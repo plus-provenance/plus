@@ -16,6 +16,6 @@
  * This package contains utility classes and methods for the rest of PLUS.
  */
 /**
- * @author DMALLEN
+ * @author david
  */
 package org.mitre.provenance;
