@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 /**
  * A stop watch is a simple timer that can be started and stopped to help with in-application profiling of various sorts.
- * @author DMALLEN
+ * @author david
  */
 public class StopWatch {
 	protected static final Logger log = Logger.getLogger(StopWatch.class.getName());

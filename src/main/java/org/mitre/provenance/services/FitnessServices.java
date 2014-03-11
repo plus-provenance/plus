@@ -54,7 +54,7 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
  * database that are too large to be loaded into memory.  For that reason, they do not
  * provide interfaces that return ProvenanceCollection objects.
  * 
- * @author DMALLEN
+ * @author david
  */
 @Path("/fitness")
 public class FitnessServices {

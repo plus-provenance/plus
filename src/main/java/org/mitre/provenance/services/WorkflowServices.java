@@ -37,7 +37,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * Workflow services encompass RESTful services which provide access to workflows and their members.
- * @author dmallen
+ * @author david
  */
 @Path("/workflow/")
 public class WorkflowServices {

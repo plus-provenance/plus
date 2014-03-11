@@ -17,7 +17,7 @@ package org.mitre.provenance;
 /**
  * Surrogate functions use edge markings to indicate which edges in the DAG should be hidden, inferred, shown, 
  * etc.  This class represents a surrogate's "vote" on what should be done with an edge in a LineageDAG
- * @author DMALLEN
+ * @author david
  */
 public class EdgeMarking {
 	/** Default marking to show an edge */

@@ -25,7 +25,7 @@ import org.mitre.provenance.db.neo4j.Neo4JStorage;
  * This class works with the servlet application deployment of PLUS, and permits the application to know when it
  * is started and stopped.  This is typically only called by the container (tomcat, jetty, etc)
  * 
- * @author DMALLEN
+ * @author david
  */
 public class PLUSServletContextListener implements ServletContextListener {
 	private static Logger log = Logger.getLogger(PLUSServletContextListener.class.getName());

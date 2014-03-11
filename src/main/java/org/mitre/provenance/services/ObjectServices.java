@@ -47,7 +47,7 @@ import org.neo4j.graphdb.Transaction;
 
 /**
  * Object services encompass RESTful services for access to individual provenance objects.
- * @author dmallen
+ * @author david
  */
 @Path("/object")
 public class ObjectServices {

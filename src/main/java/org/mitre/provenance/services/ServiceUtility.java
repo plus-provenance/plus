@@ -33,7 +33,7 @@ import com.sun.syndication.io.SyndFeedOutput;
 
 /**
  * This class provides utility methods as helpers for other service implementations.
- * @author DMALLEN
+ * @author david
  */
 public class ServiceUtility {
 	public static User getUser(HttpServletRequest req) {

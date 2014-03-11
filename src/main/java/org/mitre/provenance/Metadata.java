@@ -27,7 +27,7 @@ import java.util.Map;
  * <p>Provenance objects contain base metadata which applies to all sorts of things you might want to log
  * provenance about, but Metadata provides an "escape hatch" of sorts where you can apply any kind of 
  * arbitrary system-specific metadata to a provenance object.  This class implements that feature.
- * @author DMALLEN
+ * @author david
  */
 public class Metadata extends java.util.Hashtable <String,Object> {	
 	public static final long serialVersionUID = 131324134;	

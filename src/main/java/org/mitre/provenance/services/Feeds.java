@@ -16,7 +16,6 @@ package org.mitre.provenance.services;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,7 +46,7 @@ import com.sun.syndication.io.FeedException;
 
 /**
  * Services in this class produce RSS/XML and JSON feeds of the latest objects reported to PLUS in various categories.
- * @author dmallen
+ * @author david
  */
 @Path("/feeds")
 public class Feeds {
