@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context reloadable="false" override="true" debug="5" crossContext="true">
+<!-- 
+  <Resource name="jdbc/MySQLDB" auth="Container" type="javax.sql.DataSource"
+               maxActive="150" maxIdle="5" maxWait="30000"
+               username="implus" password="implus$" driverClassName="com.mysql.jdbc.Driver"                              
+               timeBetweenEvictionRunsMillis="3000"
+               minEvictableIdleTimeMillis="60000"
+               testOnIdle="true"
+               testOnBorrow="true"
+               validationQuery="SELECT 1"
+               url="jdbc:mysql://implus.mitre.org:3306/implus"/>               
+-->
+	<!-- Working on getting a proper path deploy on jetty.  Work in progress. -->
+	 <Configure class="org.eclipse.jetty.webapp.WebAppContext">
+	   <Set name="contextPath">/plus</Set>  
+	 </Configure>
+</Context>

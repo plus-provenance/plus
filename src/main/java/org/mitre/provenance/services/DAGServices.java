@@ -1,0 +1,410 @@
+/* Copyright 2014 MITRE Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.mitre.provenance.services;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
+import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.dag.LineageDAG;
+import org.mitre.provenance.dag.TraversalSettings;
+import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
+import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
+import org.mitre.provenance.plusobject.json.JsonFormatException;
+import org.mitre.provenance.plusobject.json.ProvenanceCollectionDeserializer;
+import org.mitre.provenance.user.User;
+import org.neo4j.cypher.javacompat.ExecutionResult;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.ResourceIterator;
+import org.neo4j.graphdb.Transaction;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
+
+/**
+ * DAGServices encompassess RESTful services that operate over provenance "DAGs" (directed acyclic graphs).
+ * @author dmallen
+ */
+@Path("/graph")
+public class DAGServices {
+	protected static Logger log = Logger.getLogger(DAGServices.class.getName());
+	
+	public class CollectionFormatException extends Exception {
+		private static final long serialVersionUID = 2819285921155590440L;
+		public CollectionFormatException(String msg) { super(msg); } 
+	}
+	
+	@GET
+	@Path("/{oid:.*}")
+	@Produces(MediaType.APPLICATION_JSON)
+	/**
+	 * Gets a provenance graph centered at a particular point, in D3 JSON format.
+	 * @param oid the OID for the starting point of the graph
+	 * @return a D3 JSON string, or 404 if not found, or internal server error on PLUSException 
+	 */
+	public Response getD3Graph(@Context HttpServletRequest req, 
+			@PathParam("oid") String oid, 
+			@DefaultValue("50") @QueryParam("n") int maxNodes,
+			@DefaultValue("8") @QueryParam("maxHops") int maxHops,
+			@DefaultValue("true") @QueryParam("includeNodes") boolean includeNodes,
+			@DefaultValue("true") @QueryParam("includeEdges") boolean includeEdges, 
+			@DefaultValue("true") @QueryParam("includeNPEs") boolean includeNPEs,
+			@DefaultValue("true") @QueryParam("followNPIDs") boolean followNPIDs,
+			@DefaultValue("true") @QueryParam("forward") boolean forward,
+			@DefaultValue("true") @QueryParam("backward") boolean backward,
+			@DefaultValue("true") @QueryParam("breadthFirst") boolean breadthFirst) {				
+
+		TraversalSettings ts = new TraversalSettings();
+		ts.n = maxNodes;
+		ts.maxDepth = maxHops;
+		ts.backward = backward;
+		ts.forward = forward;
+		ts.includeNodes = includeNodes;
+		ts.includeEdges = includeEdges;
+		ts.includeNPEs = includeNPEs;
+		ts.followNPIDs = followNPIDs;
+		ts.breadthFirst = breadthFirst;
+		
+		log.info("GET D3 GRAPH " + oid + " / " + ts);
+		
+		if(maxNodes <= 0) return ServiceUtility.BAD_REQUEST("n must be greater than zero");		
+		if(maxHops <= 0) return ServiceUtility.BAD_REQUEST("Max hops must be greater than zero");		
+		
+		try { 
+			if((Neo4JStorage.oidExists(oid) == null) && (Neo4JStorage.getNPID(oid, false) == null))  
+				return Response.status(Response.Status.NOT_FOUND).entity("Entity not found for " + oid).build();
+			
+			LineageDAG col = Neo4JPLUSObjectFactory.newDAG(oid, ServiceUtility.getUser(req), ts);
+			log.info("D3 Graph for " + oid + " returned " + col); 
+			return ServiceUtility.OK(col);					
+		} catch(PLUSException exc) { 
+			log.severe(exc.getMessage());
+			exc.printStackTrace();
+			return ServiceUtility.ERROR(exc.getMessage());					
+		} // End catch
+	} // End getD3Graph
+	
+	/**
+	 * This function is needed to check the format of incoming collections to see if they are 
+	 * loggable.
+	 * @param col
+	 * @return the same collection, or throws an exception on error.
+	 */
+	public ProvenanceCollection checkGraphFormat(ProvenanceCollection col) throws CollectionFormatException { 
+		for(PLUSObject o : col.getNodes()) {
+			if(Neo4JStorage.oidExists(o.getId()) != null)
+				throw new CollectionFormatException("Node named " + o.getName() + " / " + o.getId() + " has a duplicate ID");
+		}
+		
+		return col;
+	} // End checkGraphFormat
+	
+	@SuppressWarnings("unchecked")
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/new")
+	/**
+	 * Creates a new graph in the provenance store.  The parameters posted must include an item called "provenance" whose value
+	 * is a D3 JSON object corresponding to the provenance graph that will be created.
+	 * <p>This service will re-allocate new IDs for everything in the graph, and will *not* store the objects under the IDs provided by
+	 * the user, to avoid conflicts on uniqueness.
+	 * @param req 
+	 * @param queryParams a set of parameters, which must contain an element "provenance" mapping to a D3 JSON object.
+	 * @return a D3 JSON graph of the provenance that was stored, with new IDs.
+	 * @throws JsonFormatException
+	 */
+	public Response newGraph(@Context HttpServletRequest req, @FormParam("provenance") String provenance, MultivaluedMap<String, String> queryParams) throws JsonFormatException {
+		//String jsonStr = queryParams.getFirst("provenance");
+		User reportingUser = ServiceUtility.getUser(req);		
+		log.info("NEW GRAPH msg len " + (provenance == null ? "null" : provenance.length()) + " REPORTING USER " + reportingUser);
+		
+		if(provenance == null)  {
+			Map<String,String[]> params = req.getParameterMap();
+			
+			System.err.println("DEBUG:  bad parameters to newGraph");
+			for(String k : params.keySet()) {
+				String[] val = params.get(k);
+				System.err.println(k + " => " + (val != null && val.length > 0 ? val[0] : "null"));
+			}
+			
+			return ServiceUtility.BAD_REQUEST("You must specify a provenance parameter that is not empty.");
+		}
+		
+		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
+		
+		ProvenanceCollection col = null;
+		try {
+			col = g.fromJson(provenance, ProvenanceCollection.class);
+			System.out.println("Converted from D3 JSON:  " + col);
+
+			// Check format, and throw an exception if it's no good.
+			col = checkGraphFormat(col);
+			
+			System.out.println("Tagging source...");
+			col = tagSource(col, req);
+			
+			/* for many reasons, this is a bad idea.  leave stubbed out for now.
+			System.out.println("Resetting IDs...");
+			col = resetIDs(col);
+			*/
+			Neo4JStorage.store(col);
+		} catch(CollectionFormatException gfe) {
+			log.warning("Failed storing collection: " + gfe.getMessage());
+			return ServiceUtility.BAD_REQUEST("Your collection contained a format problem: " + gfe.getMessage());
+		} catch(JsonParseException j) {
+			j.printStackTrace();
+			return ServiceUtility.BAD_REQUEST(j.getMessage());			
+		} catch(PLUSException exc) { 
+			return ServiceUtility.ERROR(exc.getMessage());				
+		}
+
+		return ServiceUtility.OK(col);
+	} // End newGraph
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/search")	
+	/**
+	 * Search the provenance store for objects with a particular cypher query.
+	 * @param cypherQuery the cypher query
+	 * @return a D3 JSON formatted provenance collection
+	 * @deprecated
+	 */
+	public Response search(@FormParam("query") String cypherQuery) {
+		int limit = 100;		
+
+		// log.info("SEARCH " + cypherQuery);
+		
+		if(cypherQuery == null || "".equals(cypherQuery)) {
+			return ServiceUtility.BAD_REQUEST("No query");
+		}
+		
+		// Ban certain "stop words" from the query to prevent users from updating, deleting, or
+		// creating data. 
+		String [] stopWords = new String [] { "create", "delete", "set", "remove", "foreach", "merge" };
+		String q = cypherQuery.toLowerCase();
+		for(String sw : stopWords) { 
+			if(q.contains(sw))  
+				return ServiceUtility.BAD_REQUEST("Invalid query specified (" + sw + ")"); 			
+		} // End for
+		
+		/* Begin executing query */
+
+		ProvenanceCollection col = new ProvenanceCollection();
+		try (Transaction tx = Neo4JStorage.beginTx()) { 
+			log.info("Query for " + cypherQuery);
+			ExecutionResult rs = Neo4JStorage.execute(cypherQuery);
+
+			for(String colName : rs.columns()) {
+				int x=0;							
+				ResourceIterator<?> it = rs.columnAs(colName);
+
+				while(it.hasNext() && x < limit) {
+					Object next = it.next();
+					
+					if(next instanceof Node) { 
+						if(Neo4JStorage.isPLUSObjectNode((Node)next))  
+							col.addNode(Neo4JPLUSObjectFactory.newObject((Node)next));
+						else { 
+							log.info("Skipping non-provnenace object node ID " + ((Node)next).getId());
+							continue;
+						}
+					} else if(next instanceof Relationship) { 
+						Relationship rel = (Relationship)next;
+						if(Neo4JStorage.isPLUSObjectNode(rel.getStartNode()) && 
+						   Neo4JStorage.isPLUSObjectNode(rel.getEndNode())) {
+							col.addNode(Neo4JPLUSObjectFactory.newObject(rel.getStartNode()));
+							col.addNode(Neo4JPLUSObjectFactory.newObject(rel.getEndNode()));
+							col.addEdge(Neo4JPLUSObjectFactory.newEdge(rel));
+						} else { 
+							log.info("Skipping non-provenace edge not yet supported " + rel.getId());
+						}
+					}
+				} // End while
+				
+				it.close();
+				
+				if((col.countEdges() + col.countNodes()) >= limit) break;
+			}			
+			
+			tx.success();
+		} catch(Exception exc) { 
+			exc.printStackTrace();
+			return ServiceUtility.ERROR(exc.getMessage());
+		}
+
+		return ServiceUtility.OK(col);		
+	} // End search
+	
+	protected Object formatLimitedSearchResult(Object o) { 
+		if(o instanceof Node) { 
+			Node n = (Node)o;
+			if(Neo4JStorage.isPLUSObjectNode(n)) {
+				HashMap<String,Object> nodeProps = new HashMap<String,Object>();
+				nodeProps.put("oid", n.getProperty("oid"));
+				nodeProps.put("name", n.getProperty("name", "Unknown"));
+				return nodeProps;
+			} else { 
+				log.info("Skipping non-provenance object node ID " + n.getId());
+				return null;
+			}
+		} else if(o instanceof Relationship) { 
+			Relationship r = (Relationship)o;
+
+			if(Neo4JStorage.isPLUSObjectNode(r.getStartNode()) && 
+			   Neo4JStorage.isPLUSObjectNode(r.getEndNode())) {
+				//TODO ;
+			}
+			
+			HashMap<String,Object> relProps = new HashMap<String,Object>();
+			
+			relProps.put("from", formatLimitedSearchResult(r.getStartNode()));
+			relProps.put("to", formatLimitedSearchResult(r.getEndNode()));
+			relProps.put("type", r.getType().name());
+			return relProps;
+		} else if(o instanceof Iterable) { 
+			ArrayList<Object> things = new ArrayList<Object>();
+			for(Object so : (Iterable<?>)o) {
+				Object ro = formatLimitedSearchResult(so);
+				if(ro != null) things.add(ro);
+			}
+			
+			return things;
+		} else {
+			log.info("Unsupported query response type " + o.getClass().getCanonicalName());
+		}
+		
+		return null;
+	} // End formatLimitedSearchResult
+	
+	/**
+	 * This method resets all of the unique identifiers.  We can't trust identifiers coming from
+	 * external clients to be truly globally unique, so we re-generate our own.  This means we have to 
+	 * keep track of references to other nodes within the edge table.
+	 * 
+	 * This method also REMOVES dangling edges from the store.
+	 * @param col
+	 * @return
+	 *
+	protected ProvenanceCollection resetIDs(ProvenanceCollection col) throws JsonFormatException { 
+		HashMap<String,String> idMapping = new HashMap<String,String>();
+		
+		// Generate new IDs for all objects the user is reporting; store the mapping. 
+		for(PLUSObject o : col.getNodes().values()) { 
+			String id = o.getId();
+			String newID = PLUSUtils.generateID();
+			
+			if(idMapping.containsKey(id)) 
+				throw new JsonFormatException("The converted provenance collection contains a duplicate node entry under " + id);
+			
+			o.setId(newID);
+			idMapping.put(id, newID);
+		}
+		
+		// Re-write each of the user-reported edges, to refer to the nodes we just re-ID'd. 
+		for(PLUSEdge e : col.getEdges().values()) { 
+			String oldFrom = e.getFrom();
+			String oldTo = e.getTo();
+			
+			String newFrom = idMapping.get(oldFrom);
+			String newTo = idMapping.get(oldTo);
+			
+			if(newFrom != null) 
+				e.setFrom(newFrom);
+			else { 
+				//In some cases, the user will refer to a node that isn't in the set of what they're logging,
+				//but which *does* exist.  That's OK -- just keep the original ID they reported.   If the ID they're
+				//reporting references nothing, skip the edge.
+				//
+				if(Neo4JStorage.oidExists(oldFrom) == null) { 
+					log.warning("Can't log danging edge " + e + " with non-existant node " + oldFrom);
+					continue;
+				} else newFrom = oldFrom;
+			}
+			
+			if(newTo != null) 
+				e.setTo(newTo);
+			else { 
+				if(Neo4JStorage.oidExists(oldTo) == null) { 
+					log.warning("Can't log danging edge " + e + " with non-existant node " + oldTo);
+					continue;
+				} else newTo = oldTo;				
+			}
+		} // End for
+		
+		for(NonProvenanceEdge npe : col.getNonProvenanceEdges().values()) { 
+			String old = npe.getIncidentOID();
+			String newOID = idMapping.get(old);
+			
+			if(newOID == null) {
+				if(Neo4JStorage.oidExists(old) != null) newOID = old;
+				else log.warning("Dangling NPE on " + npe);
+			} else { 
+				if(PLUSUtils.isPLUSOID(npe.getFrom())) npe.setFrom(newOID);
+				else npe.setTo(newOID);
+			}
+		} // End for
+		
+		return col;
+	} // End resetIDs
+	*/
+
+	/**
+	 * Tag each of the objects in a provenance collection with information about the user that
+	 * posted them.
+	 * @param col the provenance collection to tag
+	 * @param req the request that created the provenenace collection
+	 * @return the modified collection
+	 */
+	protected ProvenanceCollection tagSource(ProvenanceCollection col, HttpServletRequest req) {		
+		String addr = req.getRemoteAddr();
+		String host = req.getRemoteHost();
+		String user = req.getRemoteUser();
+		String ua = req.getHeader("User-Agent");
+
+		String tag = (user != null ? user : "unknown") + "@" + 
+				host + " " + 
+				(host.equals(addr) ? "" : "(" + addr + ") ") + 
+				ua;
+		long reportTime = System.currentTimeMillis();
+
+		for(PLUSObject o : col.getNodes()) { 
+			o.getMetadata().put("plus:reporter", tag);
+			o.getMetadata().put("plus:reportTime", reportTime);
+		}
+
+		return col;
+	} // End tagSource
+} // End DAGServices

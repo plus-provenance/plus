@@ -1,0 +1,36 @@
+Notes on the mapping between PLUS and PROV-DM
+
+CE stands for "Closest Equivalent", meaning that there isn't an accurate detailed mapping, but similar concepts
+are available.
+
+PLUS Concept				PROV-DM Concept		F	Source
+------------------------------------------------------------
+PLUSDataObject				Entity					Moreau & Groth, p. 24
+PLUSInvocation				Activity
+PLUSWorkflow				Plan					http://www.w3.org/TR/prov-dm/#concept-plan				
+PLUSWorkflow				Bundle					p. 34 "A named set of provenance descriptions, allowing provenance of prov"
+CE: "owns"					wasAttributedTo			Part of the chain of responsibility.
+CE: "owns"					associatedWith			p. 24
+edge: contributed			wasDerivedFrom			http://www.w3.org/TR/prov-dm/#component2
+edge: contributed			WasRevisionOf			http://www.w3.org/TR/prov-dm/#component2
+edge: contributed			WasQuotedFrom			http://www.w3.org/TR/prov-dm/#component2
+edge: contributed			HadPrimarySource		http://www.w3.org/TR/prov-dm/#component2
+edge: input to				used 				R	http://www.w3.org/TR/prov-dm/#component1
+edge: generated				wasGeneratedBy		R	http://www.w3.org/TR/prov-dm/#component1
+CE: edge: triggered			wasInformedBy		R	http://www.w3.org/TR/prov-dm/#component1
+NPE							wasInfluencedBy			p. 24
+NPE							wasStartedBy
+NPE							wasEndedBy
+NPE							specializationOf		p. 33
+NPE							alternate				p. 34
+NPE							wasInvalidatedBy		p. 24
+
+N/A							wasAssociatedWith		p. 22 (Domain: Agent, Range: Agent)
+N/A							actedOnBehalfOf			p. 22 (Domain: Agent, Range: Agent)
+CE: ProvenanceCollection	Collection				Entities only!  http://www.w3.org/TR/prov-dm/#component6
+N/A							hadMember				http://www.w3.org/TR/prov-dm/#component6
+
+PROV-DM "Views"
+- Responsibility view: chain of what was attributed to whom (Agents -> Agents)
+- Data flow view: expresses dependencies between data in a system (Entity -> Entity)
+- Process flow view: description of chains of operations (Activity -> Activity)

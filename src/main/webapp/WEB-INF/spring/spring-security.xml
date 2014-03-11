@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  See https://github.com/mitreid-connect/OpenID-Connect-Java-Spring-Server/wiki/Client-configuration -->
+<beans xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:oauth2="http://www.springframework.org/schema/security/oauth2"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/security/oauth2 http://www.springframework.org/schema/security/spring-security-oauth2.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<mvc:annotation-driven />
+	<context:component-scan base-package="org.mitre.provenance.openid" />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving 
+		up static resources in the ${webappRoot}/resources directory -->
+	<mvc:resources mapping="/**" location="/" />
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources 
+		in the /WEB-INF/views directory -->
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/spring/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	
+	<!-- Application properties -->
+	<bean id="propertyConfigurer"
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="properties" ref="appProperties" />
+    </bean>
+    <bean id="appProperties"
+        class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="locations">
+            <list>
+                <value>/WEB-INF/spring/application.properties
+                </value>
+            </list>
+        </property>
+    </bean>
+    
+
+	<!-- Spring Security & MITREid OpenID Connect configuration -->
+	<security:global-method-security pre-post-annotations="enabled" proxy-target-class="true" authentication-manager-ref="authenticationManager"/>
+
+	<!-- Exclude /identify.jsp from the security filter -->
+	<security:http pattern="/identify.jsp" security="none" authentication-manager-ref="authenticationManager" disable-url-rewriting="true" />
+
+	<security:http pattern="j_spring_openid_security_check" security="none" />
+
+	<!--  <security:http pattern="/**" security="none"/> -->
+		
+	<security:http auto-config="false" use-expressions="true"
+		disable-url-rewriting="true" entry-point-ref="authenticationEntryPoint"
+		pattern="/**">
+		<security:intercept-url pattern="/*" access="isAuthenticated()"/>
+		<security:custom-filter before="PRE_AUTH_FILTER" ref="openIdConnectAuthenticationFilter" />
+		<security:custom-filter ref="openIdInterceptFilter" after="SECURITY_CONTEXT_FILTER" />
+		<security:custom-filter ref="openId4JavaFilter" position="OPENID_FILTER" />
+		<security:logout />
+	</security:http>
+
+	<!-- OpenID 2.0 -->
+	<bean id="openId2UserDetailsService" class="org.mitre.provenance.openid.OpenID2UserDetailsService"/>
+	<bean id="openId4JavaConsumer" class="org.mitre.provenance.openid.OpenId4JavaProxyConsumer" />
+	<bean id="openId4JavaFilter" class="org.springframework.security.openid.OpenIDAuthenticationFilter">
+		<property name="consumer" ref="openId4JavaConsumer" />
+		<property name="authenticationManager" ref="authenticationManager"/>
+	</bean>
+	<bean id="openId2AuthenticationUserDetailsService" class="org.mitre.provenance.openid.OpenId2AuthenticationUserDetailsService" />
+	<bean id="openid2AuthenticationProvider" class="org.springframework.security.openid.OpenIDAuthenticationProvider">
+		<property name="authenticationUserDetailsService" ref="openId2AuthenticationUserDetailsService" />
+		<property name="userDetailsService" ref="openId2UserDetailsService" />     
+	</bean>
+
+	<!-- Custom filter to populate HTTP Request with a Plus user corresponding to the logged-in OpenId Connect user -->
+	<bean id="openIdInterceptFilter" class="org.mitre.provenance.openid.OpenIDInterceptorFilter"/>
+
+	<bean id="authenticationEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+		<property name="loginFormUrl" value="/identify.jsp"/>
+	</bean>
+
+	<security:authentication-manager alias="authenticationManager">
+		<security:authentication-provider ref="openIdConnectAuthenticationProvider" />
+		<security:authentication-provider ref="openid2AuthenticationProvider" />
+	</security:authentication-manager>
+
+	<bean id="openIdConnectAuthenticationProvider" class="org.mitre.openid.connect.client.OIDCAuthenticationProvider">
+		<property name="authoritiesMapper">
+			<bean class="org.mitre.openid.connect.client.NamedAdminAuthoritiesMapper">
+				<property name="admins">
+					<set>
+					<!-- This is an example of how to set up a user as an administrator: they'll be given ROLE_ADMIN in addition to ROLE_USER -->
+						<bean class="org.mitre.openid.connect.client.SubjectIssuerGrantedAuthority">
+							<constructor-arg name="subject" value="${admin.sub}" />
+							<constructor-arg name="issuer" value="${admin.iss}" />
+						</bean>
+					</set>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="openIdConnectAuthenticationFilter" class="org.mitre.openid.connect.client.OIDCAuthenticationFilter">
+		<property name="authenticationManager" ref="authenticationManager" />
+		<property name="serverConfigurationService">
+			<!--  See https://github.com/mitreid-connect/OpenID-Connect-Java-Spring-Server/wiki/Client-configuration
+			<bean class="org.mitre.openid.connect.client.service.impl.StaticServerConfigurationService">
+				<property name="servers">
+					<map>
+						<entry key="${idp.url}">
+							<bean class="org.mitre.openid.connect.config.ServerConfiguration">
+								<property name="issuer" value="${idp.url}" />
+								<property name="authorizationEndpointUri"	value="${idp.url}authorize" />
+								<property name="tokenEndpointUri"	value="${idp.url}token" />
+								<property name="userInfoUri" value="${idp.url}userinfo" />
+								<property name="jwksUri" value="${idp.url}jwk" />
+							</bean>
+						</entry>
+					</map>
+				</property>
+			</bean>
+			-->
+			<bean class="org.mitre.openid.connect.client.service.impl.DynamicServerConfigurationService" />
+		</property>
+		<property name="clientConfigurationService">
+			<bean class="org.mitre.openid.connect.client.service.impl.StaticClientConfigurationService">
+				<property name="clients">
+					<map>
+						<entry key="${idp.url}">
+							<bean class="org.mitre.oauth2.model.RegisteredClient">
+								<property name="clientId" value="61d43573-4afe-4208-a960-41c5a2faaa62" />
+								<property name="clientSecret" value="Mqas4MkbSKIXrHh9SnAkGMsfO-nqNIyUhu9ok2XukFr1fxBAPE4jSY3vTZe6DD2Bhuq5-hqA4d0NX8mZApH1Hw" />
+								<property name="scope">
+									<set value-type="java.lang.String">
+										<value>openid</value>
+										<value>email</value>
+										<value>address</value>
+										<value>profile</value>
+										<value>phone</value>
+									</set>
+								</property>
+								<property name="tokenEndpointAuthMethod" value="SECRET_BASIC" />
+								<property name="redirectUris">
+									<set>
+										<value>${app.home}/openid_connect_login</value>
+									</set>
+								</property>
+							</bean>
+						</entry>
+				</map>
+		  		</property>
+			</bean>
+		</property>
+		<property name="issuerService">
+			<bean class="org.mitre.openid.connect.client.service.impl.WebfingerIssuerService">
+  				<property name="loginPageUrl" value="/identify.jsp" />
+			</bean>
+		</property>
+		<!-- Property below will ensure that a MITRE user (who can be logged in to OpenID Connect via SSO) -->
+		<!-- will be prompted for consent each time they log in. It is currently under development; not available in a release yet -->
+<!-- 		<property name="authRequestOptionsService"> -->
+<!-- 			<bean class="org.mitre.openid.connect.client.service.impl.StaticAuthRequestOptionsService"> -->
+<!-- 				<property name="options"> -->
+<!-- 					<map> -->
+<!-- 						<entry key="display" value="page" /> -->
+<!-- 						<entry key="prompt" value="consent" /> -->
+<!-- 					</map> -->
+<!-- 				</property> -->
+<!-- 			</bean> -->
+<!-- 		</property> -->
+		<property name="authRequestUrlBuilder">
+			<bean class="org.mitre.openid.connect.client.service.impl.PlainAuthRequestUrlBuilder" />
+		</property>
+	</bean>
+
+	<bean id="validatorCache" class="org.mitre.jwt.signer.service.impl.JWKSetCacheService" />	 
+</beans>
