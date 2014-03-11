@@ -8,7 +8,7 @@ Data provenance is “information that helps determine the derivation history of
 
 PLUS comes bundled with a web application that can be deployed to a container, which permits visualizing and querying provenance.
 
-	git clone (blah blah blah)
+	git clone https://github.com/plus-provenance/plus.git
 	mvn jetty:run
 
 Wait until jetty finishes starting up, and then go to [http://localhost:8080/plus/](http://localhost:8080/plus/).  The first time PLUS starts up, it may take a bit of extra time as it pre-populates your provenance store with some example workflows and data.  In general, your provenance database will be stored in your user's home directory under the name `provenance.db`.

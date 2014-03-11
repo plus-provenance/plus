@@ -177,7 +177,7 @@
   </properties>
   
   <scm>
-  	<url>svn+ssh://anonymous@developer.mitre.org/svnroot/implus</url>
+  	<url>https://github.com/plus-provenance/plus.git</url>
   </scm>
   
   <organization>
