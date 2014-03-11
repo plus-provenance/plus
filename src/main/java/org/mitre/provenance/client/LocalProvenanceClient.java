@@ -25,7 +25,7 @@ import org.mitre.provenance.user.User;
 /**
  * This class permits the use of a provenance client attached to a local database.  This local class is essentially a 
  * wrapper around a number of methods found in the storage layer.
- * @author DMALLEN
+ * @author david
  */
 public class LocalProvenanceClient extends AbstractProvenanceClient {
 	protected User user = User.PUBLIC;

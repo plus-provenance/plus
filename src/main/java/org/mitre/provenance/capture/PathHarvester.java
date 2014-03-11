@@ -28,7 +28,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 /** 
  * Path harvester creates a series of provenance objects from files on a path.   This is useful for pre-creating objects
  * when you know they will be referenced, and capturing hashes from a large set of files.
- * @author DMALLEN
+ * @author david
  */
 public class PathHarvester {
 	protected static final Logger log = Logger.getLogger(PathHarvester.class.getName());

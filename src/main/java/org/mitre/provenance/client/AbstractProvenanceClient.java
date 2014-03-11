@@ -22,7 +22,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * This class defines the methods that all provenance clients must implement.
- * @author DMALLEN
+ * @author david
  */
 public abstract class AbstractProvenanceClient {
 	protected User viewer = User.PUBLIC;
