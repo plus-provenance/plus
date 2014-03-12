@@ -4,7 +4,7 @@ PLUS is a system for capturing and managing provenance information, originally c
 
 Data provenance is “information that helps determine the derivation history of a data product...[It includes] the ancestral data product(s) from which this data product evolved, and the process of transformation of these ancestral data product(s).  Essentially, provenance provides a data family tree,‖ helping consumers of data to interpret it properly and determine how much they should trust it.
 
-## Installation & Quick Start:  Running the Provenance Server
+## Quick Start
 
 PLUS comes bundled with a web application that can be deployed to a container, which permits visualizing and querying provenance.
 
@@ -13,7 +13,15 @@ PLUS comes bundled with a web application that can be deployed to a container, w
 
 Wait until jetty finishes starting up, and then go to [http://localhost:8080/plus/](http://localhost:8080/plus/).  The first time PLUS starts up, it may take a bit of extra time as it pre-populates your provenance store with some example workflows and data.  In general, your provenance database will be stored in your user's home directory under the name `provenance.db`.
 
-## Components of the PLUS System:  What Can You Do With This?
+## Capturing some Test Provenance
+
+If you're on a linux system, you can capture some test provenance of programs currently running on your system, by running the PROCtor capture agent.  This can be executed with the following maven command.
+
+	mvn exec:java  -Dexec.mainClass=org.mitre.provenance.capture.linux.PROCtor
+
+This program will run as long as you permit it to; hit Ctrl-C or send it a SIGINT to stop capturing.  Once you're finished capturing test provenance, start your web server (via `mvn jetty:run`) and view the latest reported objects.	
+
+## Components of the PLUS System
 
 The PLUS system has four main components: capture, storage, usage and admin.
 

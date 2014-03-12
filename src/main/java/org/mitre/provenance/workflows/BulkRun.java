@@ -44,6 +44,10 @@ public class BulkRun {
 		
 		PrivilegeSet ps = new PrivilegeSet();
 		ps.addPrivilege(PrivilegeClass.PUBLIC);
+
+		ContainmentDemo cd = new ContainmentDemo(); cd.finalize();
+		cols.add(cd);
+		
 		RandomMotifCollection rmc = new RandomMotifCollection(
 				new SyntheticGraphProperties().setComponents(20).setSGF(new SurgicalInferAll()).setPrivilegeSet(ps));
 		cols.add(rmc);
@@ -72,10 +76,7 @@ public class BulkRun {
 		
 		AnalysisWorkflow af =  new AnalysisWorkflow();  af.finalize();
 		cols.add(af);
-		
-		ContainmentDemo cd = new ContainmentDemo(); cd.finalize();
-		cols.add(cd);
-		
+				
 		SimpleWorkflow sf = new SimpleWorkflow();
 		cols.add(sf);
 				

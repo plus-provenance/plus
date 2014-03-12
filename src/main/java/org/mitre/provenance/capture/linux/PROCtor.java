@@ -28,7 +28,6 @@ import java.util.HashSet;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.contenthash.ContentHasher;
-import org.mitre.provenance.contenthash.MD5ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
@@ -124,6 +123,7 @@ public class PROCtor {
 		if(fileDescriptors == null) { return; } // No permissions here.
 
 		ProvenanceCollection pcol = new ProvenanceCollection();
+		pcol.addNode(inv);
 		System.out.println("\n");
 		
 		String rev = (Neo4JStorage.exists(inv) != null ? "REVISITING" : "NEW");
@@ -159,26 +159,31 @@ public class PROCtor {
 		    if(Neo4JStorage.exists(fdObj) != null) pcol.addNonProvenanceEdge(new NonProvenanceEdge(fdObj, file_uuid, UUID_KEY)); 
 		}
 		
-		pcol.addNode(inv); 
-
 		for(String id : inputs) { 
-		    PLUSObject o = (PLUSObject)cache.get(id); 
-		    
-		    // Only add edges if one of the objects is really new.
-		    if((Neo4JStorage.exists(o) != null) || (Neo4JStorage.exists(inv) != null))
-		    	pcol.addEdge(new PLUSEdge(o, inv, PLUSWorkflow.DEFAULT_WORKFLOW)); 
+		    PLUSObject o = (PLUSObject)cache.get(id); 		    
+		    if(o != null) pcol.addEdge(new PLUSEdge(o, inv)); 
 		} 
 
 		for(String id : outputs) { 
 		    PLUSObject o = (PLUSObject)cache.get(id); 
-		    
-		    // Only add edges if object is really new.
-		    if((Neo4JStorage.exists(o) != null) || (Neo4JStorage.exists(inv) != null))		    
-		    	pcol.addEdge(new PLUSEdge(inv, o, PLUSWorkflow.DEFAULT_WORKFLOW));
+		    if(o != null) pcol.addEdge(new PLUSEdge(inv, o));
 		} 
 
 		int written = Neo4JStorage.store(pcol);  
 		System.out.println(written + " new objects logged ==="); 
+	}
+	
+	public boolean isSymlink(File file) throws IOException {
+		if(file == null) return false; 
+		
+		File canon;
+		if (file.getParent() == null) canon = file;
+		else {
+			File canonDir = file.getParentFile().getCanonicalFile();
+			canon = new File(canonDir, file.getName());
+		}
+		
+		return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
 	}
 	
 	public static String getMyPID() { 
@@ -201,7 +206,10 @@ public class PROCtor {
 		
 		String pid = procPID.getName();
 		if(pid.equals(myPID)) return null;   // Don't log myself.
-		
+
+		String [] children = procPID.list();  		
+		if(children == null) return null;   // No permissions.
+	
 		if(cache.containsKey(procFileID)) return (PLUSInvocation)cache.get(procFileID); 
 		
 		try { 
@@ -214,14 +222,9 @@ public class PROCtor {
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 		}
-			
-		String [] children = null;		
-		
+					
 		long lmod = procPID.lastModified();
 		
-		children = procPID.list();  		
-		if(children == null) return null;   // No permissions.
-						
 		String cmdline = slurp(new File(procPID, "cmdline"));		
 		File exe = new File(procPID, "exe").getCanonicalFile();
 		File cwd = new File(procPID, "cwd").getCanonicalFile(); 

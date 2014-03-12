@@ -147,7 +147,7 @@ public class Neo4JPLUSObjectFactory {
                 "return n " + 
 		        "limit " + maxReturn;
 		
-		System.out.println(query);
+		// System.out.println(query);
 		Iterator <Node> ns = Neo4JStorage.execute(query).columnAs("n");
 		
 		while(ns.hasNext()) {
