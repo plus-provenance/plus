@@ -705,10 +705,16 @@ public class Neo4JPLUSObjectFactory {
 					break;			
 							
 				if(settings.includeNodes && n.hasProperty(Neo4JStorage.PROP_PLUSOBJECT_ID)) {
+					dag.getFingerPrint().startTimer("CreatePLUSObject");
 					PLUSObject o = Neo4JPLUSObjectFactory.newObject(n).getVersionSuitableFor(user);
+					dag.getFingerPrint().stopTimer("CreatePLUSObject"); 
+					
 					if(o != null) { 
 						// log.info("Added node " + o.getId());
 						dag.addNode(o);
+						
+						// Have we reached the max size?
+						if(dag.countNodes() >= settings.n) break;
 					}
 				} else 
 					log.warning("That doesn't seem right...Node " + n + " lacks OID property, type=" + n.getProperty(Neo4JStorage.PROP_TYPE, "(missing)") + " name=" + n.getProperty(Neo4JStorage.PROP_NAME, "(missing)"));			
@@ -719,14 +725,17 @@ public class Neo4JPLUSObjectFactory {
 							Neo4JStorage.UNSPECIFIED, Neo4JStorage.INPUT_TO, 
 							Neo4JStorage.GENERATED, Neo4JStorage.TRIGGERED);
 					
+					dag.getFingerPrint().startTimer("SpiderRelationships");
 					for(Relationship r : rels)  {
 						PLUSEdge e = newPLUSEdge(r);
 						// log.info("Added edge " + e);
 						dag.addEdge(e);
 					}
+					dag.getFingerPrint().stopTimer("SpiderRelationships");					
 				} // End if
 	
 				if(settings.includeNPEs) { 
+					dag.getFingerPrint().startTimer("SpiderNPEs");
 					Iterable<Relationship> rels = n.getRelationships(Neo4JStorage.NPE);
 					for(Relationship r : rels) {
 						NonProvenanceEdge np = newNonProvenanceEdge(r);
@@ -740,6 +749,7 @@ public class Neo4JPLUSObjectFactory {
 							log.warning("When adding NPE " + np + " found we were missing incident OID " + oid);
 						}			
 					}
+					dag.getFingerPrint().stopTimer("SpiderNPEs");
 				} // End if
 			
 				dag.getFingerPrint().startTimer("TraverseIterator");
@@ -755,7 +765,7 @@ public class Neo4JPLUSObjectFactory {
 		} catch(TransactionFailureException exc) { 
 			log.severe("Transaction failed: " + exc.getMessage());
 		}
-		
+				
 		dag.getFingerPrint().stopTimer("TraverseIterator");
 		
 		// Add actors that are relevant to the graph.
