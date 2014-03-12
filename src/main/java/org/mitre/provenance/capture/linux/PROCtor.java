@@ -25,9 +25,11 @@ import java.lang.management.ManagementFactory;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 
+import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.MD5ContentHasher;
+import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
@@ -56,7 +58,7 @@ public class PROCtor {
 	protected String myPID = null;
 	public static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(1000); 
 	
-	protected MD5ContentHasher hasher = new MD5ContentHasher();
+	protected SHA256ContentHasher hasher = new SHA256ContentHasher();
 	
 	public static final String UUID_KEY = "file_uuid";
 	
@@ -93,7 +95,7 @@ public class PROCtor {
 		// Unique ID for a file based on its absolute pathname, and last modified date.
 		// When this hash value changes, you know it's a different file.
 		String stamp = f.getCanonicalPath() + "-" + f.lastModified();				
-		return MD5ContentHasher.formatAsHexString(hasher.hash(new ByteArrayInputStream(stamp.getBytes())));
+		return ContentHasher.formatAsHexString(hasher.hash(new ByteArrayInputStream(stamp.getBytes())));
 	}
 	
 	protected void poll() throws IOException, NoSuchAlgorithmException, PLUSException { 
@@ -106,6 +108,7 @@ public class PROCtor {
 		});
 		
 		for(String pid : PIDs) { 
+			if(pid.equals(myPID)) continue;  // Don't process myself.
 			processPID(new File(PROC, pid)); 	
 		}		
 	}
@@ -229,6 +232,7 @@ public class PROCtor {
 		inv.getMetadata().put("cmdline", cmdline); 
 		inv.getMetadata().put("started", ""+lmod); 
 		inv.getMetadata().put(UUID_KEY, procFileID);
+		inv.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, procFileID);
 		
 		cache.put(procFileID, inv);  // Cache this so we don't go back over it.
 		
