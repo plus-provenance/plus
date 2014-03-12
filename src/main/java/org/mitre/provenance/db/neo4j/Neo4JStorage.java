@@ -946,27 +946,23 @@ public class Neo4JStorage {
 			// Actors need to be stored first because some other things may depend on their
 			// existence.
 			for(PLUSActor a : col.getActors()) {
-				Neo4JStorage.store(a);
-				x++;
+				if(Neo4JStorage.store(a) != null) x++;				
 			}
 			
 			for(PLUSObject o : col.getNodes()) {
-				Neo4JStorage.store(o);
-				x++;
+				if(Neo4JStorage.store(o) != null) x++;				
 			}
 				
 			for(PLUSEdge e : col.getEdges()) {
-				Neo4JStorage.store(e);
-				x++;
+				if(Neo4JStorage.store(e)) x++;				
 			}
 			
 			for(NonProvenanceEdge npe : col.getNonProvenanceEdges()) {
-				Neo4JStorage.store(npe);
-				x++; 
+				if(Neo4JStorage.store(npe)) x++;				
 			}
 			
 			tx.success();
-		}
+		} // End try
 		
 		return x;
 	}

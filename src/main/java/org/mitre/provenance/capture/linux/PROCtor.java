@@ -52,6 +52,8 @@ import org.mitre.provenance.user.User;
  * We have to apply a few basic fingerprinting techniques to avoid logging duplicates.
  * 
  * At present, this program polls procfs exactly once.  This might be appropriate for setting up as a daemon process in later code.
+ * 
+ * @author david
  */
 public class PROCtor {
 	protected static final Logger log = Logger.getLogger(PROCtor.class.getName());
@@ -61,6 +63,16 @@ public class PROCtor {
 	protected SHA256ContentHasher hasher = new SHA256ContentHasher();
 	
 	public static final String UUID_KEY = "file_uuid";
+	
+	/**
+	 * Signals that an object already exists.
+	 * @author david
+	 */
+	public static class ExistsException extends PLUSException { 
+		protected PLUSObject o; 
+		public ExistsException(PLUSObject obj) { this.o = obj; }
+		public PLUSObject getObject() { return o; } 
+	}
 	
 	//HashMap<String,PLUSObject> cache = new HashMap<String,PLUSObject>();	
 	protected static File PROC = new File("/proc"); 
@@ -146,15 +158,24 @@ public class PROCtor {
 		    // we're gathering metadata about the file, and not a symlink to the file.
 		    // If we're revisiting this PID and the file has already been logged, this will return null
 		    // so we don't re-log the same things.
-		    PLUSObject fdObj = createOnlyIfNew(fdFile.getCanonicalFile()); 
+		    boolean previouslyWritten = false;
+		    PLUSObject fdObj = null;
+		    
+		    try { fdObj = createOnlyIfNew(fdFile.getCanonicalFile()); }
+		    catch(ExistsException e) {
+		    	previouslyWritten = true;
+		    	fdObj = e.getObject();
+		    }
 		    
 		    if(fdObj == null) { 
 		    	// System.out.println("Error creating obj for " + fdFile);
 		    	continue;
 		    }
 		    
-		    fdObj.getMetadata().put("unix:fd", fdName); 
-		    pcol.addNode(fdObj); 
+		    if(!previouslyWritten) { 
+		    	fdObj.getMetadata().put("unix:fd", fdName); 
+		    	pcol.addNode(fdObj);
+		    }
 		    
 		    // TRICKY: is this correct?
 		    // If the fd was open for writing, that means the program is either creating or appending to it.
@@ -165,7 +186,7 @@ public class PROCtor {
 		    
 		    String file_uuid = ""+fdObj.getMetadata().get(UUID_KEY);
 		    
-		    if(Neo4JStorage.exists(fdObj) != null) pcol.addNonProvenanceEdge(new NonProvenanceEdge(fdObj, file_uuid, UUID_KEY)); 
+		    if(previouslyWritten) pcol.addNonProvenanceEdge(new NonProvenanceEdge(fdObj, file_uuid, UUID_KEY)); 
 		}
 		
 		for(String id : inputs) { 
@@ -258,7 +279,7 @@ public class PROCtor {
 		return inv;
 	}
 	
-	public PLUSObject createOnlyIfNew(File f) throws NoSuchAlgorithmException, IOException {
+	public PLUSObject createOnlyIfNew(File f) throws ExistsException, NoSuchAlgorithmException, IOException {
 		if(f == null || !f.exists()) return null;
 		
 		if(!f.isFile()) return null;   // Don't log things like sockets right now.
@@ -269,14 +290,14 @@ public class PROCtor {
 			return null;
 		}
 				
-		if(cache.containsKey(id)) return null; 
+		if(cache.containsKey(id)) throw new ExistsException(cache.get(id)); 
 		
 		try { 
-			ProvenanceCollection results = Neo4JPLUSObjectFactory.loadBySingleMetadataField(User.DEFAULT_USER_GOD, UUID_KEY, id);
+			ProvenanceCollection results = Neo4JPLUSObjectFactory.loadBySingleMetadataField(User.DEFAULT_USER_GOD, UUID_KEY, id, 1);
 			if(results != null && results.countNodes() > 0) {
 				PLUSObject o = (PLUSObject) results.getNodes().toArray()[0];
 				cache.put(id, o); 
-				return null;
+				throw new ExistsException(o);
 			}
 		} catch(PLUSException exc) { 
 			exc.printStackTrace(); 
@@ -330,4 +351,4 @@ public class PROCtor {
 			p.run(5000);		
 		}
 	}
-}
+} // End PROCtor
