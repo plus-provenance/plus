@@ -129,12 +129,15 @@ public class PROCtor {
 		if(fileDescriptors == null) { return; } // No permissions here.
 
 		ProvenanceCollection pcol = new ProvenanceCollection();
-		pcol.addNode(inv);
+		
 		System.out.println("\n");
 		
-		String rev = (Neo4JStorage.exists(inv) != null ? "REVISITING" : "NEW");
-		System.out.print("=== " + rev + ": " + inv.getMetadata().get("cmdline") + " PID " + inv.getMetadata().get("pid") + " => "); 
-
+		boolean revisiting = false;
+		
+		if(Neo4JStorage.exists(inv) != null) 
+			revisiting = true;
+		else pcol.addNode(inv);
+		
 		HashSet<String> inputs = new HashSet<String>();
 		HashSet<String> outputs = new HashSet<String>();
 
@@ -143,7 +146,9 @@ public class PROCtor {
 		    
 		    // We get the canonical file to resolve the procfs symlink, so that 
 		    // we're gathering metadata about the file, and not a symlink to the file.
-		    PLUSObject fdObj = createOrRetrieveData(fdFile.getCanonicalFile()); 
+		    // If we're revisiting this PID and the file has already been logged, this will return null
+		    // so we don't re-log the same things.
+		    PLUSObject fdObj = createOnlyIfNew(fdFile.getCanonicalFile()); 
 		    
 		    if(fdObj == null) { 
 		    	// System.out.println("Error creating obj for " + fdFile);
@@ -174,9 +179,12 @@ public class PROCtor {
 		    PLUSObject o = (PLUSObject)cache.get(id); 
 		    if(o != null) pcol.addEdge(new PLUSEdge(inv, o));
 		} 
-
-		int written = Neo4JStorage.store(pcol);  
-		System.out.println(written + " new objects logged ==="); 
+							
+		int written = Neo4JStorage.store(pcol);
+		
+		log.info((revisiting ? "REVISITED" : "NEW") + ": " + inv.getMetadata().get("cmdline") + 
+				 " PID " + inv.getMetadata().get("pid") + " => " + 
+				 inputs.size() + " inputs, " + outputs.size() + " outputs.  Total written=" + written);
 	}
 	
 	public boolean isSymlink(File file) throws IOException {
@@ -248,23 +256,25 @@ public class PROCtor {
 		return inv;
 	}
 	
-	public PLUSObject createOrRetrieveData(File f) throws NoSuchAlgorithmException, IOException {
+	public PLUSObject createOnlyIfNew(File f) throws NoSuchAlgorithmException, IOException {
 		if(f == null || !f.exists()) return null;
+		
 		if(!f.isFile()) return null;   // Don't log things like sockets right now.
 		String id = getIDForFile(f); 
+		
 		if(id == null) { 
-			System.err.println("Couldn't compute file id for " + f);
+			log.warning("Couldn't compute file id for " + f);
 			return null;
 		}
 				
-		if(cache.containsKey(id)) return (PLUSObject)cache.get(id); 
+		if(cache.containsKey(id)) return null; 
 		
 		try { 
 			ProvenanceCollection results = Neo4JPLUSObjectFactory.loadBySingleMetadataField(User.DEFAULT_USER_GOD, UUID_KEY, id);
 			if(results != null && results.countNodes() > 0) {
 				PLUSObject o = (PLUSObject) results.getNodes().toArray()[0];
 				cache.put(id, o); 
-				return o;
+				return null;
 			}
 		} catch(PLUSException exc) { 
 			exc.printStackTrace(); 
@@ -288,10 +298,11 @@ public class PROCtor {
 				FileInputStream fis = null;
 				try { 
 					fis = new FileInputStream(f);
-					String md5hash = ContentHasher.formatAsHexString(hasher.hash(fis));
+					String sha256hash = ContentHasher.formatAsHexString(hasher.hash(fis));
 					fis.close();
-					pf.getMetadata().put("md5_uuid", md5hash);
-				} catch(IOException exc) { ; } 
+					pf.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, sha256hash);					
+				} 
+				catch(IOException exc) { ; } 
 				finally { 
 					if(fis != null) try { fis.close(); } catch(Exception e) { ; } 
 				}

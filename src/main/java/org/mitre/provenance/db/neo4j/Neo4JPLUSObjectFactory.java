@@ -957,24 +957,30 @@ public class Neo4JPLUSObjectFactory {
 		
 		Map<String,Object>params = new HashMap<String,Object>();
 		params.put("searchCriteria", "name:*" + regex + "*");
+				
+		ProvenanceCollection col = new ProvenanceCollection();
 		
-		ExecutionResult result = Neo4JStorage.execute(query, params);
-		Iterator<Node> nodes = result.columnAs("n");
-	    
-		ProvenanceCollection col = new ProvenanceCollection();		
+		try (Transaction tx = Neo4JStorage.beginTx()) {
+			ExecutionResult result = Neo4JStorage.execute(query, params);
+			Iterator<Node> nodes = result.columnAs("n");
+		
+			while(nodes.hasNext()) { 
+				Node n = nodes.next();
 	
-		while(nodes.hasNext()) { 
-			Node n = nodes.next();
-
-			try {
-				col.addNode(Neo4JPLUSObjectFactory.newObject(n));
-			} catch (PLUSException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return null;
+				try {
+					col.addNode(Neo4JPLUSObjectFactory.newObject(n));
+				} catch (PLUSException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return null;
+				}
 			}
+			
+			tx.success();
+		} catch(TransactionFailureException exc) { 
+			log.fine("Ignoring transaction failed exception.");
 		}
-	
+			
 		return col;
 	} // End searchFor
 	
