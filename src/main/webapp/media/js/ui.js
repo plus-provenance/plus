@@ -83,6 +83,20 @@ function applicationError(message, selector) {
 	}	
 }
 
+function showSharedMetadata(key, value, sel) {
+	$(sel).html(loadingMarkup());
+	
+	Provenance().getObjectsByMetadata({
+		key: key,
+		value: value,
+		success: function(g) {
+			tableInject(sel, generateObjectTable(g, g.countNodes() + " Objects with Metadata " + key + " of " + value, sel));
+		}
+	});
+	
+	return true;
+}
+
 function showOwnedObjects(aid, name, sel) {	
 	$(sel).html(loadingMarkup());
 	

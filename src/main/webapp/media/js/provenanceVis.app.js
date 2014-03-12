@@ -172,7 +172,7 @@ function tick(e) {
 	});
 }
 
-function makeRow(key, value) {
+function makeRow(key, value, linkMetadata) {
 	var valueText = "";
 	
 	if(value instanceof Array) {
@@ -185,7 +185,12 @@ function makeRow(key, value) {
 		valueText = value;
 	}
 	
-	var tableRow = '<tr><td style="max-width:50%; white-space: nowrap; overflow:hidden; text-overflow: ellipsis">' + key + '</td><td style="max-width:50%; word-wrap; break-word">' + valueText + "</td></tr>";
+	var keyCell = key;
+	if(linkMetadata) {
+		keyCell = "<a href='#' onclick=\"showSharedMetadata('" + key + "', '" + value + "', '" + CANVAS + "'); return false\">" + key + "</a>";				
+	}
+	
+	var tableRow = '<tr><td class="metadataTableCell">' + keyCell + '</td><td class="metadataTableCell">' + valueText + "</td></tr>";
 	return tableRow;
 }
 
@@ -407,7 +412,7 @@ function onSelectNode(d) {
 	    var key = keys[i];
 	    var value = d.metadata[key];
 		if($.inArray(key, ignoreList) >= 0) { continue; } 			
-		$('#metaTable').append(makeRow(key, value));	    
+		$('#metaTable').append(makeRow(key, value, true));	    
 	}
 
 	$("#metaData").styleTable();

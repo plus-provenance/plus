@@ -295,6 +295,18 @@ function Provenance() {
 		return this;
 	};
 	
+	this.getObjectsByMetadata = function(properties) { 
+		this.ensure(properties, ['key', 'value', 'success']);
+		
+		props = jQuery.extend(true, {}, properties);
+		props.type = "GET";
+		props.constructor = ProvenanceGraph;
+		props.url = "/plus/api/object/metadata/" + properties.key + "/" + properties.value + "?format=json";
+		
+		this.__genericAJAX(props);
+		return this;
+	};
+	
 	// Get a list of objects owned by a particular actor ID
 	this.getOwnedObjects = function(properties) { 
 		this.ensure(properties, ['aid', 'success']);

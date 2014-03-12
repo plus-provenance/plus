@@ -86,14 +86,19 @@ td.center {
 .styleTable TH { text-align: center; padding: .8em .4em; }
 .styleTable TD.first, .styleTable TH.first { border-left-width: 0px !important; }
 
-
+/* Applied to cells in the left-hand metadata table */
+.metadataTableCell {
+	max-width:50%; 
+	white-space: nowrap; 
+	overflow:hidden; 
+	text-overflow: ellipsis
+}
 
 .ui-tabs .ui-tabs-nav {
   display: -webkit-box;
   display: -moz-box; 
   display: box; 
 }
-
 
 .ui-tabs .ui-tabs-nav li {
   -webkit-box-flex: 1;
