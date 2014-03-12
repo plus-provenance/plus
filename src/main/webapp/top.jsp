@@ -67,7 +67,16 @@
 						applicationError("Couldn't fetch latest workflows", sel);
 					}
 				});
-			} // End else if
+			} else if(sel == '#dashboard') {
+				new Provenance().getLatestConnectedData({
+					success: function(provGraph) {
+						tableInject(sel, generateObjectTable(provGraph, "Latest Connected Data", sel));
+					},
+					error: function() {
+						applicationError("Couldn't fetch latest dashboard", sel);
+					}
+				});
+			}
 			
 			return false;
 		} // End populateTab
@@ -111,6 +120,7 @@
 			<li><a href="#workflows">Workflow Catalog</a>
 			<li><a href="#owners">Owners</a></li>
 			<li><a href="#npids">Non-Provenance Data</a></li>
+			<li><a href="#dashboard">Dashboard</a></li>
 		</ul>
 		
 		<div id='search'>			    
@@ -127,6 +137,8 @@
 		<div id='owners'>&nbsp;</div>		
 		
 		<div id='npids'>&nsbp;</div>
+		
+		<div id='dashboard'>&nbsp;</div>
 	</div>
 </div>
 </body>

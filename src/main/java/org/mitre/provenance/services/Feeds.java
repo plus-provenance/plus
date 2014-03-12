@@ -59,6 +59,26 @@ public class Feeds {
 
 	public Feeds() { ; } 
 
+	@Path("/connectedData")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response connectedData(@Context HttpServletRequest req, @DefaultValue("10") @QueryParam("n") int maxItems) {
+		if(maxItems <= 0 || maxItems > maxResults) return ServiceUtility.BAD_REQUEST("Bad n value");
+		
+		String query = "match (a:Provenance)-->(n:Provenance)-->(b:Provenance) " + 
+		               "where n.type = 'data' " + 
+				       "return n " +
+		               "order by n.created desc " + 
+		               "limit " + maxItems;
+		
+		try { 
+			return ServiceUtility.OK_ExecuteQuery(req, query, "n");
+		} catch(PLUSException exc) { 
+			exc.printStackTrace();
+			return ServiceUtility.ERROR(exc.getMessage());
+		}
+	} // End connectedData
+	
 	@Path("/externalIdentifiers")
 	@GET
 	@Produces({"application/rss+xml", MediaType.APPLICATION_JSON})

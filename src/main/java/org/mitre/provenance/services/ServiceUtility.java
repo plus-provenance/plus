@@ -14,6 +14,7 @@
  */
 package org.mitre.provenance.services;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -21,9 +22,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.dag.ViewedCollection;
+import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
+import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
 import org.mitre.provenance.user.User;
+import org.neo4j.cypher.javacompat.ExecutionResult;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.TransactionFailureException;
 
 import com.google.gson.GsonBuilder;
 import com.sun.syndication.feed.synd.SyndFeed;
@@ -42,6 +52,43 @@ public class ServiceUtility {
 		// TODO
 		return User.DEFAULT_USER_GOD;
 	} // End getUser
+	
+	/**
+	 * Execute a simple cypher query that returns *ONLY* a list of nodes, and craft a response based on the query results.
+	 * @param req the request object
+	 * @param cypherQuery the query to execute
+	 * @param nodeColumn the name of the column that the query will result in, which contains the node information
+	 * @return a JSON response of the query results.
+	 * @throws PLUSException
+	 */
+	public static Response OK_ExecuteQuery(HttpServletRequest req, String cypherQuery, String nodeColumn) throws PLUSException {
+		ViewedCollection col = new ViewedCollection(ServiceUtility.getUser(req));
+		
+		try (Transaction tx = Neo4JStorage.beginTx()) { 
+			ExecutionResult result = Neo4JStorage.execute(cypherQuery);
+			Iterator<Node> nodes = result.columnAs(nodeColumn);
+			
+			while(nodes.hasNext()) {
+				try {
+					PLUSObject obj = Neo4JPLUSObjectFactory.newObject(nodes.next());
+					if(obj != null) col.addNode(obj);
+				} catch (PLUSException e) {
+					e.printStackTrace();
+					return ServiceUtility.ERROR(e.getMessage());
+				}
+			}
+			
+			tx.success();
+		} catch(TransactionFailureException exc) {
+			// TODO
+			// Again this is bad, but it's a workaround.
+			// IGNORE exception.
+			// exc.printStackTrace();
+			// return ServiceUtility.ERROR(exc.getMessage());
+		}
+		
+		return ServiceUtility.OK(col);
+	}
 	
 	public static Response OK(Map<String,Object> map) {
 		return Response.ok(new GsonBuilder().setPrettyPrinting().create().toJson(map), 

@@ -345,6 +345,18 @@ function Provenance() {
 		return this;
 	};
 	
+	this.getLatestConnectedData = function(properties) {
+		this.ensure(properties, ['success']);
+		
+		props = jQuery.extend(true, {}, properties);
+		props.type = "GET";
+		props.constructor = ProvenanceGraph;
+		props.url = "/plus/api/feeds/connectedData?format=json&n=10";
+		
+		this.__genericAJAX(props);
+		return this;
+	};
+	
 	this.getLatestObjects = function(properties) {
 		this.ensure(properties, ['success']);
 		
