@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
@@ -36,7 +37,6 @@ import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
 import org.mitre.provenance.plusobject.PLUSInvocation;
 import org.mitre.provenance.plusobject.PLUSObject;
-import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.tools.LRUCache;
 import org.mitre.provenance.user.User;
@@ -54,6 +54,7 @@ import org.mitre.provenance.user.User;
  * At present, this program polls procfs exactly once.  This might be appropriate for setting up as a daemon process in later code.
  */
 public class PROCtor {
+	protected static final Logger log = Logger.getLogger(PROCtor.class.getName());
 	protected String myPID = null;
 	public static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(1000); 
 	
@@ -62,7 +63,7 @@ public class PROCtor {
 	public static final String UUID_KEY = "file_uuid";
 	
 	//HashMap<String,PLUSObject> cache = new HashMap<String,PLUSObject>();	
-	protected File PROC = new File("/proc"); 
+	protected static File PROC = new File("/proc"); 
 		
 	public PROCtor() throws Exception { 
 		myPID = PROCtor.getMyPID();
@@ -112,7 +113,12 @@ public class PROCtor {
 		}		
 	}
 	
-	protected void processPID(File procPID) throws IOException, NoSuchAlgorithmException, PLUSException {		
+	protected void processPID(File procPID) throws IOException, NoSuchAlgorithmException, PLUSException {
+		if(!procPID.exists()) {
+			log.warning("PID " + procPID + " doesn't exist.");
+			return;
+		}
+		
 		PLUSInvocation inv = createOrRetrieveInvocation(procPID);
 		if(inv == null) return;		
 						
@@ -295,7 +301,20 @@ public class PROCtor {
 		return pf;
 	}
 	
-	public static void main(String [] args) throws Exception { 
-		new PROCtor().run(5000);		
+	public static void main(String [] args) throws Exception {
+		PROCtor p = new PROCtor();
+		
+		if(!PROC.exists()) {
+			log.severe("This utility is intended to run on Linux systems with a PROC filesystem. You do not appear to have one (or it is not readable)");
+			System.exit(1);
+		}
+		
+		if(args.length > 0) { 
+			for(int x=0; x<args.length; x++)
+				p.processPID(new File(PROC, args[x]));
+		} else {
+			log.info("Starting PROCtor in polling mode.  Hit Ctrl-C to end logging.");
+			p.run(5000);		
+		}
 	}
 }
