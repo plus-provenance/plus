@@ -130,8 +130,6 @@ public class PROCtor {
 
 		ProvenanceCollection pcol = new ProvenanceCollection();
 		
-		System.out.println("\n");
-		
 		boolean revisiting = false;
 		
 		if(Neo4JStorage.exists(inv) != null) 
@@ -180,11 +178,15 @@ public class PROCtor {
 		    if(o != null) pcol.addEdge(new PLUSEdge(inv, o));
 		} 
 							
-		int written = Neo4JStorage.store(pcol);
+		int written = 0; 
 		
-		log.info((revisiting ? "REVISITED" : "NEW") + ": " + inv.getMetadata().get("cmdline") + 
-				 " PID " + inv.getMetadata().get("pid") + " => " + 
-				 inputs.size() + " inputs, " + outputs.size() + " outputs.  Total written=" + written);
+		if(pcol.countNodes() > 0)
+			written = Neo4JStorage.store(pcol);
+		
+		if(written > 0)
+			log.info((revisiting ? "REVISITED" : "NEW") + ": " + inv.getMetadata().get("cmdline") + 
+					" PID " + inv.getMetadata().get("pid") + " => " + 
+					inputs.size() + " inputs, " + outputs.size() + " outputs.  Total written=" + written);
 	}
 	
 	public boolean isSymlink(File file) throws IOException {
