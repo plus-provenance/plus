@@ -114,11 +114,25 @@ public class Neo4JPLUSObjectFactory {
 		return results;
 	} // End listPrivilegeClasses
 	
-	public static ProvenanceCollection loadBySingleMetadataField(User user, String key, Object value) throws PLUSException { 
+	/**
+	 * Load provenance objects that have a particular metadata key and value.
+	 * @param user the user viewing the results.
+	 * @param key the key in question (must not be null)
+	 * @param value the value of the key (must not be null)
+	 * @return a collection of objects which match the request.
+	 * @throws PLUSException
+	 */
+	public static ProvenanceCollection loadBySingleMetadataField(User user, String key, Object value) throws PLUSException {
+		return loadBySingleMetadataField(user, key, value, 25);
+	} // End loadBySingleMetadataField
+	
+	public static ProvenanceCollection loadBySingleMetadataField(User user, String key, Object value, int maxReturn) throws PLUSException {
+		if(key == null || value == null || "".equals(key)) throw new PLUSException("Key and value must be non-null and not empty.");
+		
 		Metadata m = new Metadata();
 		m.put(key, value);
-		return loadByMetadata(user, m, MAX_OBJECTS);
-	} // End loadBySingleMetadataField
+		return loadByMetadata(user, m, maxReturn);		
+	}
 	
 	public static PLUSObject load(String oid, User user) throws PLUSException {
 		if(user == null) throw new PLUSException("Must specify user");
@@ -127,6 +141,15 @@ public class Neo4JPLUSObjectFactory {
 		return obj.getVersionSuitableFor(user);
 	}
 	
+	/**
+	 * Load objects from the database by a given set of metadata fields.  Objects returned will be those that have ALL of the key/value pairs
+	 * specified.
+	 * @param user the user inspecting the data
+	 * @param fields the fields to use for the query
+	 * @param maxReturn the maximum number of objects to return
+	 * @return a collection of objects matching the query
+	 * @throws PLUSException
+	 */
 	public static ProvenanceCollection loadByMetadata(User user, Metadata fields, int maxReturn) throws PLUSException { 
 		LineageDAG d = new LineageDAG(user);
 		
