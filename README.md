@@ -2,7 +2,7 @@
 
 PLUS is a system for capturing and managing provenance information, originally created at the MITRE Corporation.
 
-Data provenance is “information that helps determine the derivation history of a data product...[It includes] the ancestral data product(s) from which this data product evolved, and the process of transformation of these ancestral data product(s).  Essentially, provenance provides a data family tree,‖ helping consumers of data to interpret it properly and determine how much they should trust it.
+Data provenance is "information that helps determine the derivation history of a data product...[It includes] the ancestral data product(s) from which this data product evolved, and the process of transformation of these ancestral data product(s)."
 
 ## Quick Start
 
