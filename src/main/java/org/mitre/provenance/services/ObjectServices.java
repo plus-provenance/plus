@@ -219,6 +219,25 @@ public class ObjectServices {
 		} // End catch
 	} // End getEdges
 	
+	@Path("/metadata/{field:.*}/{value:.*}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getObjectBySingleMetadataField(@Context HttpServletRequest req, @PathParam("field") String field, @PathParam("value") String value) {
+		if(field == null || "".equals(field) || field.length() > 128)
+			return ServiceUtility.BAD_REQUEST("Invalid field specified.");
+		if(value == null || "".equals(value) || value.length() > 256)
+			return ServiceUtility.BAD_REQUEST("Invalid value specified.");
+				
+		User user = ServiceUtility.getUser(req);
+		try {
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.loadBySingleMetadataField(user, field, value);			
+			return ServiceUtility.OK(col);
+		} catch (PLUSException e) {
+			e.printStackTrace();
+			return ServiceUtility.ERROR(e.getMessage());
+		}		
+	}
+	
 	@Path("/npid/{npid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

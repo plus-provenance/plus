@@ -107,8 +107,8 @@
 	<div id='tabs'>
 		<ul>
 			<li><a href="#search">Search</a>
-			<li><a href="#workflows">Workflow Catalog</a>
 			<li><a href="#latestObjects">Object Feed</a></li>
+			<li><a href="#workflows">Workflow Catalog</a>
 			<li><a href="#owners">Owners</a></li>
 			<li><a href="#npids">Non-Provenance Data</a></li>
 		</ul>
