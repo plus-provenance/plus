@@ -701,8 +701,10 @@ public class Neo4JPLUSObjectFactory {
 	
 				// Throttle at this many nodes maximum.
 				// If n is negative, then there's no limit.
-				if(settings.n > 0 && (settings.n <= dag.countNodes())) 				
+				if(settings.n > 0 && (settings.n <= dag.countNodes())) {
+					dag.getFingerPrint().startTimer("TraverseIterator");
 					break;			
+				}
 							
 				if(settings.includeNodes && n.hasProperty(Neo4JStorage.PROP_PLUSOBJECT_ID)) {
 					dag.getFingerPrint().startTimer("CreatePLUSObject");
@@ -711,14 +713,13 @@ public class Neo4JPLUSObjectFactory {
 					
 					if(o != null) { 
 						// log.info("Added node " + o.getId());
-						dag.addNode(o);
-						
-						// Have we reached the max size?
-						if(dag.countNodes() >= settings.n) break;
+						dag.addNode(o);				
 					}
 				} else 
 					log.warning("That doesn't seem right...Node " + n + " lacks OID property, type=" + n.getProperty(Neo4JStorage.PROP_TYPE, "(missing)") + " name=" + n.getProperty(Neo4JStorage.PROP_NAME, "(missing)"));			
 	
+				HashSet<Long> seenRelIds = new HashSet<Long>();
+				
 				if(settings.includeEdges) { 
 					Iterable<Relationship> rels = n.getRelationships(							
 							Neo4JStorage.CONTRIBUTED, Neo4JStorage.MARKS, 
@@ -727,7 +728,10 @@ public class Neo4JPLUSObjectFactory {
 					
 					dag.getFingerPrint().startTimer("SpiderRelationships");
 					for(Relationship r : rels)  {
+						if(seenRelIds.contains(r.getId())) continue;
+						
 						PLUSEdge e = newPLUSEdge(r);
+						seenRelIds.add(r.getId());
 						// log.info("Added edge " + e);
 						dag.addEdge(e);
 					}
@@ -981,7 +985,8 @@ public class Neo4JPLUSObjectFactory {
 	
 	public static ProvenanceCollection searchFor(String regex, User user, int max) {
 		String query = "start n=node:node_auto_index({searchCriteria}) "+
-                "where has(n.oid) and has(n.name) and has(n.created) " +
+	            "match (n:Provenance) " + 
+                // "where has(n.oid) and has(n.name) and has(n.created) " +
 			    "return n " + 
                 "order by n.created desc " + 
                 "limit " + max;
