@@ -1,213 +1,240 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  
-  <repositories>
-    <repository>
-      <id>openprovenance</id>
-      <name>Open Provenance Repo</name>
-      <url>http://openprovenance.org/java/maven-releases/</url>
-    </repository>  
-  </repositories>
-  
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.mitre.provenance</groupId>
-  <artifactId>plus</artifactId>
-  <packaging>jar</packaging>
-  <version>3.0.0</version>
-  <name>PLUS Provenance</name>
-  <url>http://www.mitre.org/</url>
-  <dependencies>  
-  <!-- Spring -->
-	<dependency>
-		<groupId>org.springframework</groupId>
-		<artifactId>spring-context</artifactId>
-		<version>${org.springframework-version}</version>
-	</dependency>
-	
-	<dependency>
-		<groupId>org.springframework</groupId>
-		<artifactId>spring-webmvc</artifactId>
-		<version>${org.springframework-version}</version>
-	</dependency>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-	<!-- MITREid Connect; includes Spring Security -->
-	<dependency>
-		<groupId>org.mitre</groupId>
-		<artifactId>openid-connect-client</artifactId>
-		<version>1.0.14</version>
-	</dependency>
-  
- 	<!-- Spring Security OpenID 2.0 support -->
-  	<dependency>
-		<groupId>org.springframework.security</groupId>
-		<artifactId>spring-security-openid</artifactId>
-		<version>3.1.4.RELEASE</version>
-	</dependency>
+	<repositories>
+		<repository>
+			<id>openprovenance</id>
+			<name>Open Provenance Repo</name>
+			<url>http://openprovenance.org/java/maven-releases/</url>
+		</repository>
+	</repositories>
 
-    <dependency>
-    	<groupId>com.sun.jersey</groupId>
-    	<artifactId>jersey-bundle</artifactId>
-    	<version>${jersey-version}</version>
-    </dependency>
-    
-	 <dependency>
-	 	<groupId>rome</groupId>
-	 	<artifactId>rome</artifactId>
-	 	<version>1.0</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>com.google.code.gson</groupId>
-	 	<artifactId>gson</artifactId>
-	 	<version>2.2.2</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.neo4j</groupId>
-	 	<artifactId>neo4j</artifactId>
-	 	<version>${org.neo4j-version}</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.neo4j</groupId>
-	 	<artifactId>neo4j-cypher</artifactId>
-	 	<version>${org.neo4j-version}</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.neo4j</groupId>
-	 	<artifactId>neo4j-community</artifactId>
-	 	<version>${org.neo4j-version}</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.neo4j</groupId>
-	 	<artifactId>neo4j-lucene-index</artifactId>
-	 	<version>${org.neo4j-version}</version>
-	 </dependency>
-	 
-	 
-	 
-	 <dependency>
-	 	<groupId>com.sun.jersey</groupId>
-	 	<artifactId>jersey-json</artifactId>
-	 	<version>${jersey-version}</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>javax.servlet</groupId>
-	 	<artifactId>servlet-api</artifactId>
-	 	<version>2.5</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>junit</groupId>
-	 	<artifactId>junit</artifactId>
-	 	<version>4.11</version>
-	 </dependency>
-	 
-	 
-	 <dependency>
-	 	<groupId>org.eclipse.jetty</groupId>
-	 	<artifactId>jetty-maven-plugin</artifactId>
-	 	<version>9.1.2.v20140210</version>
-	 	<type>maven-plugin</type>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.openprovenance.prov</groupId>
-	 	<artifactId>prov-model</artifactId>
-	 	<version>${openprov-version}</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.openprovenance.prov</groupId>
-	 	<artifactId>prov-rdf</artifactId>
-	 	<version>${openprov-version}</version>
-	 </dependency>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.mitre.provenance</groupId>
+	<artifactId>plus</artifactId>
+	<packaging>jar</packaging>
+	<version>3.0.0</version>
+	<name>PLUS Provenance</name>
+	<url>http://www.mitre.org/</url>
+	<dependencies>
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${org.springframework-version}</version>
+		</dependency>
 
-	 <dependency>
-	 	<groupId>org.openprovenance.prov</groupId>
-	 	<artifactId>prov-xml</artifactId>
-	 	<version>${openprov-version}</version>
-	 </dependency>
-	 
-	 <dependency>
-	 	<groupId>org.openprovenance.prov</groupId>
-	 	<artifactId>prov-json</artifactId>
-	 	<version>${openprov-version}</version>
-	 </dependency>	 
-  </dependencies>
-  
-  <build>
-    <finalName>plus</finalName>
-    <plugins>
-    	<!-- This section configures how PLUS runs on jetty within maven (mvn jetty:run) -->
-		<plugin>
-		  <groupId>org.eclipse.jetty</groupId>
-		  <artifactId>jetty-maven-plugin</artifactId>
-		  <version>9.1.2.v20140210</version>
-		  <configuration>
-		  	<!-- Controls how frequently jetty scans for application updates. -->
-		    <scanIntervalSeconds>10</scanIntervalSeconds>
-		    <webApp>
-		      <!-- This is the deploy path -->
-		      <contextPath>/plus</contextPath>
-		    </webApp>
-		    <contextXml>src/main/webapp/WEB-INF/jetty.xml</contextXml>
-		  </configuration>
-		</plugin>
-		
-		<plugin>
-			<groupId>org.dstovall</groupId>
-			<artifactId>onejar-maven-plugin</artifactId>
-			<version>1.4.4</version>
-			<executions>
-				<execution>
-					<configuration>
-						<!-- Optional, default is false -->
-						<attachToBuild>true</attachToBuild>
-						<!-- Optional, default is "onejar" -->
-						<classifier>onejar</classifier>
-					</configuration>
-					<goals>
-						<goal>one-jar</goal>
-					</goals>
-				</execution>
-			</executions>
-		</plugin>						
-    </plugins>
-  </build>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>${org.springframework-version}</version>
+		</dependency>
+
+		<!-- MITREid Connect; includes Spring Security -->
+		<dependency>
+			<groupId>org.mitre</groupId>
+			<artifactId>openid-connect-client</artifactId>
+			<version>1.0.14</version>
+		</dependency>
+
+		<!-- Spring Security OpenID 2.0 support -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-openid</artifactId>
+			<version>3.1.4.RELEASE</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-bundle</artifactId>
+			<version>${jersey-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>rome</groupId>
+			<artifactId>rome</artifactId>
+			<version>1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.2.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j</artifactId>
+			<version>${org.neo4j-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-cypher</artifactId>
+			<version>${org.neo4j-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-community</artifactId>
+			<version>${org.neo4j-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-lucene-index</artifactId>
+			<version>${org.neo4j-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-json</artifactId>
+			<version>${jersey-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-maven-plugin</artifactId>
+			<version>9.1.2.v20140210</version>
+			<type>maven-plugin</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openprovenance.prov</groupId>
+			<artifactId>prov-model</artifactId>
+			<version>${openprov-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openprovenance.prov</groupId>
+			<artifactId>prov-rdf</artifactId>
+			<version>${openprov-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openprovenance.prov</groupId>
+			<artifactId>prov-xml</artifactId>
+			<version>${openprov-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openprovenance.prov</groupId>
+			<artifactId>prov-json</artifactId>
+			<version>${openprov-version}</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>plus</finalName>
+		<plugins>
+			<!-- This section configures how PLUS runs on jetty within maven (mvn 
+				jetty:run) -->
+			<plugin>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>9.1.2.v20140210</version>
+				<configuration>
+					<!-- Controls how frequently jetty scans for application updates. -->
+					<scanIntervalSeconds>10</scanIntervalSeconds>
+					<webApp>
+						<!-- This is the deploy path -->
+						<contextPath>/plus</contextPath>
+					</webApp>
+					<contextXml>src/main/webapp/WEB-INF/jetty.xml</contextXml>
+				</configuration>
+			</plugin>
+
+			<!-- Onejar plugin: this generates a "fatjar" with all dependencies in a single JAR. 
+				 Generating these JARs is really useful for environments where it's not easy to lug around 100 JARs with
+				 you and create massive classpaths (e.g. embedding in other systems like HDFS).
+				 
+				 In general, using these fatjars is not preferred; it's better to just use the packaged jar and then the
+				 classpath generated by dependency:build-classpath, but sometimes this is easier. 
+			   -->
+			<plugin>
+				<groupId>org.dstovall</groupId>
+				<artifactId>onejar-maven-plugin</artifactId>
+				<version>1.4.4</version>
+				<executions>
+					<execution>
+						<configuration>
+							<!-- Optional, default is false -->
+							<attachToBuild>true</attachToBuild>
+							<!-- Optional, default is "onejar" -->
+							<classifier>onejar</classifier>
+						</configuration>
+						<goals>
+							<goal>one-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Appsembler plugin:  see http://mojo.codehaus.org/appassembler/appassembler-maven-plugin/usage-program.html -->
+			<!-- This plugin generates scripts that permit main methods in various java programs to be run as stand-alone programs -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>appassembler-maven-plugin</artifactId>
+				<version>1.7</version>
+				<configuration>
+					<programs>
+						<program>
+							<mainClass>org.mitre.provenance.capture.linux.PROCtor</mainClass>
+							<id>PROCtor</id>
+						</program>
+
+						<program>
+							<mainClass>org.mitre.provenance.capture.linux.STraceLogger</mainClass>
+							<id>STraceLogger</id>
+						</program>
+					</programs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 	<pluginRepositories>
 		<pluginRepository>
 			<id>onejar-maven-plugin.googlecode.com</id>
 			<url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
 		</pluginRepository>
-	</pluginRepositories>  
-  
-  <description>PLUS is software that permits the logging, retrieval, and analysis of provenance information on the web.</description>
-  
-  <properties>
-  	<java-version>1.7</java-version>  	
-	<org.springframework-version>3.2.3.RELEASE</org.springframework-version>
-	<jersey-version>1.17.1</jersey-version>
-	<openprov-version>0.5.0</openprov-version>
-	<org.neo4j-version>2.0.1</org.neo4j-version>
-  	<copyright>MITRE 2014</copyright>
-  	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  	<maven.compiler.source>1.7</maven.compiler.source>
-  	<maven.compiler.target>1.7</maven.compiler.target>
-  	<maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
-  	<maven.compiler.forceJavacCompilerUse>true</maven.compiler.forceJavacCompilerUse>
-  </properties>
-  
-  <scm>
-  	<url>https://github.com/plus-provenance/plus.git</url>
-  </scm>
-  
-  <organization>
-  	<name>MITRE Corporation</name>
-  	<url>http://www.mitre.org/</url>
-  </organization>
+	</pluginRepositories>
+
+	<description>PLUS is software that permits the logging, retrieval, and analysis of provenance information on the web.</description>
+
+	<properties>
+		<java-version>1.7</java-version>
+		<org.springframework-version>3.2.3.RELEASE</org.springframework-version>
+		<jersey-version>1.17.1</jersey-version>
+		<openprov-version>0.5.0</openprov-version>
+		<org.neo4j-version>2.0.1</org.neo4j-version>
+		<copyright>MITRE 2014</copyright>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+		<maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
+		<maven.compiler.forceJavacCompilerUse>true</maven.compiler.forceJavacCompilerUse>
+	</properties>
+
+	<scm>
+		<url>https://github.com/plus-provenance/plus.git</url>
+	</scm>
+
+	<organization>
+		<name>MITRE Corporation</name>
+		<url>http://www.mitre.org/</url>
+	</organization>
 </project>
