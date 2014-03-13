@@ -30,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
@@ -52,13 +53,49 @@ import com.sun.syndication.io.FeedException;
 public class Feeds {
 	protected static final Logger log = Logger.getLogger(Feeds.class.getName());
 	
-	@Context
-	UriInfo uriInfo;
+	protected @Context UriInfo uriInfo;
 	
 	public static Integer maxResults = 30;
 
 	public Feeds() { ; } 
+	
+	/**
+	 * Returns the latest items reported to the database that have hashed content.  That is, their metadata
+	 * contains a reference to the field below.
+	 * @param req
+	 * @param maxItems
+	 * @return D3-JSON formatted response
+	 * @see Metadata#CONTENT_HASH_SHA_256
+	 */
+	@Path("/hashedContent")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response hashedContent(@Context HttpServletRequest req, @DefaultValue("10") @QueryParam("n") int maxItems) {
+		if(maxItems <= 0 || maxItems > maxResults) return ServiceUtility.BAD_REQUEST("Bad n value");
 
+		String propName = Neo4JStorage.getMetadataPropertyName(Metadata.CONTENT_HASH_SHA_256);
+		
+		String query = "match (n:Provenance) " + 
+	               	   "where has(n.`" + propName + "`) " +  
+	               	   "return n " +
+	               	   "order by n.created desc " + 
+	               	   "limit " + maxItems;
+	
+		try { 
+			return ServiceUtility.OK_ExecuteQuery(req, query, "n");
+		} catch(PLUSException exc) { 
+			exc.printStackTrace();
+			return ServiceUtility.ERROR(exc.getMessage());
+		}
+	}
+	
+	/**
+	 * Connected data items are those with both incoming and outgoing provenance links.  This function returns the latest connected data
+	 * elements reported to the database.	
+	 * @param req
+	 * @param maxItems the total number of items to return
+	 * @return D3-JSON formatted response.
+	 */
 	@Path("/connectedData")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

@@ -1,9 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <%@page import="org.mitre.provenance.user.OpenIDUser"%>
+<%@page import="org.mitre.provenance.tools.PLUSUtils"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<% OpenIDUser user = (OpenIDUser)session.getAttribute("plus_user"); %>
+<% OpenIDUser user = (OpenIDUser)session.getAttribute("plus_user"); 
+   if(user == null) { 
+	   user = new OpenIDUser(PLUSUtils.generateID(), "JohnQ@public.com");
+	   user.setEmail("JohnQ@Public.com");
+	   session.setAttribute("plus_user", user);
+   }
+%>
 <head>
 	<title>Provenance</title>
 
@@ -246,7 +253,7 @@
 		</tr>
 	</table>
 	
-	<div width='100%' style='text-align:right;'><%=user.getDisplayName()%> / <%=user.getEmail()%></div> <!--  / <%=user.getUserIdentifier()%> / <%=user.getName() %> / <%=user.getId() %> -->
+	<div width='100%' style='text-align:right;'><%=user.getEmail()%></div> 
 	</div>
 </div>
 

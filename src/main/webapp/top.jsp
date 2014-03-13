@@ -31,7 +31,7 @@
 		var myLayout = null;
 		
 		function populateTab(sel) {		
-			if(sel == "#search") { return false; } 
+			if(sel == "#search" || sel == "#dashboard") { return false; } 
 			
 			$(sel).html(loadingMarkup());
 			
@@ -67,16 +67,7 @@
 						applicationError("Couldn't fetch latest workflows", sel);
 					}
 				});
-			} else if(sel == '#dashboard') {
-				new Provenance().getLatestConnectedData({
-					success: function(provGraph) {
-						tableInject(sel, generateObjectTable(provGraph, "Latest Connected Data", sel));
-					},
-					error: function() {
-						applicationError("Couldn't fetch latest dashboard", sel);
-					}
-				});
-			}
+			} 
 			
 			return false;
 		} // End populateTab
@@ -136,9 +127,60 @@
 		
 		<div id='owners'>&nbsp;</div>		
 		
-		<div id='npids'>&nsbp;</div>
+		<div id='npids'>&nbsp;</div>
 		
-		<div id='dashboard'>&nbsp;</div>
+		<div id='dashboard'>
+			<h1>Dashboard Queries</h1>
+			
+			<script>
+			function submitDashboardQuery() {				
+				var query = $("#querySelector").val();				
+				var results = "#dashboardQueryResults";
+				
+				optionsWithURLs = {
+					'connectedData' : "/plus/api/feeds/connectedData?n=10&format=json",
+					'hashedContent' : "/plus/api/feeds/hashedContent?n=10&format=json",
+				};
+				
+				var title = $("#querySelector option[value='" + query + "']").text();				
+				
+				if(optionsWithURLs[query]) {
+					var url = optionsWithURLs[query];
+					
+					$(results).html(loadingMarkup());
+					
+					$.ajax({
+						url: url,
+						contentType:"application/x-javascript;",
+						dataType:"json",
+						type: "GET",
+						success:function(datum) {				
+							var data = jQuery.extend(true, {}, datum);							
+							var pg = ProvenanceGraph(data);
+							tableInject(results, generateObjectTable(pg, title, results));
+						},
+						error: function() {
+							applicationError("Could not run query " + query, results);
+						},						
+					});
+				}
+				
+				return false;
+			} // End submitDashboardQuery
+			</script>
+			
+			<p>Select a dashboard query from the list below.</p>
+			<form action='#'>
+				<select name='querySelector' id='querySelector'>
+	  				<option value="connectedData">Latest Connected Data</option>
+	  				<option value="hashedContent">Latest Hashed Data</option>
+				</select> 
+				<input type='submit' name='Run Query' value='Run Query'
+					   onclick='submitDashboardQuery()'>
+			</form>
+
+			<div id='dashboardQueryResults'>&nbsp;</div>			
+		</div>
 	</div>
 </div>
 </body>
