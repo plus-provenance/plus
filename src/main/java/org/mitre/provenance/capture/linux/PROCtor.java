@@ -23,7 +23,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
@@ -37,6 +38,7 @@ import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
 import org.mitre.provenance.plusobject.PLUSInvocation;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.tools.LRUCache;
 import org.mitre.provenance.user.User;
@@ -45,13 +47,20 @@ import org.mitre.provenance.user.User;
  * This class is an operating system monitoring class for UNIX-based operating systems which support the proc filesystem.
  * For more information about procfs, see http://en.wikipedia.org/wiki/Procfs
  * 
- * Basically, this polls available OS information about processes that are running, and then saves that information as provenance.
+ * <p>Basically, this polls available OS information about processes that are running, and then saves that information as provenance.
  * The OS will tell us for example which process IDs (PIDs) have which files open for read and write, and what the command line is
  * of the application that executed.
  * 
- * We have to apply a few basic fingerprinting techniques to avoid logging duplicates.
+ * <p>We have to apply a few basic fingerprinting techniques to avoid logging duplicates.
  * 
- * At present, this program polls procfs exactly once.  This might be appropriate for setting up as a daemon process in later code.
+ * <p>This code could doubtless see many improvements, but it's a basic proof of concept for how to collect provenance in real systems.
+ * For many users, this kind of provenance would be seen as too granular, but it can produce some very interesting findings; in 
+ * particular, because we use content-bound identifiers on everything that we encounter, this can establish linkages between 
+ * different processes that read and use the same files.
+ * 
+ * <p>A major weakness of this capture approach is that you can never know when in the process lifecycle to scan a particular PID.
+ * Which assets the process is using vary dramatically (particularly for long-lived processes) depending on when you hit it in 
+ * the lifecycle.  Improvements should focus around appending in subsequent polls. 
  * 
  * @author david
  */
@@ -69,6 +78,7 @@ public class PROCtor {
 	 * @author david
 	 */
 	public static class ExistsException extends PLUSException { 
+		private static final long serialVersionUID = 11233123L;
 		protected PLUSObject o; 
 		public ExistsException(PLUSObject obj) { this.o = obj; }
 		public PLUSObject getObject() { return o; } 
@@ -88,6 +98,24 @@ public class PROCtor {
 		}		
 	}
 	
+	protected List<String> slurpLines(File f) { 
+		BufferedReader br = null;
+		ArrayList<String> lines = new ArrayList<String>();
+		
+		try { 
+			br = new BufferedReader(new FileReader(f)); 
+			String line = null;
+			while((line = br.readLine()) != null) lines.add(line);
+			return lines;
+		} catch(IOException exc) { return null; } 
+		finally { try { br.close(); } catch(IOException e) { ; } }
+	} // End slurpLines
+	
+	/**
+	 * Read the complete contents of a file and return them as a string.   Simple utility for tiny files.
+	 * @param f file to read.
+	 * @return the complete text contents
+	 */
 	protected String slurp(File f) { 
 		BufferedReader br = null;
 		try { 
@@ -103,6 +131,14 @@ public class PROCtor {
 		}
 	}
 	
+	/**
+	 * Computes a special identifier for files based on their path and when they were last modified.  This is not a content-bound identifier,
+	 * but can be used in case a duplicate file has been seen on the same system.
+	 * @param f the file to use
+	 * @return a string identifier
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 */
 	protected String getIDForFile(File f) throws NoSuchAlgorithmException, IOException {
 		// Unique ID for a file based on its absolute pathname, and last modified date.
 		// When this hash value changes, you know it's a different file.
@@ -110,6 +146,12 @@ public class PROCtor {
 		return ContentHasher.formatAsHexString(hasher.hash(new ByteArrayInputStream(stamp.getBytes())));
 	}
 	
+	/**
+	 * Polls through all available items in the proc fs, and processes them individually.
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 * @throws PLUSException
+	 */
 	protected void poll() throws IOException, NoSuchAlgorithmException, PLUSException { 
 		String[] PIDs = PROC.list(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
@@ -125,6 +167,43 @@ public class PROCtor {
 		}		
 	}
 	
+	protected ProcFDInfo getFDInfo(File procPID, String fd) {
+		File fdInfoFile = new File(new File(procPID, "fdinfo"), fd);
+		
+		if(!fdInfoFile.exists()) return null;
+		
+		List<String> lines = slurpLines(fdInfoFile);
+		
+		String flags = null;
+		String pos = null;
+		
+		for(String line : lines) { 			
+			if(line.indexOf(':') != -1) {
+				String [] toks = line.split("[ \\t]+");
+				if(toks[0].contains("pos")) pos = toks[1]; 
+				else if(toks[0].contains("flags")) flags = toks[1];
+				else 
+					log.warning("Unexpected line '" + line + "' in " + fdInfoFile.getAbsolutePath());				
+			} else 
+				// Ignore other lines, (inotify, tfd, eventfd-count, others)
+				continue;
+			
+			if(flags != null && pos != null) break;
+		}
+		
+		// Shouldn't happen...
+		if(pos == null || flags == null) return null;
+		
+		return new ProcFDInfo(pos, flags); 
+	}
+	
+	/**
+	 * Processes a PID identified by a particular /proc filesystem path, and creates the necessary provenance objects.
+	 * @param procPID
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 * @throws PLUSException
+	 */
 	protected void processPID(File procPID) throws IOException, NoSuchAlgorithmException, PLUSException {
 		if(!procPID.exists()) {
 			log.warning("PID " + procPID + " doesn't exist.");
@@ -144,43 +223,54 @@ public class PROCtor {
 		
 		boolean revisiting = false;
 		
-		if(Neo4JStorage.exists(inv) != null) 
-			revisiting = true;
+		if(Neo4JStorage.exists(inv) != null) revisiting = true;
 		else pcol.addNode(inv);
 		
-		HashSet<String> inputs = new HashSet<String>();
-		HashSet<String> outputs = new HashSet<String>();
+		List<String> inputs = new ArrayList<String>();
+		List<String> outputs = new ArrayList<String>();
+		List<String> related = new ArrayList<String>();
 
 		for(String fdName : fileDescriptors) {
 		    File fdFile = new File(fds, fdName); 
 		    
 		    // We get the canonical file to resolve the procfs symlink, so that 
 		    // we're gathering metadata about the file, and not a symlink to the file.
-		    // If we're revisiting this PID and the file has already been logged, this will return null
-		    // so we don't re-log the same things.
+		    File canonical = fdFile.getCanonicalFile();
+		    
 		    boolean previouslyWritten = false;
 		    PLUSObject fdObj = null;
+
+		    // This is what will let us know whether the file was open for input/output, or whatever.
+		    ProcFDInfo fdInfo = getFDInfo(procPID, fdName);
+		    if(fdInfo == null) { log.warning("Couldn't get fdInfo for " + procPID + "/fdinfo/" + fdName); continue; } 
 		    
-		    try { fdObj = createOnlyIfNew(fdFile.getCanonicalFile()); }
+		    try { fdObj = createOnlyIfNew(canonical); }
 		    catch(ExistsException e) {
+		    	// There is a valid file here, but we've already seen it.  That means don't add it
+		    	// to the collection or try to re-write it.
 		    	previouslyWritten = true;
 		    	fdObj = e.getObject();
 		    }
 		    
-		    if(fdObj == null) { 
-		    	// System.out.println("Error creating obj for " + fdFile);
-		    	continue;
-		    }
-		    
+		    if(fdObj == null) continue; 
+		    		    
 		    if(!previouslyWritten) { 
 		    	fdObj.getMetadata().put("unix:fd", fdName); 
 		    	pcol.addNode(fdObj);
 		    }
 		    
-		    // TRICKY: is this correct?
-		    // If the fd was open for writing, that means the program is either creating or appending to it.
-		    // Hence, it's an output.
-		    // If the file is open for read only, it's an input.
+		    // It's an output if we're appending to it, creating it, writing only to it, or truncating it.
+		    if(fdInfo.O_APPEND() || fdInfo.O_CREAT() || fdInfo.O_WRONLY() || fdInfo.O_TRUNC())
+		    	outputs.add(""+fdObj.getMetadata().get(UUID_KEY));		    
+		    // It's an input if we're read only.
+		    else if(fdInfo.O_RDONLY())
+		    	inputs.add(""+fdObj.getMetadata().get(UUID_KEY));		    
+		    else if(fdInfo.O_RDWR()) 
+		    	related.add(""+fdObj.getMetadata().get(UUID_KEY));
+		    else { 
+		    	log.warning("Ambiguous mode for " + procPID + "/fdinfo/" + fdName + ": " + fdInfo.getFlags());
+		    }
+		    
 		    if(fdFile.canWrite()) outputs.add(""+fdObj.getMetadata().get(UUID_KEY));		    
 		    else inputs.add(""+fdObj.getMetadata().get(UUID_KEY));
 		    
@@ -198,6 +288,12 @@ public class PROCtor {
 		    PLUSObject o = (PLUSObject)cache.get(id); 
 		    if(o != null) pcol.addEdge(new PLUSEdge(inv, o));
 		} 
+		
+		for(String id : related) { 
+			// Just mark these as "contributing".
+			PLUSObject o = (PLUSObject)cache.get(id); 
+			if(o != null) pcol.addEdge(new PLUSEdge(o, inv, PLUSWorkflow.DEFAULT_WORKFLOW, PLUSEdge.EDGE_TYPE_CONTRIBUTED));
+		}
 							
 		int written = 0; 
 		
@@ -223,6 +319,10 @@ public class PROCtor {
 		return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
 	}
 	
+	/**
+	 * Return the PID of the process that PROCtor is running underneath.
+	 * @return
+	 */
 	public static String getMyPID() { 
 		String pidStr = ManagementFactory.getRuntimeMXBean().getName();
 
@@ -279,6 +379,15 @@ public class PROCtor {
 		return inv;
 	}
 	
+	/**
+	 * Create a PLUSObject corresponding to a given file, only if that file is new.  Note that throwing an
+	 * ExistsException is not an error condition, to signal to the caller that provenance already exists.
+	 * @param f the file to inspect.
+	 * @return a PLUSObject if it is new.
+	 * @throws ExistsException if provenance already exists for that object, this will be thrown.
+	 * @throws NoSuchAlgorithmException on error
+	 * @throws IOException on error.
+	 */
 	public PLUSObject createOnlyIfNew(File f) throws ExistsException, NoSuchAlgorithmException, IOException {
 		if(f == null || !f.exists()) return null;
 		
@@ -335,6 +444,9 @@ public class PROCtor {
 		return pf;
 	}
 	
+	/**
+	 * If provided with arguments, the program processes only those PIDs. If given no arguments, it starts in polling mode.
+	 */
 	public static void main(String [] args) throws Exception {
 		PROCtor p = new PROCtor();
 		
