@@ -969,6 +969,7 @@ public class Neo4JStorage {
 	
 	public static Node store(Neo4JCapable n4jc) throws PLUSException {
 		if(db == null) initialize(); 
+		if(n4jc == null) throw new PLUSException("Cannot store null object."); 
 		
 		// log.info("STORE: " + n4jc.getClass().getSimpleName() + " => " + n4jc);
 		Node n = null;
