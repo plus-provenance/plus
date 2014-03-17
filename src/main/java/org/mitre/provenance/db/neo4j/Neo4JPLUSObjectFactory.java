@@ -678,9 +678,20 @@ public class Neo4JPLUSObjectFactory {
 	 * @param settings the settings used to control how the graph is discovered.
 	 * @return a LineageDAG object.
 	 * @throws PLUSException
+	 *  
 	 */	
 	public static LineageDAG newDAG(String id, User user, TraversalSettings settings) throws PLUSException {
+		// TODO 
+		// This method needs refactoring.  It traverses by nodes, but then lists edges individually.  When doing so, it has the
+		// side-effect of looking up nodes and creating new ones.  It would probably be more efficient to just traverse by
+		// edges, and create the nodes as you go.
+		// Also, possibly a bigger problem:  if each time you add a node, you spider out and add the edges, then for very dense
+		// graphs this defeats the "depth-first" option.  At each node, you spider out on the edges (breadth first), add those
+		// incident nodes, and exhaust your total node limit before you've gone very deep into the graph.
+		
 		Node startingPoint = Neo4JStorage.oidExists(id);
+		
+		log.info(user.getName() + " traversing " + id + " with " + settings);
 		
 		if(startingPoint == null) throw new PLUSException("No such node " + id);
 		
@@ -698,7 +709,7 @@ public class Neo4JPLUSObjectFactory {
 			for(Node n : desc.traverse(startingPoint).nodes()) {
 				// log.info("Traversing through " + n);
 				dag.getFingerPrint().stopTimer("TraverseIterator");
-	
+				
 				// Throttle at this many nodes maximum.
 				// If n is negative, then there's no limit.
 				if(settings.n > 0 && (settings.n <= dag.countNodes())) {
@@ -706,7 +717,7 @@ public class Neo4JPLUSObjectFactory {
 					break;			
 				}
 							
-				if(settings.includeNodes && n.hasProperty(Neo4JStorage.PROP_PLUSOBJECT_ID)) {
+				if(settings.includeNodes && n.hasLabel(Neo4JStorage.LABEL_NODE)) {
 					dag.getFingerPrint().startTimer("CreatePLUSObject");
 					PLUSObject o = Neo4JPLUSObjectFactory.newObject(n).getVersionSuitableFor(user);
 					dag.getFingerPrint().stopTimer("CreatePLUSObject"); 
@@ -715,8 +726,11 @@ public class Neo4JPLUSObjectFactory {
 						// log.info("Added node " + o.getId());
 						dag.addNode(o);				
 					}
-				} else 
-					log.warning("That doesn't seem right...Node " + n + " lacks OID property, type=" + n.getProperty(Neo4JStorage.PROP_TYPE, "(missing)") + " name=" + n.getProperty(Neo4JStorage.PROP_NAME, "(missing)"));			
+				} else {
+					StringBuffer b = new StringBuffer("");					
+					for(String k : n.getPropertyKeys()) b.append(k +", ");					
+					log.warning("That doesn't seem right...Node " + n + " lacks correct label, has props " + b); 
+				}
 	
 				HashSet<Long> seenRelIds = new HashSet<Long>();
 				
@@ -734,6 +748,14 @@ public class Neo4JPLUSObjectFactory {
 						seenRelIds.add(r.getId());
 						// log.info("Added edge " + e);
 						dag.addEdge(e);
+						
+						// Check to see if we've hit our maximum number of nodes.
+						// REMEMBER:  when creating a new edge, that sometimes has the side-effect of creating a new
+						// node that's incident to that edge.
+						if(settings.n > 0 && (settings.n <= dag.countNodes())) {
+							dag.getFingerPrint().startTimer("TraverseIterator");
+							break;			
+						}
 					}
 					dag.getFingerPrint().stopTimer("SpiderRelationships");					
 				} // End if
