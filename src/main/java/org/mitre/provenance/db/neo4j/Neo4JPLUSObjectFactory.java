@@ -789,9 +789,9 @@ public class Neo4JPLUSObjectFactory {
 			// Temporary work-around is to remove tx.success().
 			// This is *not* the right thing to do, but it works for now until neo4j addresses the issue.			
 			// tx.success();
-		} catch(TransactionFailureException exc) { 
-			log.severe("Transaction failed: " + exc.getMessage());
-		}
+		} //catch(TransactionFailureException exc) { 
+		//	log.severe("Transaction failed: " + exc.getMessage());
+		//}
 				
 		dag.getFingerPrint().stopTimer("TraverseIterator");
 		
@@ -1040,9 +1040,9 @@ public class Neo4JPLUSObjectFactory {
 			}
 			
 			tx.success();
-		} catch(TransactionFailureException exc) { 
-			log.fine("Ignoring transaction failed exception.");
-		}
+		} //catch(TransactionFailureException exc) { 
+		//	log.fine("Ignoring transaction failed exception.");
+		//}
 			
 		return col;
 	} // End searchFor
@@ -1122,9 +1122,9 @@ public class Neo4JPLUSObjectFactory {
 			// tx.success();
 			
 			return col;
-		} catch(TransactionFailureException exc) { 
-			log.severe("Failed transaction on get most recent: " + exc.getMessage()); 
-			return col; 
-		}  
+		} //catch(TransactionFailureException exc) { 
+		//	log.severe("Failed transaction on get most recent: " + exc.getMessage()); 
+		//	return col; 
+		//}  
 	}	
 } // End Neo4JPLUSObjectFactory

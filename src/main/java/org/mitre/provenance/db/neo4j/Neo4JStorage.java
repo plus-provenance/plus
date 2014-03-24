@@ -577,10 +577,10 @@ public class Neo4JStorage {
 			// Temporary work-around is to remove tx.success().
 			// This is *not* the right thing to do, but it works for now until neo4j addresses the issue.
 			// tx.success();
-		} catch(TransactionFailureException exc) { 
-			log.severe("Failed transaction: " + exc.getMessage());
-			exc.printStackTrace();
-		}
+		} //catch(TransactionFailureException exc) { 
+		//	log.severe("Failed transaction: " + exc.getMessage());
+		//	exc.printStackTrace();
+		//}
 		
 		// System.out.println("Returning collection with " + d.countNodes() + " nodes.");
 		return d;
