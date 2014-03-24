@@ -126,8 +126,10 @@ public class ViewedCollection extends ProvenanceCollection {
 			// TODO:  If the edge goes to something for which there is no suitable surrogate,
 			// that's a problem.
 			// log.info("Adding missing to object to collection.");
-			if(!addNode(edge.getTo(), false))
-				throw new RuntimeException("Adding edge requires adding missing TO node, but it cannot be added to this collection.");
+			if(!addNode(edge.getTo(), false)) {
+				log.warning("Adding edge requires adding missing TO node, but it cannot be added to this collection.");
+				return false;
+			}
 		}
 		
 		if(fromNeedsUpdate|| toNeedsUpdate) {
