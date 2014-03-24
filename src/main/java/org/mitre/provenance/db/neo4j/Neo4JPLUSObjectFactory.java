@@ -655,7 +655,7 @@ public class Neo4JPLUSObjectFactory {
 		desc = desc.relationships(Neo4JStorage.INPUT_TO, dirToTraverse);
 		desc = desc.relationships(Neo4JStorage.MARKS, dirToTraverse);
 		desc = desc.relationships(Neo4JStorage.TRIGGERED, dirToTraverse);
-		desc = desc.relationships(Neo4JStorage.UNSPECIFIED, dirToTraverse);
+		desc = desc.relationships(Neo4JStorage.UNSPECIFIED, dirToTraverse);		
 		
 		// Optionally, traverse the NPE edges if necessary.
 		// Note that even if we're not including NPEs, we have to follow the links to get the NPIDs.
@@ -717,7 +717,12 @@ public class Neo4JPLUSObjectFactory {
 					break;			
 				}
 							
-				if(settings.includeNodes && n.hasLabel(Neo4JStorage.LABEL_NODE)) {
+				if(!n.hasLabel(Neo4JStorage.LABEL_NODE)) {
+					dag.getFingerPrint().startTimer("TraverseIterator");
+					continue;
+				}
+				
+				if(settings.includeNodes) {
 					dag.getFingerPrint().startTimer("CreatePLUSObject");
 					PLUSObject o = Neo4JPLUSObjectFactory.newObject(n).getVersionSuitableFor(user);
 					dag.getFingerPrint().stopTimer("CreatePLUSObject"); 
@@ -726,11 +731,7 @@ public class Neo4JPLUSObjectFactory {
 						// log.info("Added node " + o.getId());
 						dag.addNode(o);				
 					}
-				} else {
-					StringBuffer b = new StringBuffer("");					
-					for(String k : n.getPropertyKeys()) b.append(k +", ");					
-					log.warning("That doesn't seem right...Node " + n + " lacks correct label, has props " + b); 
-				}
+				} 
 	
 				HashSet<Long> seenRelIds = new HashSet<Long>();
 				
@@ -1012,11 +1013,13 @@ public class Neo4JPLUSObjectFactory {
 			    "return n " + 
                 "order by n.created desc " + 
                 "limit " + max;
-        	
-		log.info("regex=" + regex);
+		
+		String term = "name:\"*" + regex + "*\"";
+		
+		log.info("regex=" + term);
 		
 		Map<String,Object>params = new HashMap<String,Object>();
-		params.put("searchCriteria", "name:*" + regex + "*");
+		params.put("searchCriteria", term);
 				
 		ProvenanceCollection col = new ProvenanceCollection();
 		
