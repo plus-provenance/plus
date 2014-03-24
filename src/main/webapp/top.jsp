@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <%@page import="org.mitre.provenance.user.OpenIDUser"%>
+<%@page import="org.mitre.provenance.user.PrivilegeClass"%>
 <%@page import="org.mitre.provenance.tools.PLUSUtils"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <% if(request.getParameter("logout") != null) { session.invalidate(); } %>
@@ -8,6 +9,7 @@
 <% OpenIDUser user = (OpenIDUser)session.getAttribute("plus_user"); 
    if(user == null) { 
 	   user = new OpenIDUser(PLUSUtils.generateID(), "JohnQ@public.com");
+	   user.addPrivilege(PrivilegeClass.ADMIN);
 	   user.setEmail("JohnQ@Public.com");
 	   session.setAttribute("plus_user", user);
    }
