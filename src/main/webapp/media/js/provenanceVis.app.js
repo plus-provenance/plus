@@ -538,7 +538,8 @@ function restart() {
     .attr('title', function(d) { return d.label; })
     .classed('selected', function(d) { return d === selected_link; })
     .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })    
-    .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })    
+    .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; }) 
+    .style('stroke-dasharray', function(d) { return d.type === "npe" ? "5,5" : "10,0" })
 	.style('stroke', assignLinkColor)
     .on('mousedown', function(d) {
       if(d3.event.ctrlKey) return;
