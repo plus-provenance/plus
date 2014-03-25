@@ -1003,7 +1003,7 @@ public class Neo4JPLUSObjectFactory {
 		if(term.contains(" ") || term.contains("\t"))
 			expr = "\"" + term + "\"";
 		
-		expr = "'name:" + expr + "'";
+		expr = "name:" + expr + "~0.8";
 		
 		log.info("search expression=" + expr);
 		
