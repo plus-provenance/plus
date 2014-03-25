@@ -776,6 +776,28 @@ public class Neo4JStorage {
 		return db.index().getNodeAutoIndexer().getAutoIndex().get(PROP_PRIVILEGE_ID, pid).getSingle();
 	}
 	
+	/**
+	 * Checks to see if a particular non-provenance ID exists.  If yes, the first node found is returned.
+	 * If no, null is returned.
+	 * @param npid
+	 * @return
+	 */
+	public static Node npidExists(String npid) {
+		if(db == null) initialize();
+		
+		try(Transaction tx = db.beginTx()) {
+			Node n = db.index().getNodeAutoIndexer().getAutoIndex().get(PROP_NONPROV_ID, npid).getSingle();
+			tx.success();
+			return n;
+		}
+	}
+	
+	/**
+	 * Checks to see if a particular provenance ID exists.  If yes, the first node found is returned.
+	 * If no, null is returned.
+	 * @param oid
+	 * @return
+	 */
 	public static Node oidExists(String oid) {
 		if(db == null) initialize(); 		
 		

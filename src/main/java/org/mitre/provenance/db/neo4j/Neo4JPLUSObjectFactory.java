@@ -672,11 +672,14 @@ public class Neo4JPLUSObjectFactory {
 		// edges, and create the nodes as you go.
 		// Also, possibly a bigger problem:  if each time you add a node, you spider out and add the edges, then for very dense
 		// graphs this defeats the "depth-first" option.  At each node, you spider out on the edges (breadth first), add those
-		// incident nodes, and exhaust your total node limit before you've gone very deep into the graph.
-		
-		Node startingPoint = Neo4JStorage.oidExists(id);
-		
+		// incident nodes, and exhaust your total node limit before you've gone very deep into the graph.		
 		log.info(user.getName() + " traversing " + id + " with " + settings);
+
+		Node startingPoint = null;
+
+		if(PLUSUtils.isPLUSOID(id))
+			startingPoint = Neo4JStorage.oidExists(id);
+		else startingPoint = Neo4JStorage.npidExists(id);
 		
 		if(startingPoint == null) throw new PLUSException("No such node " + id);
 		
