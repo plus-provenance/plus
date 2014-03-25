@@ -188,7 +188,7 @@ function generateObjectTable(provGraph, title, sel) {
 		return preamble + t;
 	}
 	
-	var table = "<table id='objectsTable' border='1' class='ui-widget tablesorter'>" +
+	var table = "<table id='objectsTable' border='1' class='tablesorter'>" +
 	"<thead class='ui-widget-header'><tr>" + 
 		"<th>Description</th>" +
 		"<th>Object Type</th>"+          

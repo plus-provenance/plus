@@ -28,7 +28,14 @@
 	
 	<link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/pepper-grinder/jquery-ui.css" />
 	<link rel="stylesheet" type="text/css" href="media/js/tablesorter/style.css"/>
-		
+
+	<style>
+		.tabcontent {
+			height: 700px;
+			overflow-y: auto;
+		}
+	</style>
+
 	<script>
 		var myLayout = null;
 		
@@ -116,22 +123,27 @@
 			<li><a href="#dashboard">Dashboard</a></li>
 		</ul>
 		
-		<div id='search'>			    
-			<input type="text" name="searchTerm" id='searchTerm' size="70" title="Enter search term here" value=""/> 
+		<div id='search' style='overflow-y:auto'>			    
+			<input type="text" 
+			       name="searchTerm" 
+			       id='searchTerm' 
+			       size="70"
+			       onkeydown="if (event.keyCode == 13) { submitSearch('#searchTerm', '#searchResults'); return false; }" 
+			       title="Enter search term here" value=""/> 
 			<input id='searchSubmit' type='submit' value='Search' onclick="submitSearch('#searchTerm', '#searchResults'); return false"/>			
 			    		
 			<div id='searchResults'></div>
 		</div>
 		
-		<div id='workflows'>&nbsp;</div>
+		<div id='workflows' class='tabcontent'>&nbsp;</div>
 		
-		<div id='latestObjects'>&nbsp;</div>
+		<div id='latestObjects' class='tabcontent'>&nbsp;</div>
 		
-		<div id='owners'>&nbsp;</div>		
+		<div id='owners' class='tabcontent'>&nbsp;</div>		
 		
-		<div id='npids'>&nbsp;</div>
+		<div id='npids' class='tabcontent'>&nbsp;</div>
 		
-		<div id='dashboard'>
+		<div id='dashboard' class='tabcontent'>
 			<h1>Dashboard Queries</h1>
 			
 			<script>
