@@ -38,6 +38,15 @@ public class TestBasicProvenance {
 		Neo4JStorage.initialize();
 	}
 	
+	@Test
+	public void testSearch() throws Exception { 
+		ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor("track", User.DEFAULT_USER_GOD, 20);
+		
+		System.out.println("Searching for track yielded " + col.countNodes() + " results."); 
+		for(PLUSObject o : col.getNodes()) {
+			assertTrue("Name contains track", o.getName().toLowerCase().contains("track"));
+		}
+	}
 	
 	@Test
 	public void testPCs() throws Exception { 
