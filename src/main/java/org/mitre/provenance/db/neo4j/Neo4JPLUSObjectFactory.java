@@ -54,10 +54,11 @@ import org.mitre.provenance.user.User;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Path;
+import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Uniqueness;
@@ -243,23 +244,7 @@ public class Neo4JPLUSObjectFactory {
 			return result;  // This will be null if create=false.
 		}		
 	}
-	
-	/**
-	 * @deprecated
-	 */
-	public static PLUSActor getOrCreateActor(String name) throws PLUSException {
-		try(Transaction tx = Neo4JStorage.beginTx()) {
-			Node n = Neo4JStorage.actorExistsByName(name);
-			if(n != null) return newActor(n);
-			
-			PLUSActor a = new PLUSActor(name); 
-			Neo4JStorage.store(a);
-			
-			tx.success();
-			return a;
-		}
-	} // End getOrCreate
-	
+		
 	public static PLUSEdge newEdge(Relationship r) throws PLUSException { 
 		try(Transaction tx = Neo4JStorage.beginTx()) {
 			//String from = ""+r.getStartNode().getProperty(Neo4JStorage.PROP_PLUSOBJECT_ID, "");
@@ -1127,4 +1112,107 @@ public class Neo4JPLUSObjectFactory {
 		//	return col; 
 		//}  
 	}	
+	
+	/**
+	 * Extract a ProvenanceCollection out of an execution result.
+	 * This method is ideal for creating provenance collections from the results of cypher queries.
+	 * Any column that comes from the query that contains a java primitive will be ignored; only relationships 
+	 * and nodes will be examined.
+	 * @param er the execution result of a cypher query
+	 * @param viewer the user who views the collection
+	 * @return a collection containing the provenance contents of er, according to viewer's view.
+	 * @throws PLUSException 
+	 */
+	public static ProvenanceCollection extractCollection(ExecutionResult er, User viewer) throws PLUSException { 
+		ViewedCollection col = new ViewedCollection(viewer);
+		
+		for(Map<String,Object> row : er) { 
+			for(String k : row.keySet()) {
+				Object val = row.get(k);
+				if(val instanceof Node) {
+					Object t = transmogrify((Node)val);
+					
+					if(t == null) continue;
+					if(t instanceof PLUSObject) col.addNode((PLUSObject)t); 
+					else if(t instanceof PLUSActor) col.addActor((PLUSActor)t); 
+					else if(t instanceof NonProvenanceEdge) col.addNonProvenanceEdge((NonProvenanceEdge)t); 
+				} else if(val instanceof Relationship) { 
+					Object t = transmogrify((Relationship)val);
+
+					if(t == null) continue;
+					else if(t instanceof PLUSEdge) col.addEdge((PLUSEdge)t);
+					else if(t instanceof NonProvenanceEdge) col.addNonProvenanceEdge((NonProvenanceEdge)t); 
+				} else if(val instanceof Path) { 
+					Path p = (Path)val;
+					
+					if(p.length() == 0) {
+						for(Node n : p.nodes()) {
+							Object t = transmogrify(n);
+							
+							if(t == null) continue;
+							if(t instanceof PLUSObject) col.addNode((PLUSObject)t); 
+							else if(t instanceof PLUSActor) col.addActor((PLUSActor)t); 
+							else if(t instanceof NonProvenanceEdge) col.addNonProvenanceEdge((NonProvenanceEdge)t); 
+						}
+					} else { 					
+						for(Relationship r : p.relationships()) { 
+							Object t = transmogrify(r);
+							if(t == null) continue;
+							else if(t instanceof PLUSEdge) col.addEdge((PLUSEdge)t); 
+							else if(t instanceof NonProvenanceEdge) col.addNonProvenanceEdge((NonProvenanceEdge)t); 						
+						}
+					}
+				} else continue;
+			}
+		}
+		
+		return col;
+	} // End extractCollection
+	
+	public static void main(String[] args) throws Exception {
+		String query = "match (n:Provenance)-[r]->(m:Provenance) return n, r, m order by n.created limit 10";
+		
+		ProvenanceCollection col = extractCollection(Neo4JStorage.execute(query), User.DEFAULT_USER_GOD);				
+		
+		for(PLUSObject o : col.getNodes()) System.out.println(o);
+		for(PLUSEdge e : col.getEdges()) System.out.println(e);
+		for(NonProvenanceEdge npe : col.getNonProvenanceEdges()) System.out.println(npe); 
+	}
+	
+	/**
+	 * Figure out the most appropriate PLUS type to turn a node into, and return that.
+	 * @param n
+	 * @return either a NonProvenanceEdge, an Actor, or a PLUSObject depending on what's appropriate.
+	 * @throws PLUSException
+	 */
+	protected static Object transmogrify(Node n) throws PLUSException { 
+		if(n.hasLabel(Neo4JStorage.LABEL_NODE)) {
+			return newObject(n);
+		} else if(n.hasLabel(Neo4JStorage.LABEL_ACTOR)) {
+			return newActor(n); 
+		} else if(n.hasLabel(Neo4JStorage.LABEL_NONPROV)) {
+			Iterator<Relationship> rels = n.getRelationships(Direction.INCOMING, Neo4JStorage.NPE).iterator();						
+			if(rels.hasNext()) return newNonProvenanceEdge(rels.next());
+		}		
+		
+		return null;
+	}
+	
+	/**
+	 * Figure out the most appropriate PLUS type to turn a given relationship into, and return that.
+	 * @param r
+	 * @return either a PLUSEdge or a NonProvenanceEdge, depending on what's appropriate.
+	 * @throws PLUSException
+	 */
+	protected static Object transmogrify(Relationship r) throws PLUSException { 
+		if(r.getStartNode().hasLabel(Neo4JStorage.LABEL_NODE) && r.getEndNode().hasLabel(Neo4JStorage.LABEL_NODE))					
+			return newEdge(r);
+		else if(r.getStartNode().hasLabel(Neo4JStorage.LABEL_NODE) && r.getEndNode().hasLabel(Neo4JStorage.LABEL_NONPROV)) {
+			return newNonProvenanceEdge(r); 
+		} else { 
+			log.info("Unrecognized/unsupported relationship " + r + " of type " + r.getType());
+		}
+
+		return null;
+	}
 } // End Neo4JPLUSObjectFactory
