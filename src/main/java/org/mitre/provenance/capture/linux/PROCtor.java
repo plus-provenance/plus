@@ -22,6 +22,10 @@ import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.UserPrincipal;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -373,6 +377,15 @@ public class PROCtor {
 		inv.getMetadata().put("started", ""+lmod); 
 		inv.getMetadata().put(UUID_KEY, procFileID);
 		inv.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, procFileID);
+		
+		Path path = Paths.get(procPID.getAbsolutePath());
+		UserPrincipal owner = Files.getOwner(path);
+		String username = owner.getName();
+		try {
+			inv.setOwner(Neo4JPLUSObjectFactory.getActor(username, true));
+		} catch(PLUSException exc) { 
+			log.warning("Failed to set owner for " + inv + ": " + exc.getMessage());
+		}
 		
 		cache.put(procFileID, inv);  // Cache this so we don't go back over it.
 		
