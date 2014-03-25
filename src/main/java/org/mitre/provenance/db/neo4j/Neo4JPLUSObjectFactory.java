@@ -985,26 +985,30 @@ public class Neo4JPLUSObjectFactory {
 		
 	/**
 	 * Search for provenance objects by name.
-	 * @param regex a regular expression to use to match names
+	 * @param term a search term to use to match names
 	 * @param user the user permitted to see the data
 	 * @return a provenance collection containing the results
 	 */
-	public static ProvenanceCollection searchFor(String regex, User user) { return searchFor(regex, user, DEFAULT_SEARCH_RESULTS); }
+	public static ProvenanceCollection searchFor(String term, User user) { return searchFor(term, user, DEFAULT_SEARCH_RESULTS); }
 	
-	public static ProvenanceCollection searchFor(String regex, User user, int max) {
+	public static ProvenanceCollection searchFor(String term, User user, int max) {
 		String query = "start n=node:node_auto_index({searchCriteria}) "+
 	            "match (n:Provenance) " + 
-                // "where has(n.oid) and has(n.name) and has(n.created) " +
 			    "return n " + 
                 "order by n.created desc " + 
                 "limit " + max;
+
+		String expr = term;
 		
-		String term = "name:\"*" + regex + "*\"";
+		if(term.contains(" ") || term.contains("\t"))
+			expr = "\"" + term + "\"";
 		
-		log.info("regex=" + term);
+		expr = "'name:" + expr + "'";
+		
+		log.info("search expression=" + expr);
 		
 		Map<String,Object>params = new HashMap<String,Object>();
-		params.put("searchCriteria", term);
+		params.put("searchCriteria", expr);
 				
 		ProvenanceCollection col = new ProvenanceCollection();
 		
