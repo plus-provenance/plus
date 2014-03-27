@@ -1003,10 +1003,11 @@ public class Neo4JPLUSObjectFactory {
 
 		String expr = term;
 		
-		if(term.contains(" ") || term.contains("\t"))
-			expr = "\"" + term + "\"";
+		// If the search term includes a non-word character, put it in quotes.
+		//if(term.matches("\\W"))
+		//	expr = "\"" + term + "\"";
 		
-		expr = "name:" + expr + "~0.8";
+		expr = "name:" + expr + "~";
 		
 		log.info("search expression=" + expr);
 		

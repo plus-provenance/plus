@@ -56,6 +56,12 @@ public class ObjectServices {
 	@Context
 	UriInfo uriInfo;
 	
+	/**
+	 * Cleans up a user-entered search term, and formats it as a more flexible regular expression.
+	 * @param term
+	 * @return
+	 * @deprecated
+	 */
 	public String formatSearchTerm(String term) {
 		if(term == null || term.trim().equals("")) return "";
 		
@@ -76,7 +82,7 @@ public class ObjectServices {
 		log.info("SEARCH POST '" + searchTerm + "'");
 		try { 			
 			//TODO : user
-			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(formatSearchTerm(searchTerm), User.DEFAULT_USER_GOD);			
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(searchTerm, User.DEFAULT_USER_GOD);			
 			return ServiceUtility.OK(col);			
 		} catch(Exception exc) { 
 			exc.printStackTrace();
@@ -91,7 +97,7 @@ public class ObjectServices {
 		log.info("SEARCH GET '" + term + "'");
 		try { 
 			//TODO
-			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(formatSearchTerm(term), User.DEFAULT_USER_GOD);
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(term, User.DEFAULT_USER_GOD);
 			return ServiceUtility.OK(col);			
 		} catch(Exception exc) { 
 			exc.printStackTrace();
