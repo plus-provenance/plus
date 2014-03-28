@@ -148,7 +148,7 @@ public class Neo4JStorage {
 	
 	/** Label affixed to all non provenance ID nodes */
 	protected static Label LABEL_NONPROV = null;
-	
+		
 	/**
 	 * Class that defines relationship types in Neo4J
 	 * @see org.neo4j.graphdb.RelationshipType
@@ -164,24 +164,48 @@ public class Neo4JStorage {
 	 * various things that will be necessary.
 	 * @throws Exception 
 	 */
-	public static void ONE_TIME_SETUP() throws Exception {
+	public static void ONE_TIME_SETUP() throws Exception {		
 		log.info("Running a one-time setup of this new database...");
 		// This simple statement causes several pieces of privilege information to be written.
-		assertDominates(PrivilegeClass.ADMIN, PrivilegeClass.PUBLIC);
+		// assertDominates(PrivilegeClass.ADMIN, PrivilegeClass.PUBLIC);
 		
 		setupConstraints();
 
 		// Store basics that should always be there.
 		store(PLUSWorkflow.DEFAULT_WORKFLOW);
-		store(PLUSActivity.UNKNOWN_ACTIVITY);
-		store(User.DEFAULT_USER_GOD);
-		store(User.PUBLIC);	
+		store(PLUSActivity.UNKNOWN_ACTIVITY);		
+				
+		store(User.DEFAULT_USER_GOD);		
+		store(User.PUBLIC);			
+		
+		createPrivilegeClassLattice();
 		
 		// Populate with test data.
 		new BulkRun().run();  
 		
 		log.info("Finished running one-time setup of database.");
 	} // End ONE_TIME_SETUP
+	
+	/**
+	 * This method creates a default lattice of privilege classes as a one-time setup step on a new DB.
+	 * @throws PLUSException
+	 */
+	protected static void createPrivilegeClassLattice() throws PLUSException { 	
+		PrivilegeClass[] levels = new  PrivilegeClass[10];
+		for(int x=1; x<=10; x++) levels[x-1] = new PrivilegeClass(x);
+		
+		Neo4JStorage.assertDominates(PrivilegeClass.ADMIN, PrivilegeClass.NATIONAL_SECURITY);
+		Neo4JStorage.assertDominates(PrivilegeClass.NATIONAL_SECURITY, PrivilegeClass.EMERGENCY_HIGH);
+		Neo4JStorage.assertDominates(PrivilegeClass.EMERGENCY_HIGH, PrivilegeClass.EMERGENCY_LOW);
+		Neo4JStorage.assertDominates(PrivilegeClass.ADMIN, PrivilegeClass.PRIVATE_MEDICAL);
+		Neo4JStorage.assertDominates(PrivilegeClass.PRIVATE_MEDICAL, PrivilegeClass.PUBLIC);
+		Neo4JStorage.assertDominates(PrivilegeClass.EMERGENCY_LOW, PrivilegeClass.PUBLIC);
+		Neo4JStorage.assertDominates(PrivilegeClass.NATIONAL_SECURITY, PrivilegeClass.PUBLIC);
+		
+		for(int x=10; x>0; x--) { 
+			if(x >= 2) Neo4JStorage.assertDominates(levels[x-1], levels[x-2]);
+		}
+	} // End createLattice
 	
 	/**
 	 * Called as part of the one-time setup of a database; establishes new constraints on data that will be created.
