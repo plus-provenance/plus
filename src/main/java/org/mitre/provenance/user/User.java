@@ -31,39 +31,31 @@ import org.neo4j.graphdb.PropertyContainer;
 public class User extends PLUSActor {
 	protected static Logger log = Logger.getLogger(User.class.getName());
 	
-	public static final User DEFAULT_USER_PLUS = new User("Administrator", new PrivilegeClass(10));
+	public static final User DEFAULT_USER_PLUS = new User("Administrator", new PrivilegeSet(new PrivilegeClass(10)));
 	
-	public static final User DEFAULT_USER_ONE = new User("One", new PrivilegeClass(1));
-	public static final User DEFAULT_USER_TWO = new User("Two", new PrivilegeClass(2));
-	public static final User DEFAULT_USER_THREE = new User("Three", new PrivilegeClass(3));
-	public static final User DEFAULT_USER_FOUR = new User("Four", new PrivilegeClass(4));
-	public static final User DEFAULT_USER_FIVE = new User("Five", new PrivilegeClass(5));
-	public static final User DEFAULT_USER_SIX = new User("Six", new PrivilegeClass(6));
-	public static final User DEFAULT_USER_SEVEN = new User("Seven", new PrivilegeClass(7));
-	public static final User DEFAULT_USER_EIGHT = new User("Eight", new PrivilegeClass(8));
-	public static final User DEFAULT_USER_NINE = new User("Nine", new PrivilegeClass(9));
-	public static final User DEFAULT_USER_TEN = new User("Ten", new PrivilegeClass(10));
+	public static final User DEFAULT_USER_ONE = new User("One", new PrivilegeSet(new PrivilegeClass(1)));
+	public static final User DEFAULT_USER_TWO = new User("Two", new PrivilegeSet(new PrivilegeClass(2)));
+	public static final User DEFAULT_USER_THREE = new User("Three", new PrivilegeSet(new PrivilegeClass(3)));
+	public static final User DEFAULT_USER_FOUR = new User("Four", new PrivilegeSet(new PrivilegeClass(4)));
+	public static final User DEFAULT_USER_FIVE = new User("Five", new PrivilegeSet(new PrivilegeClass(5)));
+	public static final User DEFAULT_USER_SIX = new User("Six", new PrivilegeSet(new PrivilegeClass(6)));
+	public static final User DEFAULT_USER_SEVEN = new User("Seven", new PrivilegeSet(new PrivilegeClass(7)));
+	public static final User DEFAULT_USER_EIGHT = new User("Eight", new PrivilegeSet(new PrivilegeClass(8)));
+	public static final User DEFAULT_USER_NINE = new User("Nine", new PrivilegeSet(new PrivilegeClass(9)));
+	public static final User DEFAULT_USER_TEN = new User("Ten", new PrivilegeSet(new PrivilegeClass(10)));
 	
-	public static final User NATIONAL_SECURITY = new User("National Security User");
-	public static final User PUBLIC = new User("Public"); 
-	public static final User PRIVATE_MEDICAL = new User("Private Medical"); 
+	public static final User NATIONAL_SECURITY = new User("National Security User", new PrivilegeSet(PrivilegeClass.NATIONAL_SECURITY));
+	public static final User PUBLIC = new User("Public", new PrivilegeSet(PrivilegeClass.PUBLIC)); 
+	public static final User PRIVATE_MEDICAL = new User("Private Medical", new PrivilegeSet(PrivilegeClass.PRIVATE_MEDICAL)); 
 	
-	public static final User DEFAULT_USER_GOD = new User("Uber User Universal Access");
+	public static final User DEFAULT_USER_GOD = new User("Uber User Universal Access", 
+			new PrivilegeSet(PrivilegeClass.ADMIN, new PrivilegeClass(10)));
 
 	/** @deprecated */
 	public static Hashtable <String,User> userHash = new Hashtable <String,User>();
 	
-	static { 
-		DEFAULT_USER_GOD.privileges = new PrivilegeSet(PrivilegeClass.ADMIN);
-				
-		try { 
-			NATIONAL_SECURITY.addPrivilege(PrivilegeClass.NATIONAL_SECURITY);
-			PUBLIC.addPrivilege(PrivilegeClass.PUBLIC);
-			PRIVATE_MEDICAL.addPrivilege(PrivilegeClass.PRIVATE_MEDICAL); 
-			
-			DEFAULT_USER_GOD.addPrivilege(new PrivilegeClass(10));
-			DEFAULT_USER_PLUS.addPrivilege(new PrivilegeClass(10));
-			
+	static { 			
+		try { 			
 			userHash.put(PUBLIC.getName(), PUBLIC);
 			userHash.put(PRIVATE_MEDICAL.getName(), PRIVATE_MEDICAL);
 			userHash.put(DEFAULT_USER_GOD.getName(), DEFAULT_USER_GOD);
@@ -72,7 +64,7 @@ public class User extends PLUSActor {
 			log.severe("Error adding static privileges to default users: " + e.getMessage());
 		}
 	} // End static initializer block
-			
+	
 	/** The set of privileges this user has, which determines what the user can see. */
 	protected PrivilegeSet privileges;
 	
@@ -100,14 +92,6 @@ public class User extends PLUSActor {
 		setType("user");
 	}	
 	
-	public User(String username, PrivilegeClass pc) {
-		super(username);
-		PrivilegeSet ps = new PrivilegeSet();
-		ps.addPrivilege(pc);		
-		this.privileges = ps;
-		setType("user");
-	}
-		
 	protected void setPrivileges(PrivilegeSet ps) { this.privileges = ps; } 
 	public PrivilegeSet getPrivileges() { return privileges; }	
 	public void addPrivilege(PrivilegeClass p) { privileges.addPrivilege(p); } 
