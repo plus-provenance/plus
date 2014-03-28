@@ -48,6 +48,17 @@ public class PrivilegeSet {
 		addPrivilege(pc);
 	}
 	
+	/**
+	 * Create a new PrivilegeSet with a number of entries.
+	 * @param pcs
+	 */
+	public PrivilegeSet(PrivilegeClass ... pcs) { 
+		this();
+		
+		for(PrivilegeClass pc : pcs)
+			addPrivilege(pc);
+	}
+	
 	public List <PrivilegeClass> getPrivilegeSet(){
 		return set;
 	}
