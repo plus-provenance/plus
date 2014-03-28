@@ -50,20 +50,6 @@ public class User extends PLUSActor {
 	
 	public static final User DEFAULT_USER_GOD = new User("Uber User Universal Access", 
 			new PrivilegeSet(PrivilegeClass.ADMIN, new PrivilegeClass(10)));
-
-	/** @deprecated */
-	public static Hashtable <String,User> userHash = new Hashtable <String,User>();
-	
-	static { 			
-		try { 			
-			userHash.put(PUBLIC.getName(), PUBLIC);
-			userHash.put(PRIVATE_MEDICAL.getName(), PRIVATE_MEDICAL);
-			userHash.put(DEFAULT_USER_GOD.getName(), DEFAULT_USER_GOD);
-			userHash.put(DEFAULT_USER_PLUS.getName(), DEFAULT_USER_PLUS);			
-		} catch(Exception e) { 
-			log.severe("Error adding static privileges to default users: " + e.getMessage());
-		}
-	} // End static initializer block
 	
 	/** The set of privileges this user has, which determines what the user can see. */
 	protected PrivilegeSet privileges;
@@ -188,21 +174,7 @@ public class User extends PLUSActor {
 	public String toString() { 
 		return "[User:" + getName() + " level " + getPrivileges() + "]";
 	} // End toString()
-	
-	/**
-	 * @deprecated
-	 */
-	public static void addUser(User user) { 
-		userHash.put(user.getName(), user); 
-	}
-	
-	/**
-	 * @deprecated
-	 */
-	public static User getUserByName(String userName) { 
-		return userHash.get(userName); 
-	}
-	
+		
 	public Map<String,Object> getStorableProperties() {
 		Map<String,Object> map = super.getStorableProperties();
 		map.put("displayName", displayName);		

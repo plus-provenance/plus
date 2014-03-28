@@ -27,6 +27,10 @@ import javax.servlet.http.HttpSession;
 
 import org.mitre.openid.connect.model.OIDCAuthenticationToken;
 import org.mitre.openid.connect.model.UserInfo;
+import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
+import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.user.OpenIDUser;
 import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.User;
@@ -60,7 +64,15 @@ public class OpenIDInterceptorFilter extends GenericFilterBean {
 		System.err.println("FILTER: OpenID2 Token ID " + oid2UniqueId + " cred " + oidToken.getCredentials() + 
 				" details " + oidToken.getDetails()+ " principal " + oidToken.getPrincipal() + " message " + oidToken.getMessage());				
 		
-		User existingUser = User.getUserByName(oid2UniqueId);
+		User existingUser = null;
+		
+		try { 
+			PLUSActor a = Neo4JPLUSObjectFactory.getActor(oid2UniqueId);		
+			if(a instanceof User) existingUser = (User)a;
+		} catch(PLUSException exc) { 
+			log.severe("Could not load actor by ID " + oid2UniqueId);
+			exc.printStackTrace();
+		}
 		
 		if (existingUser != null) {
 			// System.err.println("FILTER: OpenID2 existing user " + existingUser);
@@ -108,8 +120,13 @@ public class OpenIDInterceptorFilter extends GenericFilterBean {
 			oid2User.addPrivilege(PrivilegeClass.ADMIN);
 			oid2User.addPrivilege(PrivilegeClass.PUBLIC);
 			
-			
-			User.addUser(oid2User);
+			try { 
+				if(Neo4JStorage.actorExists(oid2User.getId()) == null)
+					Neo4JStorage.store(oid2User);
+			} catch(PLUSException exc) { 
+				log.severe("Could not save new user entry " + oid2User);
+				exc.printStackTrace();
+			}
         
 			System.err.println("FILTER: set new OpenID2 user " + oid2User);
 			return oid2User;
@@ -132,8 +149,17 @@ public class OpenIDInterceptorFilter extends GenericFilterBean {
 		//for storage.
 		
 		String uniqueId = "" + oidcToken.getIssuer() + ":" + oidcToken.getSub();
+
+		User existingUser = null;
 		
-		User existingUser = User.getUserByName(uniqueId);
+		try { 
+			PLUSActor a = Neo4JPLUSObjectFactory.getActor(uniqueId);		
+			if(a instanceof User) existingUser = (User)a;
+		} catch(PLUSException exc) { 
+			log.severe("Could not load actor by ID " + uniqueId);
+			exc.printStackTrace();
+		}
+
 		if (existingUser != null) {
 			System.err.println("FILTER: existing user " + existingUser);
 			return existingUser;
@@ -150,7 +176,14 @@ public class OpenIDInterceptorFilter extends GenericFilterBean {
 			newUser.addPrivilege(PrivilegeClass.PUBLIC);			
 			
 			System.err.println("FILTER: new user " + newUser);
-			User.addUser(newUser);
+
+			try { 
+				if(Neo4JStorage.actorExists(newUser.getId()) == null)
+					Neo4JStorage.store(newUser);
+			} catch(PLUSException exc) { 
+				log.severe("Could not save new user entry " + newUser);
+				exc.printStackTrace();
+			}
 	
 			return newUser;
 		} // End else
