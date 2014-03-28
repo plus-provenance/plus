@@ -55,19 +55,7 @@ public class ObjectServices {
 	
 	@Context
 	UriInfo uriInfo;
-	
-	/**
-	 * Cleans up a user-entered search term, and formats it as a more flexible regular expression.
-	 * @param term
-	 * @return
-	 * @deprecated
-	 */
-	public String formatSearchTerm(String term) {
-		if(term == null || term.trim().equals("")) return "";
-		
-		return term.trim().replaceAll(" +", "[ ]+");
-	}
-		
+			
 	@Path("/search")
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)

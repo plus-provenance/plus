@@ -987,6 +987,20 @@ public class Neo4JPLUSObjectFactory {
 	} // End newDAG
 		
 	/**
+	 * Takes a basic user-entered search term, and formats it as a regular expression suitable for name matching.
+	 * @param term
+	 * @return
+	 */
+	private static String formatRegex(String term) { 
+		if(term == null || term.trim().equals("")) return ".";
+		
+		// The first bit makes it case-insensitive in cypher.
+		return "(?i).*" + term.trim()
+			.replaceAll("\\s+", "\\s+")
+			.replaceAll("[:\\-\\+;\\[\\]\\{\\}\\(\\)]", ".") + ".*";			
+	} // End formatRegex
+	
+	/**
 	 * Search for provenance objects by name.
 	 * @param term a search term to use to match names
 	 * @param user the user permitted to see the data
@@ -995,12 +1009,13 @@ public class Neo4JPLUSObjectFactory {
 	public static ProvenanceCollection searchFor(String term, User user) { return searchFor(term, user, DEFAULT_SEARCH_RESULTS); }
 	
 	public static ProvenanceCollection searchFor(String term, User user, int max) {
+		/*
 		String query = "start n=node:node_auto_index({searchCriteria}) "+
 	            "match (n:Provenance) " + 
 			    "return n " + 
-                "order by n.created desc " + 
+                "order by n.created desc " +           
                 "limit " + max;
-
+       
 		String expr = term;
 		
 		// If the search term includes a non-word character, put it in quotes.
@@ -1008,7 +1023,12 @@ public class Neo4JPLUSObjectFactory {
 		//	expr = "\"" + term + "\"";
 		
 		expr = "name:" + expr + "~";
+       
+       */
+
+		String query = "match (n:Provenance) where n.name =~ {searchCriteria} return n order by n.created desc limit " + max;
 		
+		String expr = formatRegex(term);
 		log.info("search expression=" + expr);
 		
 		Map<String,Object>params = new HashMap<String,Object>();
