@@ -35,27 +35,7 @@ import org.neo4j.graphdb.PropertyContainer;
  */
 public class PrivilegeClass implements Neo4JCapable {
 	protected static Logger log = Logger.getLogger(PrivilegeClass.class.getName());
-	
-	protected String name;
-	protected String id;
-	protected String description;
-	protected long created;
-	
-	public static PrivilegeClass ADMIN = null;
-	public static PrivilegeClass NATIONAL_SECURITY = null;
-	public static PrivilegeClass PRIVATE_MEDICAL = null;
-	public static PrivilegeClass EMERGENCY_HIGH = null;
-	public static PrivilegeClass EMERGENCY_LOW = null;
-	public static PrivilegeClass PUBLIC = null;
-
-	static { 
-		try {  
-			createLattice();
-		} catch(Exception exc) { 			
-			log.severe("Failed static initialization of PrivilegeClasses: " + exc.getMessage());
-		}
-	} // End static block
-	
+		
 	protected static final String GOD_ID = "urn:uuid:plus:111111111111111111111111111111111111";
 	protected static final String NATIONAL_SECURITY_ID = "urn:uuid:plus:000000000000000000000000000000000014";
 	protected static final String PRIVATE_MEDICAL_ID = "urn:uuid:plus:000000000000000000000000000000000013";
@@ -63,30 +43,25 @@ public class PrivilegeClass implements Neo4JCapable {
 	protected static final String EMERGENCY_HIGH_ID = "urn:uuid:plus:000000000000000000000000000000000011";
 	protected static final String PUBLIC_ID = "urn:uuid:plus:000000000000000000000000000000000015";
 	
-	protected static void createLattice() throws PLUSException { 
-		ADMIN = new PrivilegeClass(GOD_ID, "Super User", "Super User");
-		NATIONAL_SECURITY = new PrivilegeClass(NATIONAL_SECURITY_ID, "National Security");
-		PRIVATE_MEDICAL = new PrivilegeClass(PRIVATE_MEDICAL_ID, "Private Medical");
-		EMERGENCY_LOW = new PrivilegeClass(EMERGENCY_LOW_ID, "Emergency Low");
-		EMERGENCY_HIGH = new PrivilegeClass(EMERGENCY_HIGH_ID, "Emergency High");
-		PUBLIC = new PrivilegeClass(PUBLIC_ID, "Public");
-		
-		PrivilegeClass[] levels = new  PrivilegeClass[10];
-		for(int x=1; x<=10; x++) levels[x-1] = new PrivilegeClass(x);
-		
-		Neo4JStorage.assertDominates(ADMIN, NATIONAL_SECURITY);
-		Neo4JStorage.assertDominates(NATIONAL_SECURITY, EMERGENCY_HIGH);
-		Neo4JStorage.assertDominates(EMERGENCY_HIGH, EMERGENCY_LOW);
-		Neo4JStorage.assertDominates(ADMIN, PRIVATE_MEDICAL);
-		Neo4JStorage.assertDominates(PRIVATE_MEDICAL, PUBLIC);
-		Neo4JStorage.assertDominates(EMERGENCY_LOW, PUBLIC);
-		Neo4JStorage.assertDominates(NATIONAL_SECURITY, PUBLIC);
-		
-		for(int x=10; x>0; x--) { 
-			if(x >= 2)
-				Neo4JStorage.assertDominates(levels[x-1], levels[x-2]);
-		}
-	} // End createLattice
+	/* Static singletons for commonly used PCs */
+	public static final PrivilegeClass ADMIN = new PrivilegeClass(GOD_ID, "Super User", "Super User");;
+	public static final PrivilegeClass NATIONAL_SECURITY = new PrivilegeClass(NATIONAL_SECURITY_ID, "National Security");
+	public static final PrivilegeClass PRIVATE_MEDICAL = new PrivilegeClass(PRIVATE_MEDICAL_ID, "Private Medical");
+	public static final PrivilegeClass EMERGENCY_HIGH = new PrivilegeClass(EMERGENCY_HIGH_ID, "Emergency High");
+	public static final PrivilegeClass EMERGENCY_LOW = new PrivilegeClass(EMERGENCY_LOW_ID, "Emergency Low");
+	public static final PrivilegeClass PUBLIC = new PrivilegeClass(PUBLIC_ID, "Public");
+	
+	/** the name of the privilege class */
+	protected String name;
+	
+	/** a PLUS OID */
+	protected String id;
+	
+	/** Brief description */
+	protected String description;
+	
+	/** When created */
+	protected long created;
 	
 	/**
 	 * As a special case you can create a privilege class that is a "security level" -- a totally ordered 0-10 setup
