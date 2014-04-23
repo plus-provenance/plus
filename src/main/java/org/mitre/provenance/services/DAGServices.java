@@ -68,13 +68,13 @@ public class DAGServices {
 	
 	@GET
 	@Path("/{oid:.*}")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	/**
 	 * Gets a provenance graph centered at a particular point, in D3 JSON format.
 	 * @param oid the OID for the starting point of the graph
 	 * @return a D3 JSON string, or 404 if not found, or internal server error on PLUSException 
 	 */
-	public Response getD3Graph(@Context HttpServletRequest req, 
+	public Response getGraph(@Context HttpServletRequest req, 
 			@PathParam("oid") String oid, 
 			@DefaultValue("50") @QueryParam("n") int maxNodes,
 			@DefaultValue("8") @QueryParam("maxHops") int maxHops,
@@ -108,7 +108,8 @@ public class DAGServices {
 			
 			LineageDAG col = Neo4JPLUSObjectFactory.newDAG(oid, ServiceUtility.getUser(req), ts);
 			log.info("D3 Graph for " + oid + " returned " + col); 
-			return ServiceUtility.OK(col);					
+			
+			return ServiceUtility.OK(col, req);					
 		} catch(PLUSException exc) { 
 			log.severe(exc.getMessage());
 			exc.printStackTrace();
