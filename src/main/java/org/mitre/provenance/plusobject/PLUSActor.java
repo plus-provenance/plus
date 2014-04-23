@@ -15,6 +15,7 @@
 package org.mitre.provenance.plusobject;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,6 +76,7 @@ public class PLUSActor implements Neo4JCapable {
 			   getType().equals(b.getType());
 	}
 	
+	public Date getCreatedAsDate() { return new java.util.Date(getCreated()); }
 	public long getCreated() { return created; } 
 	protected void setCreated(long created) { this.created = created; } 
 	
