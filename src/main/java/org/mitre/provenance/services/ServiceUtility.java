@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.bind.JAXBException;
 
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.ViewedCollection;
@@ -29,6 +30,7 @@ import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
+import org.mitre.provenance.plusobject.prov.PROVConverter;
 import org.mitre.provenance.user.User;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Node;
@@ -98,6 +100,36 @@ public class ServiceUtility {
 	public static Response OK(List<?> list) { 
 		String json = new GsonBuilder().setPrettyPrinting().create().toJson(list);		
 		return Response.ok(json, MediaType.APPLICATION_JSON).build();		
+	}
+	
+	/**
+	 * Convenience function for returning HTTP OK response, with variable representation format depending on user request.
+	 * @param col the collection
+	 * @param req the request
+	 * @return
+	 */
+	public static Response OK(ProvenanceCollection col, HttpServletRequest req) {
+		String acceptedTypes = req.getHeader("Accept");
+		if(acceptedTypes == null) acceptedTypes = "";
+			
+		String format = req.getParameter("format");
+		if(format == null) format = "";
+
+		boolean acceptsXML = acceptedTypes.contains("application/provenance+xml") || "xml".equals(format);  
+		boolean acceptsJSON = acceptedTypes.contains("json") || "json".equals(format); 
+	
+		System.out.println("Accept: " + acceptedTypes + " format=" + format + " acceptsXML=" + acceptsXML + " acceptsJSON=" + acceptsJSON);
+		
+		if(acceptsXML && !acceptsJSON) {
+			PROVConverter conv = new PROVConverter();
+			try {
+				String xml = PROVConverter.asString(conv.provenanceCollectionToPROV(col));
+				return Response.ok(xml, MediaType.APPLICATION_XML).build();
+			} catch (JAXBException | PLUSException e) {
+				e.printStackTrace();
+				return ERROR("Could not build XML representation of this collection: " + e.getMessage());
+			}
+		} else return OK(col);
 	}
 	
 	/**
