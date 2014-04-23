@@ -52,12 +52,14 @@ import org.neo4j.graphdb.Transaction;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
+import com.wordnik.swagger.annotations.Api;
 
 /**
  * DAGServices encompassess RESTful services that operate over provenance "DAGs" (directed acyclic graphs).
  * @author dmallen
  */
 @Path("/graph")
+@Api(value = "/graph", description = "Operations about provenance graphs")
 public class DAGServices {
 	protected static Logger log = Logger.getLogger(DAGServices.class.getName());
 	
@@ -66,9 +68,9 @@ public class DAGServices {
 		public CollectionFormatException(String msg) { super(msg); } 
 	}
 	
-	@GET
-	@Path("/{oid:.*}")
+	@Path("/{oid:.*}")	
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+	@GET
 	/**
 	 * Gets a provenance graph centered at a particular point, in D3 JSON format.
 	 * @param oid the OID for the starting point of the graph
