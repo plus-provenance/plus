@@ -3,7 +3,6 @@ package org.mitre.provenance.plusobject.prov;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -12,6 +11,8 @@ import javax.xml.bind.JAXBException;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.dag.TraversalSettings;
+import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.plusobject.PLUSActivity;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSDataObject;
@@ -22,12 +23,13 @@ import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSURL;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
+import org.mitre.provenance.services.ServiceUtility;
 import org.mitre.provenance.simulate.DAGAholic;
 import org.mitre.provenance.simulate.SyntheticGraphProperties;
 import org.mitre.provenance.user.PrivilegeClass;
+import org.mitre.provenance.user.User;
 import org.openprovenance.prov.model.Activity;
 import org.openprovenance.prov.model.Agent;
-import org.openprovenance.prov.model.Attribute;
 import org.openprovenance.prov.model.Document;
 import org.openprovenance.prov.model.Entity;
 import org.openprovenance.prov.model.HasOther;
@@ -37,6 +39,7 @@ import org.openprovenance.prov.model.Other;
 import org.openprovenance.prov.model.QualifiedName;
 import org.openprovenance.prov.model.Statement;
 import org.openprovenance.prov.xml.ProvFactory;
+import org.openprovenance.prov.model.WasGeneratedBy;
 
 /**
  * A class that knows how to convert ProvenanceCollection objects into a PROV-DM representation. 
@@ -83,7 +86,9 @@ public class PROVConverter {
 	 */
 	public Document provenanceCollectionToPROV(ProvenanceCollection col) throws PLUSException {		
 		for(PLUSActor a : col.getActors()) {
-			provAgents.put(a.getId(), actorToAgent(a)); 
+			Agent agent = actorToAgent(a);
+			agent.getOther().add(makeObjectProperty("created", a.getCreatedAsDate()));
+			provAgents.put(a.getId(), agent); 			
 		}
 		
 		for(PLUSObject o : col.getNodes()) {
@@ -112,6 +117,7 @@ public class PROVConverter {
 			// Log properties common to all PLUSObjects.
 			if(item != null) {
 				convertMetadata(o, item);
+				convertOwnership(o);
 				
 				item.getOther().add(makeObjectProperty("name", o.getName()));
 				item.getOther().add(makeObjectProperty("created", o.getCreatedAsDate()));
@@ -129,7 +135,8 @@ public class PROVConverter {
 		}
 		
 		for(PLUSEdge e : col.getEdges()) {
-			provStatements.put(e.getFrom().getId() + "/" + e.getTo().getId(), edgeToStatement(e)); 
+			Statement stmt = edgeToStatement(e);
+			provStatements.put(e.getFrom().getId() + "/" + e.getTo().getId(), stmt); 
 		}
 				
 		if(col.countNPEs() > 0) 
@@ -137,9 +144,13 @@ public class PROVConverter {
 		
 		// Assemble final document.
 		Document d = factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());
-		Namespace n = new Namespace();
-		n.setDefaultNamespace(BASE_NAMESPACE);
+		//Namespace n = new Namespace();
+		//n.setDefaultNamespace(BASE_NAMESPACE);
+		//n.addKnownNamespaces();
+		
+		Namespace n = Namespace.gatherNamespaces(d);
 		n.addKnownNamespaces();
+		n.setDefaultNamespace(BASE_NAMESPACE);
 		d.setNamespace(n);
 		return d;
 	} // End provenanceCollectionToPROV
@@ -161,7 +172,7 @@ public class PROVConverter {
 		return null;
 	}
 	
-	public Statement edgeToStatement(PLUSEdge e) throws PROVConversionException { 
+	protected Statement edgeToStatement(PLUSEdge e) throws PROVConversionException { 
 		String edgeType = e.getType();
 		
 		if(PLUSEdge.EDGE_TYPE_INPUT_TO.equals(edgeType)) {
@@ -183,8 +194,10 @@ public class PROVConverter {
 			Activity act = provActivities.get(e.getFrom().getId());
 
 			if(!canConvert(e, act, ent)) return null;
-			
-			return factory.newWasGeneratedBy(getQualifiedName(e), ent.getId(), act.getId());
+						
+			WasGeneratedBy wgb = factory.newWasGeneratedBy(getQualifiedName(e), ent.getId(), act.getId());
+			wgb.setTime(factory.newTime(e.getTo().getCreatedAsDate()));
+			return wgb;
 		} else if(PLUSEdge.EDGE_TYPE_MARKS.equals(edgeType) || PLUSEdge.EDGE_TYPE_UNSPECIFIED.equals(edgeType)) {
 			QualifiedName q1 = findEntityOrActivity(e.getFrom());
 			QualifiedName q2 = findEntityOrActivity(e.getTo());
@@ -205,34 +218,53 @@ public class PROVConverter {
 		}		
 	} // End edgeToStatement
 	
-	public void convertMetadata(PLUSObject obj, HasOther convertedObj) throws PROVConversionException { 
-		Metadata md = obj.getMetadata();
-		
-		// Ownership gets mapped onto a "wasAssociatedWith" relationship
-		if(obj.getOwner() != null) {
-			PLUSActor a = obj.getOwner();
+	/**
+	 * If applicable, convert the ownership relationship between an object and its actor into a "wasAssociatedWith" statement,
+	 * or a "wasAttributedTo" statement, depending on the type of object.
+	 * @param o
+	 */
+	protected void convertOwnership(PLUSObject o) { 
+		// Ownership gets mapped onto a "wasAssociatedWith" or "wasAttributedTo" relationship
+		if(o.getOwner() != null) {
+			PLUSActor a = o.getOwner();
 			if(provAgents.containsKey(a.getId())) {
 				Agent agent = provAgents.get(a.getId());
 				QualifiedName ownership = new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE, 
-						a.getId() + "/" + obj.getId(), "owns");						
+						a.getId() + "/" + o.getId(), "owns");						
 				
-				QualifiedName other = findEntityOrActivity(obj);
+				QualifiedName other = findEntityOrActivity(o);
 				
-				if(other != null)
-					provStatements.put(a.getId(), factory.newWasAssociatedWith(ownership, other, agent.getId()));
+				if(other != null && provEntities.containsKey(o.getId())) {
+					// Entities are related to agents via "wasAttributedTo"
+					provStatements.put(a.getId(), factory.newWasAttributedTo(ownership, other, agent.getId()));
+				} else if(other != null && provActivities.containsKey(o.getId())) {
+					provStatements.put(a.getId(), factory.newWasAssociatedWith(ownership, other, agent.getId()));					
+				} else { 
+					log.warning("Could not find appropriate owner for other " + other + " on " + o);
+				}
 			} else { 
-				log.warning("Owner of " + obj + " not in list of converted agents."); 
+				log.warning("Owner of " + o + " not in list of converted agents."); 
 			}
 		}
-		
-		for(String key : md.keySet()) { 
-			convertedObj.getOther().add(
-				factory.newOther(BASE_NAMESPACE, key, "metadata", md.get(key), name.XSD_STRING)
+	} // End convertOwnership
+	
+	protected void convertMetadata(PLUSObject obj, HasOther convertedObj) throws PROVConversionException { 
+		Metadata md = obj.getMetadata();
+				
+		for(String key : md.keySet()) { 	
+			convertedObj.getOther().add(					
+				factory.newOther(BASE_NAMESPACE, key, "metadata", ""+md.get(key), name.XSD_STRING)
 			);
 		}
 	}
 	
-	public Other makeObjectProperty(String name, Object value) {
+	/**
+	 * Make a single object property into an "Other" statement.
+	 * @param name property name
+	 * @param value property value
+	 * @return
+	 */
+	protected Other makeObjectProperty(String name, Object value) {
 		QualifiedName nameType = this.name.XSD_STRING;		
 		
 		if(value instanceof Date) {
@@ -300,9 +332,9 @@ public class PROVConverter {
 	}
 	
 	public Agent actorToAgent(PLUSActor actor) throws PROVConversionException { 
-		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 		// TODO attributes
 		Agent a = factory.newAgent(getQualifiedName(actor), actor.getName());
+		
 		return a;
 	}
 
@@ -323,9 +355,18 @@ public class PROVConverter {
 		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + actor.getClass().getSimpleName(), actor.getId(), "actor");
 	}
 	
-	public static void main(String [] args) throws Exception { 
-		SyntheticGraphProperties props = new SyntheticGraphProperties().setConnectivity(0.5).setComponents(10).protectN(0).percentageData(0.5);
-		DAGAholic col = new DAGAholic(props);
+	public static void main(String [] args) throws Exception {
+		String oid = "urn:uuid:mitre:plus:bc0993ca-33a7-409f-b747-591b6f1b0e4e";
+				
+		ProvenanceCollection col = null;
+		
+		if(oid != null) { 
+			col = Neo4JPLUSObjectFactory.newDAG(oid, 
+				User.DEFAULT_USER_GOD, new TraversalSettings());
+		} else {
+			SyntheticGraphProperties props = new SyntheticGraphProperties().setConnectivity(0.5).setComponents(10).protectN(0).percentageData(0.5);
+			col = new DAGAholic(props);			
+		}
 		
 		Document d = new PROVConverter().provenanceCollectionToPROV(col);
 		Namespace.withThreadNamespace(d.getNamespace());
@@ -335,9 +376,10 @@ public class PROVConverter {
 	}
 	
 	public static String asString(Document d) throws JAXBException { 
+		Namespace.withThreadNamespace(d.getNamespace());
 		org.openprovenance.prov.xml.ProvSerialiser serializer = new org.openprovenance.prov.xml.ProvSerialiser();
 		StringWriter sw = new StringWriter();
 		serializer.serialiseDocument(sw, d, true);
 		return sw.toString();
 	}
-}
+} // End PROVConverter
