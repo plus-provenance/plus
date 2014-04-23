@@ -9,12 +9,14 @@ PLUSDataObject				Entity					Moreau & Groth, p. 24
 PLUSInvocation				Activity
 PLUSWorkflow				Plan					http://www.w3.org/TR/prov-dm/#concept-plan				
 PLUSWorkflow				Bundle					p. 34 "A named set of provenance descriptions, allowing provenance of prov"
+PLUSActivity 				Activity				
 CE: "owns"					wasAttributedTo			Part of the chain of responsibility.
 CE: "owns"					associatedWith			p. 24
 edge: contributed			wasDerivedFrom			http://www.w3.org/TR/prov-dm/#component2
 edge: contributed			WasRevisionOf			http://www.w3.org/TR/prov-dm/#component2
 edge: contributed			WasQuotedFrom			http://www.w3.org/TR/prov-dm/#component2
 edge: contributed			HadPrimarySource		http://www.w3.org/TR/prov-dm/#component2
+edge: marks                 wasInformedBy       R
 edge: input to				used 				R	http://www.w3.org/TR/prov-dm/#component1
 edge: generated				wasGeneratedBy		R	http://www.w3.org/TR/prov-dm/#component1
 CE: edge: triggered			wasInformedBy		R	http://www.w3.org/TR/prov-dm/#component1
