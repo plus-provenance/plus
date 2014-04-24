@@ -101,15 +101,15 @@ public class PROVConverter {
 				item = a;
 				provActivities.put(o.getId(), a); 
 			} else if(o.isWorkflow()) {
-				Entity e = workflowToPlan(o);
+				Entity e = workflowToPlan(o);				
 				item = e;
 				provEntities.put(o.getId(), e);
 			} else if(o.isDataItem()) { 
-				Entity e = dataObjectToEntity(o);
+				Entity e = dataObjectToEntity(o);				
 				item = e;
 				provEntities.put(o.getId(), e); 
 			} else if(o.isInvocation()) {
-				Activity a = invocationToActivity(o);
+				Activity a = invocationToActivity(o);				
 				item = a;
 				provActivities.put(o.getId(), a);
 			} else { 
@@ -133,6 +133,8 @@ public class PROVConverter {
 				for(String sgf : o.getSGFs()) {
 					item.getOther().add(makeObjectProperty("hasSGF", sgf));
 				}
+				
+				// System.out.println(item);
 			}
 		}
 		
@@ -281,10 +283,10 @@ public class PROVConverter {
 	protected void convertMetadata(PLUSObject obj, HasOther convertedObj) throws PROVConversionException { 
 		Metadata md = obj.getMetadata();
 				
-		for(String key : md.keySet()) { 	
-			convertedObj.getOther().add(					
-				factory.newOther(BASE_NAMESPACE, key, "metadata", ""+md.get(key), name.XSD_STRING)
-			);
+		for(String key : md.keySet()) {
+			System.out.println("METADATA: '" + key + "' '" + md.get(key) + "'");
+			Other o = factory.newOther(BASE_NAMESPACE, key, "metadata", ""+md.get(key), name.XSD_STRING);		
+			convertedObj.getOther().add(o);
 		}
 	}
 	
@@ -313,24 +315,18 @@ public class PROVConverter {
 		} else if(value instanceof Double) {
 			nameType = this.name.XSD_DOUBLE;
 		} else {
-			value = s(""+value);						
+			value = ""+value;						
 		}
 		
-		System.out.println("OBJECT PROPERTY: " + name + " " + value + " " + prefix + " " + nameType);
-		return factory.newOther(BASE_NAMESPACE, s(name), prefix, value, nameType);
+		if("npe".equals(prefix)) System.out.println("OBJECT PROPERTY: " + name + " " + value + " " + prefix + " " + nameType);
+		return factory.newOther(BASE_NAMESPACE, name, prefix, value, nameType);
 	} // End makeObjectProperty
-	
-	private String s(String v) {
-		if(v == null || "".equals(v)) return v;
 		
-		return v.replaceAll("[^A-Za-z0-9]", "_");
-	}
-	
 	public Entity workflowToPlan(PLUSObject obj) throws PROVConversionException { 		
 		if(!obj.isWorkflow()) throw new PROVConversionException("Object is not a workflow: " + obj);
 		PLUSWorkflow w = (PLUSWorkflow)obj;
 		
-		Entity e = factory.newEntity(getQualifiedName(w), s(obj.getName()));		
+		Entity e = factory.newEntity(getQualifiedName(w), obj.getName());		
 		
 		e.getOther().add(makeObjectProperty("when_start", w.getWhenStart()));
 		e.getOther().add(makeObjectProperty("when_end", w.getWhenEnd()));
@@ -341,7 +337,7 @@ public class PROVConverter {
 	public Activity activityToActivity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isActivity()) throw new PROVConversionException("Object is not an activity: " + obj);
 		PLUSActivity act = (PLUSActivity)obj;
-		Activity a = factory.newActivity(getQualifiedName(act), s(obj.getName()));
+		Activity a = factory.newActivity(getQualifiedName(act), obj.getName());
 		
 		a.getOther().add(makeObjectProperty("inputs", act.getInputs()));
 		a.getOther().add(makeObjectProperty("outputs", act.getOutputs()));
@@ -352,14 +348,14 @@ public class PROVConverter {
 	public Activity invocationToActivity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isInvocation()) throw new PROVConversionException("Object is not an invocation: " + obj);
 		PLUSInvocation inv = (PLUSInvocation)obj;
-		Activity a = factory.newActivity(getQualifiedName(inv), s(obj.getName()));		
+		Activity a = factory.newActivity(getQualifiedName(inv), obj.getName());		
 		
 		return a;
 	}
 	
 	public Entity dataObjectToEntity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isDataItem()) throw new PROVConversionException("Object is not a data item: " + obj);		
-		Entity e = factory.newEntity(getQualifiedName((PLUSDataObject)obj), s(obj.getName()));
+		Entity e = factory.newEntity(getQualifiedName((PLUSDataObject)obj), obj.getName());
 		// factory.addType(e, DATA_TYPE, name.XSD_QNAME);
 		
 		if(obj instanceof PLUSFile) { 
@@ -367,8 +363,7 @@ public class PROVConverter {
 			e.getOther().add(makeObjectProperty("path", f.getFile().getAbsolutePath()));
 		} else if(obj instanceof PLUSURL) { 
 			PLUSURL u = (PLUSURL) obj;
-			try {
-				System.out.println("URL " + u.getURL());
+			try {				
 				e.getOther().add(makeObjectProperty("url", u.getURL()));
 			} catch (MalformedURLException e1) {
 				log.severe(e1.getMessage());
@@ -376,26 +371,27 @@ public class PROVConverter {
 		}
 		
 		return e;
-	}
+	} // End dataObjectToEntity
 	
 	public Agent actorToAgent(PLUSActor actor) throws PROVConversionException { 
 		// TODO attributes
-		Agent a = factory.newAgent(getQualifiedName(actor), s(actor.getName()));
-		
+		Agent a = factory.newAgent(getQualifiedName(actor), actor.getName());
 		return a;
 	}
 
 	public QualifiedName getQualifiedName(PLUSEdge e) { 
-		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + e.getClass().getSimpleName(), 
-				e.getFrom().getId() + "/" + e.getTo().getId(), 
+		QualifiedName qn = new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + e.getClass().getSimpleName(), 
+				e.getFrom().getId() + ":" + e.getTo().getId(), 
 				e.getType().replaceAll(" ", "_"));
+		return qn;
 	}
 	
 	public QualifiedName getQualifiedName(PLUSObject obj) { 
 		String className = obj.getClass().getSimpleName();
-		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + className, 
+		QualifiedName qn = new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + className, 
 				obj.getId(), 
 				className.replaceAll("PLUS", "").toLowerCase());
+		return qn;
 	}
 				
 	public QualifiedName getQualifiedName(PLUSActor actor) { 
@@ -403,8 +399,8 @@ public class PROVConverter {
 	}
 	
 	public static void main(String [] args) throws Exception {
-		String oid = "urn:uuid:mitre:plus:bc0993ca-33a7-409f-b747-591b6f1b0e4e";
-				
+		String oid = "urn:uuid:mitre:plus:bf894a51-3f5e-4134-ba62-bff5b24cd19a";
+		
 		ProvenanceCollection col = null;
 		
 		if(oid != null) { 
