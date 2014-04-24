@@ -222,7 +222,7 @@
                             <outputTemplate>${basedir}/src/main/resources/apidocs.template</outputTemplate>                                     
                             <outputPath>${basedir}/src/main/webapp/apidocs.html</outputPath>
                             <swaggerDirectory>src/main/webapp/api-docs</swaggerDirectory>
-                            <!--useOutputFlatStructure>false</useOutputFlatStructure-->
+                            <useOutputFlatStructure>true</useOutputFlatStructure>
                             <mustacheFileRoot>${basedir}/src/main/resources/</mustacheFileRoot>
                         </apiSource>
                     </apiSources>
