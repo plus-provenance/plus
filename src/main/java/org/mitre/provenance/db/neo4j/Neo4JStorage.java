@@ -1116,8 +1116,9 @@ public class Neo4JStorage {
 	} // End delete
 	
 	public static boolean delete(PLUSEdge e) throws PLUSException {
-		System.out.println("DELETING EDGE " + e);
-
+		System.out.println("DELETING EDGE " + e);		
+		if(db == null) initialize(); 
+		
 		if(e.getFrom() == null) throw new PLUSException("Missing FROM object");
 		if(e.getTo() == null) throw new PLUSException("Missing TO object"); 
 		
@@ -1191,6 +1192,7 @@ public class Neo4JStorage {
 	}
 	
 	public static List<PLUSWorkflow> listWorkflows(User user, int maxReturn) throws PLUSException {
+		if(db == null) initialize(); 
 		if(maxReturn <= 0 || maxReturn > 1000) maxReturn = 100;
 		
 		String query = "start n=node:node_auto_index(type=\"" + PLUSWorkflow.PLUS_TYPE_WORKFLOW + "\") " + 
