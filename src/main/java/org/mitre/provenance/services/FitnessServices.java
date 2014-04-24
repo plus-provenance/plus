@@ -36,6 +36,7 @@ import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.tools.PLUSUtils;
 import org.mitre.provenance.user.User;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -44,6 +45,12 @@ import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.traversal.TraversalDescription;
+
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * Services which drive the "fitness widget" functionality.
@@ -57,12 +64,18 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
  * @author david
  */
 @Path("/fitness")
+@Api(value = "/fitness", description = "Provenance Fitness Assessments")
 public class FitnessServices {
 	protected static Logger log = Logger.getLogger(FitnessServices.class.getName());
 	
 	@GET
 	@Path("/{oid:.*}/timelag")
-	public Response timeLag(@Context HttpServletRequest req, @PathParam("oid") String oid) throws PLUSException {
+	@ApiOperation(value = "Assess the time lag (oldest to newest) in a graph", notes="")
+	@ApiResponses(value = {
+	  @ApiResponse(code = 404, message="No such object"),	  
+	})				
+	public Response timeLag(@Context HttpServletRequest req, 
+			@ApiParam(value="Object ID as starting point", required=true) @PathParam("oid") String oid) throws PLUSException {
 		Node n = Neo4JStorage.oidExists(oid);
 		if(n == null) return ServiceUtility.NOT_FOUND("No such object");
 					
@@ -123,7 +136,7 @@ public class FitnessServices {
 	} // End timeLag
 	
 	@GET
-	@Path("/{oid:.*}/termFinder")
+	@Path("/{oid:.*}/termFinder")	
 	public Response termFinder(@Context HttpServletRequest req, @PathParam("oid") String oid, @QueryParam("term") String term) throws PLUSException {
 		if(term == null || "".equals(term) || "".equals(term.trim()))
 			return ServiceUtility.BAD_REQUEST("Missing term");

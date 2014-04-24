@@ -45,11 +45,18 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
+
 /**
  * Object services encompass RESTful services for access to individual provenance objects.
- * @author david
+ * @author moxious
  */
 @Path("/object")
+@Api(value = "/object", description = "Provenance Objects: data, invocations, workflows, activities, etc.")
 public class ObjectServices {
 	protected static Logger log = Logger.getLogger(ObjectServices.class.getName());
 	
@@ -59,14 +66,11 @@ public class ObjectServices {
 	@Path("/search")
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Search for provenance objects with a given search term.
-	 * @param searchTerm 
-	 * @return a D3 JSON formatted provenance collection containing only nodes that match the search term.
-	 * @see DAGServices.search
-	 * @throws PLUSException
-	 */
-	public Response search(@FormParam("searchTerm") String searchTerm) {
+	@ApiOperation(value = "Search for provenance objects by a given search term", notes="", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message="Error processing search")	  
+	})			
+	public Response search(@ApiParam(value="the search term to use", required=true) @FormParam("searchTerm") String searchTerm) {
 		log.info("SEARCH POST '" + searchTerm + "'");
 		try { 			
 			//TODO : user
@@ -78,10 +82,14 @@ public class ObjectServices {
 		}
 	} // End search
 	
-	@Path("/search/{term:.*}")
+	@Path("/search/{term:.*}")	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response searchTerm(@PathParam("term") String term) { 
+	@ApiOperation(value = "Search for provenance objects by a given search term", notes="", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message="Error processing search")	  
+	})			
+	public Response searchTerm(@ApiParam(value = "The ID of the actor", required=true) @PathParam("term") String term) { 
 		log.info("SEARCH GET '" + term + "'");
 		try { 
 			//TODO
@@ -96,6 +104,13 @@ public class ObjectServices {
 	@Path("/taint/{oid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Get a list of taint nodes that are upstream influencers for a given OID", 
+				  notes="Returns only nodes that represent taint (no edges).  It is assumed that these are non-local.", 
+				  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 404, message="Object not found"),
+	  @ApiResponse(code = 400, message="Error processing request")	  
+	})				
 	/**
 	 * Get a list of taint nodes that are upstream influencers for a given OID.
 	 * @param oid the OID you want to know the taints for
@@ -103,7 +118,8 @@ public class ObjectServices {
 	 * that these are non-local.
 	 * @throws PLUSException
 	 */
-	public Response getTaint(@Context HttpServletRequest req, @PathParam("oid") String oid) {
+	public Response getTaint(@Context HttpServletRequest req, 
+			@ApiParam(value = "Object OID", required=true) @PathParam("oid") String oid) {
 		// log.info("GET TAINT " + oid);
 		
 		User user = ServiceUtility.getUser(req);
@@ -122,16 +138,18 @@ public class ObjectServices {
 	
 	@Path("/taint/{oid:.*}") 
 	@POST
-	//@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Marks an item as tainted.
-	 * @param oid the OID as part of the URL that will be marked.
-	 * @param req 
-	 * @param queryParams a parameter map; must include a parameter called "reason" with a string description of why the item is tainted.
-	 * @return a D3 JSON formatted provenance collection, containing only one node corresponding to the new taint object.
-	 */
-	public Response setTaint(@PathParam("oid") String oid, @FormParam("reason") String reason, @Context HttpServletRequest req, MultivaluedMap<String, String> queryParams) {
+	@ApiOperation(value = "Mark an item as tainted", 
+	  notes="This modifies the graph to assert that a given item is tainted", 
+	  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 404, message="Object not found"),
+			@ApiResponse(code = 400, message="Error processing request")	  
+	})				
+	public Response setTaint(@ApiParam(value = "Object OID", required=true) @PathParam("oid") String oid, 
+			@ApiParam(value = "Description of reason for taint", required=true) @FormParam("reason") String reason, 
+			@Context HttpServletRequest req, 
+			MultivaluedMap<String, String> queryParams) {
 		User user = ServiceUtility.getUser(req);
 
 		// String reason = queryParams.getFirst("reason");
@@ -160,7 +178,15 @@ public class ObjectServices {
 	@Path("/taint/{oid:.*}") 
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response removeTaint(@Context HttpServletRequest req, @PathParam("oid") String oid) {
+	@ApiOperation(value="Remove taint marking from an object.", 
+	  notes="This modifies the graph to remove the assertion that a given item is tainted", 
+	  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 404, message="Object not found"),
+			@ApiResponse(code = 400, message="Error processing request or no oid provided")	  
+	})					
+	public Response removeTaint(@Context HttpServletRequest req, 
+			@ApiParam(value = "Object OID", required=true) @PathParam("oid") String oid) {
 		User user = ServiceUtility.getUser(req);
 
 		// log.info("REMOVE TAINT " + oid);
@@ -190,12 +216,15 @@ public class ObjectServices {
 	@Path("/edges/{oid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Get the set of edges associated with a given OID
-	 * @param oid
-	 * @return
-	 */
-	public Response getEdges(@Context HttpServletRequest req, @PathParam("oid") String oid) {
+	@ApiOperation(value="Get the set of edges associated with an object", 
+	  notes="Returns a collection of edges incident to an object.", 
+	  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 404, message="Object not found"),
+			@ApiResponse(code = 400, message="Error processing request or no oid provided")	  
+	})					
+	public Response getEdges(@Context HttpServletRequest req, 
+			@ApiParam(value = "Object OID", required=true) @PathParam("oid") String oid) {
 		// log.info("EDGES " + oid);
 		try { 
 			ArrayList<String>oids = new ArrayList<String>();
@@ -216,7 +245,15 @@ public class ObjectServices {
 	@Path("/metadata/{field:.*}/{value:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getObjectBySingleMetadataField(@Context HttpServletRequest req, @PathParam("field") String field, @PathParam("value") String value) {
+	@ApiOperation(value="Get objects with a particular metadata field value", 
+	  notes="Returns a collection of objects with the specified metadata field name and value.", 
+	  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message="Error processing request or no invalid fields provided")	  
+	})						
+	public Response getObjectBySingleMetadataField(@Context HttpServletRequest req, 
+			@ApiParam(value="Metadata field name", required=true) @PathParam("field") String field, 
+			@ApiParam(value="Metadata field value", required=true) @PathParam("value") String value) {
 		if(field == null || "".equals(field) || field.length() > 128)
 			return ServiceUtility.BAD_REQUEST("Invalid field specified.");
 		if(value == null || "".equals(value) || value.length() > 256)
@@ -235,13 +272,14 @@ public class ObjectServices {
 	@Path("/npid/{npid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Get a list of provenance objects by their available Non-Provenance IDs, if any.
-	 * @param npid the NPID being sought
-	 * @return a D3 JSON formatted list of nodes (no edges) where the provenance object in question is
-	 * linked to the NPID specified.
-	 */
-	public Response getObjectByNPID(@Context HttpServletRequest req, @PathParam("npid") String npid) {
+	@ApiOperation(value="Get a list of provenance objects by their available non-provenance IDs, if any", 
+	  notes="Returns a collection of objects", 
+	  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message="Error processing request or no invalid fields provided")	  
+	})							
+	public Response getObjectByNPID(@Context HttpServletRequest req, 
+			@ApiParam(value = "Non-provenance ID", required=true) @PathParam("npid") String npid) {
 		// log.info("OBJECT BY NPID " + npid);
 		if(npid == null || "".equals(npid)) return ServiceUtility.BAD_REQUEST("Must specify npid");
 		
@@ -280,12 +318,15 @@ public class ObjectServices {
 	@Path("/{oid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Get an individual provenance object.
-	 * @param oid the unique identifier of the object
-	 * @return a D3 JSON formatted JSON object, containing a single node.
-	 */
-	public Response getObject(@Context HttpServletRequest req, @PathParam("oid") String oid) {
+	@ApiOperation(value="Get an individual provenance object", 
+	  notes="Returns a collection containing one object", 
+	  response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message="Error processing request or invalid fields provided"),	  
+			@ApiResponse(code = 404, message="No such object")
+	})								
+	public Response getObject(@Context HttpServletRequest req, 
+			@ApiParam(value = "Object ID", required=true) @PathParam("oid") String oid) {
 		// log.info("GET OBJECT " + oid);
 		if(oid == null || "".equals(oid)) return ServiceUtility.BAD_REQUEST("Must specify oid");
 		

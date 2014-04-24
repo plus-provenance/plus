@@ -44,12 +44,18 @@ import com.sun.syndication.feed.synd.SyndEntry;
 import com.sun.syndication.feed.synd.SyndFeed;
 import com.sun.syndication.feed.synd.SyndFeedImpl;
 import com.sun.syndication.io.FeedException;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * Services in this class produce RSS/XML and JSON feeds of the latest objects reported to PLUS in various categories.
- * @author david
+ * @author moxious
  */
 @Path("/feeds")
+@Api(value = "/feeds", description = "Feeds of latest reported provenance information")
 public class Feeds {
 	protected static final Logger log = Logger.getLogger(Feeds.class.getName());
 	
@@ -70,7 +76,14 @@ public class Feeds {
 	@Path("/hashedContent")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response hashedContent(@Context HttpServletRequest req, @DefaultValue("10") @QueryParam("n") int maxItems) {
+	@ApiOperation(value = "Get latest hashed content", notes="Content identified by MD5, SHA hashes", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message = "Error loading content"),	 
+	  @ApiResponse(code = 400, message = "Bad n value"),
+	})		
+	public Response hashedContent(@Context HttpServletRequest req,
+			@ApiParam(value = "Maximum number of items to return", required = false)
+			@DefaultValue("10") @QueryParam("n") int maxItems) {
 		if(maxItems <= 0 || maxItems > maxResults) return ServiceUtility.BAD_REQUEST("Bad n value");
 
 		String propName = Neo4JStorage.getMetadataPropertyName(Metadata.CONTENT_HASH_SHA_256);
@@ -89,17 +102,20 @@ public class Feeds {
 		}
 	}
 	
-	/**
-	 * Connected data items are those with both incoming and outgoing provenance links.  This function returns the latest connected data
-	 * elements reported to the database.	
-	 * @param req
-	 * @param maxItems the total number of items to return
-	 * @return D3-JSON formatted response.
-	 */
 	@Path("/connectedData")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response connectedData(@Context HttpServletRequest req, @DefaultValue("10") @QueryParam("n") int maxItems) {
+	@ApiOperation(value = "Get latest connected data", 
+	              notes="Connected data are data items with both incoming and outgoing provenance links.", 
+	              response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message = "Error loading content"),	 
+	  @ApiResponse(code = 400, message = "Bad n value"),
+	})			
+	public Response connectedData(@Context HttpServletRequest req, 
+			@ApiParam(value = "Maximum number of items to return", required = false)
+			@DefaultValue("10") @QueryParam("n") int maxItems) {
+		
 		if(maxItems <= 0 || maxItems > maxResults) return ServiceUtility.BAD_REQUEST("Bad n value");
 		
 		String query = "match (a:Provenance)-->(n:Provenance)-->(b:Provenance) " + 
@@ -119,7 +135,17 @@ public class Feeds {
 	@Path("/externalIdentifiers")
 	@GET
 	@Produces({"application/rss+xml", MediaType.APPLICATION_JSON})
-	public Response externalIdentifiers(@Context HttpServletRequest req, @DefaultValue("30") @QueryParam("n") int maxItems,
+	@ApiOperation(value = "Get latest external identifiers (non-provenance IDs)", 
+    notes="Any non-provenance identifiers associated with reported data", 
+    response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message = "Error loading content"),	 
+			@ApiResponse(code = 400, message = "Bad n value"),
+	})				
+	public Response externalIdentifiers(@Context HttpServletRequest req, 
+			@ApiParam(value = "Maximum number of items to return", required = false)
+			@DefaultValue("30") @QueryParam("n") int maxItems,
+			@ApiParam(value = "Format of response: rdf or json", required = false)
 			@DefaultValue("rss") @QueryParam("format") String format) throws PLUSException, FeedException {
 		if(maxItems < 0) return ServiceUtility.BAD_REQUEST("Bad n value");
 		if(maxItems > maxResults) maxItems = maxResults;
@@ -158,7 +184,15 @@ public class Feeds {
 	@Path("/objects/search/{query}")
 	@GET
 	@Produces("application/rss+xml")
-	public Response objectsSearch(@Context HttpServletRequest req, @PathParam("query") String query) throws PLUSException, FeedException { 
+	@ApiOperation(value = "Search for provenance objects by name or description", 
+    notes="Simple keyword or phrase", 
+    response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message = "Error loading content"),	 
+	})					
+	public Response objectsSearch(@Context HttpServletRequest req, 
+			@ApiParam(value = "user-supplied query string", required = true)
+			@PathParam("query") String query) throws PLUSException, FeedException { 
 		String title = "Trusting Composed Information: Federated Search Results";
 		String description = "Feed of objects containing the keyword " + query;	
 		// Set up the syndicated feed
@@ -187,7 +221,17 @@ public class Feeds {
 	@Path("/objects/owners/")
 	@GET
 	@Produces({"application/rss+xml", MediaType.APPLICATION_JSON})
-	public Response owners(@Context HttpServletRequest req, @DefaultValue("rss") @QueryParam("format") String format, @QueryParam("n") int maxItems) throws FeedException, PLUSException { 
+	@ApiOperation(value = "Get latest owners of provenance objects", 
+                  notes=" ", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message = "Error loading content"),	 
+			@ApiResponse(code = 400, message = "Bad n value"),
+	})						
+	public Response owners(@Context HttpServletRequest req, 
+			@ApiParam(value = "representation format; json or rss", required = true)
+			@DefaultValue("rss") @QueryParam("format") String format, 
+			@ApiParam(value = "total items to return", required = true)
+			@QueryParam("n") int maxItems) throws FeedException, PLUSException { 
 		if(!"rss".equals(format) && !"json".equals(format))
 			return ServiceUtility.BAD_REQUEST("Illegal format '" + format + "' specified.");
 		
@@ -233,8 +277,16 @@ public class Feeds {
 	@Path("/objects/owner/{owner}")
 	@GET
 	@Produces({"application/rss+xml", MediaType.APPLICATION_JSON})
-	public Response objectsOwner(@Context HttpServletRequest req, @PathParam("owner") String ownerID,
-			                     @DefaultValue("rss") @QueryParam("format") String format) throws FeedException, PLUSException { 
+	@ApiOperation(value = "Get objects owned by a particular actor", notes=" ", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message = "Error loading content"),	 
+			@ApiResponse(code = 400, message = "Bad n value"),
+	})
+	public Response objectsOwner(@Context HttpServletRequest req, 
+			@ApiParam(value = "The actor ID of the owner whose objects you want", required=true)
+			@PathParam("owner") String ownerID,
+			@ApiParam(value = "format to return; json or rss", required=true)
+			@DefaultValue("rss") @QueryParam("format") String format) throws FeedException, PLUSException { 
 		PLUSActor owner = null;
 
 		if(!"rss".equals(format) && !"json".equals(format))
@@ -282,7 +334,12 @@ public class Feeds {
 	@Path("/objects/latest")
 	@GET
 	@Produces({"application/rss+xml", MediaType.APPLICATION_JSON})
+	@ApiOperation(value = "Get latest reported objects", notes=" ", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+			@ApiResponse(code = 400, message = "Error loading content"),	 			
+	})	
 	public Response latest(@Context HttpServletRequest req, 
+						   @ApiParam(value = "format of response; rss or json", required=true)
 			               @DefaultValue("rss") @QueryParam("format") String format) throws PLUSException, FeedException {
 		if(!"rss".equals(format) && !"json".equals(format)) 
 			return ServiceUtility.BAD_REQUEST("Invalid format");
@@ -318,4 +375,4 @@ public class Feeds {
 			return ServiceUtility.OK(feed);
 		} // End else
 	}
-}
+} // End Feeds

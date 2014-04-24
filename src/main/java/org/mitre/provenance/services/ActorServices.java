@@ -28,18 +28,31 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSActor;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.neo4j.graphdb.Node;
+
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * Actor services exposes RESTful services that allow users to interact with actors in the PLUS system.
  * @author dmallen
  */
 @Path("/actor")
+@Api(value = "/actor", description = "Actors who are involved in provenance")
 public class ActorServices {
 	@Path("/{aid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getActor(@PathParam("aid") String actorID) { 
+	@ApiOperation(value = "Get information about an actor", notes="", response=HashMap.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 404, message = "Actor doesn't exist or can't be found")	  
+	})			
+	public Response getActor(
+			@ApiParam(value = "The ID of the actor", required=true) @PathParam("aid") String actorID) { 
 		Map<String,Object> map = new HashMap<String,Object>();		
 		try { 
 			Node n = Neo4JStorage.actorExists(actorID);		

@@ -53,6 +53,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponses;
+import com.wordnik.swagger.annotations.ApiResponse;
 
 /**
  * DAGServices encompassess RESTful services that operate over provenance "DAGs" (directed acyclic graphs).
@@ -71,21 +75,31 @@ public class DAGServices {
 	@Path("/{oid:.*}")	
 	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	@GET
-	/**
-	 * Gets a provenance graph centered at a particular point, in D3 JSON format.
-	 * @param oid the OID for the starting point of the graph
-	 * @return a D3 JSON string, or 404 if not found, or internal server error on PLUSException 
-	 */
+	@ApiOperation(value = "Get a provenance graph", notes = "More notes about this method", response = ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message = "Error loading graph"),
+	  @ApiResponse(code = 404, message = "Base object ID not found") 
+	})	
 	public Response getGraph(@Context HttpServletRequest req, 
+			@ApiParam(value = "The ID of the starting point from which to discover the graph", required = true)
 			@PathParam("oid") String oid, 
+			@ApiParam(value = "Maximum number of nodes to return", required = false)
 			@DefaultValue("50") @QueryParam("n") int maxNodes,
+			@ApiParam(value = "Maximum number of hops from starting point to traverse", required = false)
 			@DefaultValue("8") @QueryParam("maxHops") int maxHops,
+			@ApiParam(value = "Whether or not to include nodes in result", required = false)
 			@DefaultValue("true") @QueryParam("includeNodes") boolean includeNodes,
-			@DefaultValue("true") @QueryParam("includeEdges") boolean includeEdges, 
+			@ApiParam(value = "Whether or not to include edges in result", required = false)
+			@DefaultValue("true") @QueryParam("includeEdges") boolean includeEdges,
+			@ApiParam(value = "Whether or not to include non-provenance edges in result", required = false)
 			@DefaultValue("true") @QueryParam("includeNPEs") boolean includeNPEs,
+			@ApiParam(value = "Whether or not to follow non-provenance IDs in traversal", required = false)
 			@DefaultValue("true") @QueryParam("followNPIDs") boolean followNPIDs,
+			@ApiParam(value = "Return results forward of the starting point", required = false)
 			@DefaultValue("true") @QueryParam("forward") boolean forward,
+			@ApiParam(value = "Return results backward of the starting point", required = false)
 			@DefaultValue("true") @QueryParam("backward") boolean backward,
+			@ApiParam(value = "If true, traverse via BFS.  If false, use DFS", required = false)
 			@DefaultValue("true") @QueryParam("breadthFirst") boolean breadthFirst) {				
 
 		TraversalSettings ts = new TraversalSettings();
@@ -138,6 +152,10 @@ public class DAGServices {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/new")
+	@ApiOperation(value = "Report a new provenance graph", notes = "Write the contents of new provenance to the database", response = ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message = "Invalid data provided")	  
+	})
 	/**
 	 * Creates a new graph in the provenance store.  The parameters posted must include an item called "provenance" whose value
 	 * is a D3 JSON object corresponding to the provenance graph that will be created.
@@ -148,7 +166,10 @@ public class DAGServices {
 	 * @return a D3 JSON graph of the provenance that was stored, with new IDs.
 	 * @throws JsonFormatException
 	 */
-	public Response newGraph(@Context HttpServletRequest req, @FormParam("provenance") String provenance, MultivaluedMap<String, String> queryParams) throws JsonFormatException {
+	public Response newGraph(@Context HttpServletRequest req,
+			@ApiParam(value = "D3-JSON formatted provenance graph", required = true)
+			@FormParam("provenance") String provenance, 
+			MultivaluedMap<String, String> queryParams) throws JsonFormatException {
 		//String jsonStr = queryParams.getFirst("provenance");
 		User reportingUser = ServiceUtility.getUser(req);		
 		log.info("NEW GRAPH msg len " + (provenance == null ? "null" : provenance.length()) + " REPORTING USER " + reportingUser);
@@ -205,7 +226,7 @@ public class DAGServices {
 	 * @return a D3 JSON formatted provenance collection
 	 * @deprecated
 	 */
-	public Response search(@FormParam("query") String cypherQuery) {
+	public Response search(@ApiParam(value = "A cypher query", required=true) @FormParam("query") String cypherQuery) {
 		int limit = 100;		
 
 		// log.info("SEARCH " + cypherQuery);
@@ -312,78 +333,6 @@ public class DAGServices {
 		return null;
 	} // End formatLimitedSearchResult
 	
-	/**
-	 * This method resets all of the unique identifiers.  We can't trust identifiers coming from
-	 * external clients to be truly globally unique, so we re-generate our own.  This means we have to 
-	 * keep track of references to other nodes within the edge table.
-	 * 
-	 * This method also REMOVES dangling edges from the store.
-	 * @param col
-	 * @return
-	 *
-	protected ProvenanceCollection resetIDs(ProvenanceCollection col) throws JsonFormatException { 
-		HashMap<String,String> idMapping = new HashMap<String,String>();
-		
-		// Generate new IDs for all objects the user is reporting; store the mapping. 
-		for(PLUSObject o : col.getNodes().values()) { 
-			String id = o.getId();
-			String newID = PLUSUtils.generateID();
-			
-			if(idMapping.containsKey(id)) 
-				throw new JsonFormatException("The converted provenance collection contains a duplicate node entry under " + id);
-			
-			o.setId(newID);
-			idMapping.put(id, newID);
-		}
-		
-		// Re-write each of the user-reported edges, to refer to the nodes we just re-ID'd. 
-		for(PLUSEdge e : col.getEdges().values()) { 
-			String oldFrom = e.getFrom();
-			String oldTo = e.getTo();
-			
-			String newFrom = idMapping.get(oldFrom);
-			String newTo = idMapping.get(oldTo);
-			
-			if(newFrom != null) 
-				e.setFrom(newFrom);
-			else { 
-				//In some cases, the user will refer to a node that isn't in the set of what they're logging,
-				//but which *does* exist.  That's OK -- just keep the original ID they reported.   If the ID they're
-				//reporting references nothing, skip the edge.
-				//
-				if(Neo4JStorage.oidExists(oldFrom) == null) { 
-					log.warning("Can't log danging edge " + e + " with non-existant node " + oldFrom);
-					continue;
-				} else newFrom = oldFrom;
-			}
-			
-			if(newTo != null) 
-				e.setTo(newTo);
-			else { 
-				if(Neo4JStorage.oidExists(oldTo) == null) { 
-					log.warning("Can't log danging edge " + e + " with non-existant node " + oldTo);
-					continue;
-				} else newTo = oldTo;				
-			}
-		} // End for
-		
-		for(NonProvenanceEdge npe : col.getNonProvenanceEdges().values()) { 
-			String old = npe.getIncidentOID();
-			String newOID = idMapping.get(old);
-			
-			if(newOID == null) {
-				if(Neo4JStorage.oidExists(old) != null) newOID = old;
-				else log.warning("Dangling NPE on " + npe);
-			} else { 
-				if(PLUSUtils.isPLUSOID(npe.getFrom())) npe.setFrom(newOID);
-				else npe.setTo(newOID);
-			}
-		} // End for
-		
-		return col;
-	} // End resetIDs
-	*/
-
 	/**
 	 * Tag each of the objects in a provenance collection with information about the user that
 	 * posted them.

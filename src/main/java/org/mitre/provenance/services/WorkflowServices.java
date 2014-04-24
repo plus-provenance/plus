@@ -35,22 +35,31 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.User;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
+
 /**
  * Workflow services encompass RESTful services which provide access to workflows and their members.
  * @author david
  */
 @Path("/workflow/")
+@Api(value = "/workflow", description = "Provenance Workflows")
 public class WorkflowServices {
 
 	@Path("/{oid:.*}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Returns the members of a particular workflow
-	 * @param oid the oid of the workflow node in question.
-	 * @return a D3 JSON formatted provenance collection
-	 */
-	public Response getWorkflowMembers(@Context HttpServletRequest req, @PathParam("oid") String oid, @DefaultValue("50") @QueryParam("n") int n) {
+	@ApiOperation(value = "Locate the members of a given workflow", notes="", response=ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 404, message="No such object"),
+	  @ApiResponse(code = 400, message="Object isn't a workflow")	  
+	})			
+	public Response getWorkflowMembers(@Context HttpServletRequest req, 
+			@ApiParam(value="Workflow object ID", required=true) @PathParam("oid") String oid, 
+			@ApiParam(value="maximum items to return", required=true) @DefaultValue("50") @QueryParam("n") int n) {
 		if(oid == null || "".equals(oid)) return ServiceUtility.BAD_REQUEST("Must specify an oid");
 		
 		if(n > 50 || n <= 0) n = 50;
@@ -74,12 +83,12 @@ public class WorkflowServices {
 	@Path("/latest")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	/**
-	 * Gets the list of the latest workflows reported
-	 * @param n return the most recent n items
-	 * @return D3 JSON formatted collection of objects.
-	 */
-	public Response getLatestWorkflows(@Context HttpServletRequest req, @DefaultValue("50") @QueryParam("n") int n) { 
+	@ApiOperation(value = "Get latest reported workflows", notes="", response=ProvenanceCollection.class)
+	@ApiResponses(value = {	  
+	  @ApiResponse(code = 400, message="Bad n value")	  
+	})			
+	public Response getLatestWorkflows(@Context HttpServletRequest req, 
+			@ApiParam(value="Maximum objects to return", required=true) @DefaultValue("50") @QueryParam("n") int n) { 
 		try { 			
 			if(n > 50 || n <= 0) n = 50;
 			
