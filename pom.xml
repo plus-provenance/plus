@@ -207,6 +207,35 @@
 					</programs>
 				</configuration>
 			</plugin>
+			
+			<!-- Swagger plugin generates documentation at compile time for RESTful APIs -->
+            <plugin>
+                <groupId>com.github.kongchen</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <version>2.0</version>
+                <configuration>
+                    <apiSources>
+                        <apiSource>
+                            <locations>org.mitre.provenance.services;</locations>
+                            <apiVersion>v1</apiVersion>
+                            <basePath>http://localhost:8080/plus/api</basePath>
+                            <outputTemplate>${basedir}/src/main/resources/apidocs.template</outputTemplate>                                     
+                            <outputPath>${basedir}/src/main/webapp/apidocs.html</outputPath>
+                            <swaggerDirectory>src/main/webapp/api-docs</swaggerDirectory>
+                            <!--useOutputFlatStructure>false</useOutputFlatStructure-->
+                            <mustacheFileRoot>${basedir}/src/main/resources/</mustacheFileRoot>
+                        </apiSource>
+                    </apiSources>
+                </configuration>
+                <executions>                
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>			
 		</plugins>
 	</build>
 
