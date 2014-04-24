@@ -14,16 +14,19 @@
  */
 package org.mitre.provenance.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.mitre.provenance.Metadata;
-import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSString;
+import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
 import org.mitre.provenance.plusobject.json.ProvenanceCollectionDeserializer;
@@ -56,9 +59,13 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String NEW_GRAPH_PATH = "/plus/api/graph/new";	
 	protected static final String GET_GRAPH_PATH = "/plus/api/graph/";
 	protected static final String GET_LATEST_PATH = "/plus/api/feeds/objects/latest?format=json";
+	protected static final String LIST_WORKFLOWS_PATH = "/plus/api/workflows/latest?format=json";
+	protected static final String GET_WORKFLOW_MEMBERS_PATH = "/plus/api/workflow/";
+	protected static final String GET_SINGLE_NODE_PATH = "/plus/api/object/";
+	
 	protected Client client = null;
 	
-	public RESTProvenanceClient(String host) throws PLUSException {
+	public RESTProvenanceClient(String host) throws ProvenanceClientException {
 		this(host, "80");
 	}
 	
@@ -68,19 +75,19 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 * @param port the port the provenance service is running on.
 	 * @throws when parameters are invalid
 	 */
-	public RESTProvenanceClient(String host, String port) throws PLUSException { 
+	public RESTProvenanceClient(String host, String port) throws ProvenanceClientException { 
 		this.host = host;
 		this.port = port;
 		
-		if(host == null || "".equals(host)) throw new PLUSException("No host specified.");
-		if(port == null || "".equals(port)) throw new PLUSException("No port specified.");
+		if(host == null || "".equals(host)) throw new ProvenanceClientException("No host specified.");
+		if(port == null || "".equals(port)) throw new ProvenanceClientException("No port specified.");
 		
 		int i = 0;
 		try { i = Integer.parseInt(port); } catch(Exception exc) { 
-			throw new PLUSException("Invalid port: " + port); 
+			throw new ProvenanceClientException("Invalid port: " + port); 
 		}
 		
-		if(i < 1 || i > 65535) throw new PLUSException("Invalid port number: " + i); 
+		if(i < 1 || i > 65535) throw new ProvenanceClientException("Invalid port number: " + i); 
 		
 		client = Client.create(); 
 		client.getProperties().put(ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
@@ -97,9 +104,9 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 * provenance collection to the remote service's store.
 	 * @param col the collection to report
 	 * @return true if successful, false if not successful.
-	 * @throws PLUSException
+	 * @throws ProvenanceClientException
 	 */
-	public boolean report(ProvenanceCollection col) throws PLUSException {
+	public boolean report(ProvenanceCollection col) throws ProvenanceClientException {
 		WebResource r = client.resource(buildURL(NEW_GRAPH_PATH));
 
 		MultivaluedMap<String,String> formData = new MultivaluedMapImpl();
@@ -121,11 +128,11 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		return true;
 	}
 	
-	public ProvenanceCollection getGraph(String oid) throws PLUSException {
+	public ProvenanceCollection getGraph(String oid) throws ProvenanceClientException {
 		return getGraph(oid, new TraversalSettings());
 	}
 	
-	public ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws PLUSException {
+	public ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException {
 		WebResource r = client.resource(buildURL(GET_GRAPH_PATH + oid));
 		
 		MultivaluedMap<String,String> params = desc.asMultivaluedMap();
@@ -138,7 +145,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		return provenanceCollectionFromResponse(response);
 	} // End getGraph
 	
-	public ProvenanceCollection latest() throws PLUSException {
+	public ProvenanceCollection latest() throws ProvenanceClientException {
 		WebResource r = client.resource(buildURL(GET_LATEST_PATH));
 		
 		String response = r.accept(MediaType.APPLICATION_JSON_TYPE)
@@ -199,7 +206,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		System.out.println("Reporter finished and exiting.");
 	}
 	
-	public ProvenanceCollection getActors(int max) throws PLUSException {
+	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
 		WebResource r = client.resource(buildURL(GET_ACTORS_PATH) + "&n=" + max);				
 		
 		String response = r
@@ -211,7 +218,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	} // End getActors
 	
 	public ProvenanceCollection search(String searchTerm, int max)
-			throws PLUSException {		
+			throws ProvenanceClientException {		
 		WebResource r = client.resource(buildURL(SEARCH_PATH) + "&n=" + max);
 		
 		String response = r
@@ -223,8 +230,8 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	}
 	
 	public ProvenanceCollection search(Metadata parameters, int max)
-			throws PLUSException {
-		throw new PLUSException("Not yet implemented.");
+			throws ProvenanceClientException {
+		throw new ProvenanceClientException("Not yet implemented.");
 	}
 	
 	/**
@@ -236,4 +243,53 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
 		return g.fromJson(response, ProvenanceCollection.class);		
 	}
+	
+	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
+		WebResource r = client.resource(buildURL(LIST_WORKFLOWS_PATH) + "&n=" + max);
+		
+		String response = r
+				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .header("User-Agent", UA)				 
+				 .get(String.class);		
+		
+		ProvenanceCollection col = provenanceCollectionFromResponse(response);
+		ArrayList<PLUSWorkflow> results = new ArrayList<PLUSWorkflow>();
+		
+		for(PLUSObject o : col.getNodesInOrderedList()) {
+			if(o.isWorkflow()) results.add((PLUSWorkflow)o);
+		}
+
+		return results;
+	}
+	
+	public ProvenanceCollection getWorkflowMembers(String oid, int max)
+			throws ProvenanceClientException {
+	
+		PLUSObject n = getSingleNode(oid);
+		if(n == null) throw new ProvenanceClientException("No such workflow node " + oid);
+		if(!n.isWorkflow()) throw new ProvenanceClientException("Can't list members of non-workflow node " + n);
+		
+		WebResource r = client.resource(buildURL(GET_WORKFLOW_MEMBERS_PATH) + n.getId() + "?format=json&n=" + max);
+		
+		String response = r
+				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .header("User-Agent", UA)				 
+				 .get(String.class);		
+		
+		return provenanceCollectionFromResponse(response);
+	} // End getWorkflowMembers
+
+	public PLUSObject getSingleNode(String oid) throws ProvenanceClientException {
+		WebResource r = client.resource(buildURL(GET_SINGLE_NODE_PATH) + oid + "?format=json");
+		
+		String response = r
+				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .header("User-Agent", UA)				 
+				 .get(String.class);		
+		
+		ProvenanceCollection col = provenanceCollectionFromResponse(response);
+		
+		if(col.containsObjectID(oid)) return col.getNode(oid);		
+		return null;
+	} // End getSingleNode
 } // End RESTProvenanceClient

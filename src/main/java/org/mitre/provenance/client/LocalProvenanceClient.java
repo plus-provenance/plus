@@ -14,11 +14,15 @@
  */
 package org.mitre.provenance.client;
 
+import java.util.List;
+
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.User;
 
@@ -40,33 +44,70 @@ public class LocalProvenanceClient extends AbstractProvenanceClient {
 		this.user = u;
 	}
 	
-	public boolean report(ProvenanceCollection col) throws PLUSException {
-		if(Neo4JStorage.store(col) > 0) return true;
-		return false;
+	public boolean report(ProvenanceCollection col) throws ProvenanceClientException {
+		try { 
+			if(Neo4JStorage.store(col) > 0) return true;
+			return false;
+		} catch(PLUSException exc) { 
+			throw new ProvenanceClientException(exc);  
+		}
 	}
 
 	public ProvenanceCollection getGraph(String oid, TraversalSettings desc)
-			throws PLUSException {
+			throws ProvenanceClientException {
 		// TODO Auto-generated method stub
-		return Neo4JPLUSObjectFactory.newDAG(oid, user, desc);
+		try {
+			return Neo4JPLUSObjectFactory.newDAG(oid, user, desc);
+		} catch (PLUSException e) { throw new ProvenanceClientException(e); } 
 	}
 
-	public ProvenanceCollection latest() throws PLUSException {
+	public ProvenanceCollection latest() throws ProvenanceClientException {
 		// TODO Auto-generated method stub
 		return Neo4JPLUSObjectFactory.getRecentlyCreated(user, 20);	
 	}
 	
-	public ProvenanceCollection getActors(int max) throws PLUSException {
-		return Neo4JStorage.getActors(max);
+	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
+		try {
+			return Neo4JStorage.getActors(max);
+		} catch (PLUSException e) {
+			throw new ProvenanceClientException(e); 
+		}
 	}
 
 	public ProvenanceCollection search(String searchTerm, int max)
-			throws PLUSException {
+			throws ProvenanceClientException {
 		return Neo4JPLUSObjectFactory.searchFor(searchTerm, viewer, max);
 	}
 	
 	public ProvenanceCollection search(Metadata parameters, int max)
-			throws PLUSException {
-		return Neo4JPLUSObjectFactory.loadByMetadata(viewer, parameters, max);
-	}	
+			throws ProvenanceClientException {
+		try {
+			return Neo4JPLUSObjectFactory.loadByMetadata(viewer, parameters, max);
+		} catch (PLUSException e) {
+			throw new ProvenanceClientException(e); 
+		}
+	}
+
+	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
+		try {
+			return Neo4JStorage.listWorkflows(user, max);
+		} catch (PLUSException e) {
+			throw new ProvenanceClientException(e); 
+		}
+	}
+
+	public ProvenanceCollection getWorkflowMembers(String oid, int max) throws ProvenanceClientException {
+		PLUSObject obj = getSingleNode(oid);
+		if(obj == null) throw new ProvenanceClientException("Can not load workflow members from non-existant node " + oid);
+		if(!obj.isWorkflow()) throw new ProvenanceClientException("Can not load workflow members from non-workflow " + oid);		
+		return Neo4JStorage.getMembers((PLUSWorkflow)obj, user, max);
+	} // End getWorkflowMembers
+	
+	public PLUSObject getSingleNode(String oid) throws ProvenanceClientException {
+		try {
+			return Neo4JPLUSObjectFactory.load(oid, user);
+		} catch (PLUSException e) {
+			throw new ProvenanceClientException(e); 
+		} 
+	} // End getSingleNode
 } // End LocalProvenanceClient
