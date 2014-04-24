@@ -124,7 +124,7 @@ public class PrivilegeClass implements Neo4JCapable {
 	} // End equals
 	
 	public String toString() { 
-		return new String("[[" + getName() + "]]");
+		return new String("(Privilege " + getName() + ")");
 	}
 	
 	/**
