@@ -13,6 +13,7 @@ import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
+import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActivity;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSDataObject;
@@ -26,6 +27,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.services.ServiceUtility;
 import org.mitre.provenance.simulate.DAGAholic;
 import org.mitre.provenance.simulate.SyntheticGraphProperties;
+import org.mitre.provenance.tools.PLUSUtils;
 import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.User;
 import org.openprovenance.prov.model.Activity;
@@ -139,8 +141,30 @@ public class PROVConverter {
 			provStatements.put(e.getFrom().getId() + "/" + e.getTo().getId(), stmt); 
 		}
 				
-		if(col.countNPEs() > 0) 
-			log.warning("Conversion of " + col + " - NPE conversion not yet supported.");
+		for(NonProvenanceEdge npe : col.getNonProvenanceEdges()) {
+			String oid = npe.getIncidentOID();
+			String npid = npe.getIncidentForeignID();
+			String type = npe.getType();
+			
+			if(PLUSUtils.isPLUSOID(npid)) {
+				log.warning("NPEs connecting two PLUSObjects are not yet supported: " + npe);
+				continue;
+			}
+			
+			PLUSObject node = col.getNode(oid);
+			if(node == null) {
+				log.warning("NPE " + npe + " references OID which isn't in collection; skipping");
+				continue;
+			}
+			
+			HasOther o = getHasOther(node);
+			if(o == null) {
+				log.warning("NPE " + npe + " references HasOther which wasn't created; skipping");
+				continue;
+			}
+			
+			makeObjectProperty(type, npid, "npe");
+		} // End for
 		
 		// Assemble final document.
 		Document d = factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());
@@ -154,7 +178,7 @@ public class PROVConverter {
 		d.setNamespace(n);
 		return d;
 	} // End provenanceCollectionToPROV
-
+	
 	private boolean canConvert(PLUSEdge e, Object f, Object t) { 
 		if(f == null || t == null) { 
 			log.warning("Will not convert dangling edge " + e + 
@@ -165,6 +189,12 @@ public class PROVConverter {
 		
 		return true;
 	} // End canConvert
+	
+	public HasOther getHasOther(PLUSObject obj) { 
+		if(provEntities.containsKey(obj.getId())) return provEntities.get(obj.getId());
+		if(provActivities.containsKey(obj.getId())) return provActivities.get(obj.getId());
+		return null;
+	}
 	
 	public QualifiedName findEntityOrActivity(PLUSObject obj) { 
 		if(provEntities.containsKey(obj.getId())) return provEntities.get(obj.getId()).getId();
@@ -258,13 +288,18 @@ public class PROVConverter {
 		}
 	}
 	
+	protected Other makeObjectProperty(String name, Object value) { 
+		return makeObjectProperty(name, value, "prop");
+	}
+	
 	/**
 	 * Make a single object property into an "Other" statement.
 	 * @param name property name
 	 * @param value property value
+	 * @param prefix ns prefix
 	 * @return
 	 */
-	protected Other makeObjectProperty(String name, Object value) {
+	protected Other makeObjectProperty(String name, Object value, String prefix) {
 		QualifiedName nameType = this.name.XSD_STRING;		
 		
 		if(value instanceof Date) {
@@ -273,18 +308,29 @@ public class PROVConverter {
 			// Needs to be valid XML date format.
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 			value = sdf.format((Date)value);
-		} // End if
+		} else if(value instanceof Integer) {
+			nameType = this.name.XSD_INTEGER;
+		} else if(value instanceof Double) {
+			nameType = this.name.XSD_DOUBLE;
+		} else {
+			value = s(""+value);						
+		}
 		
-		if(value instanceof Integer) nameType = this.name.XSD_INTEGER;
+		System.out.println("OBJECT PROPERTY: " + name + " " + value + " " + prefix + " " + nameType);
+		return factory.newOther(BASE_NAMESPACE, s(name), prefix, value, nameType);
+	} // End makeObjectProperty
+	
+	private String s(String v) {
+		if(v == null || "".equals(v)) return v;
 		
-		return factory.newOther(BASE_NAMESPACE, name, "prop", value, nameType);
+		return v.replaceAll("[^A-Za-z0-9]", "_");
 	}
 	
 	public Entity workflowToPlan(PLUSObject obj) throws PROVConversionException { 		
 		if(!obj.isWorkflow()) throw new PROVConversionException("Object is not a workflow: " + obj);
 		PLUSWorkflow w = (PLUSWorkflow)obj;
 		
-		Entity e = factory.newEntity(getQualifiedName(w), obj.getName());		
+		Entity e = factory.newEntity(getQualifiedName(w), s(obj.getName()));		
 		
 		e.getOther().add(makeObjectProperty("when_start", w.getWhenStart()));
 		e.getOther().add(makeObjectProperty("when_end", w.getWhenEnd()));
@@ -295,7 +341,7 @@ public class PROVConverter {
 	public Activity activityToActivity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isActivity()) throw new PROVConversionException("Object is not an activity: " + obj);
 		PLUSActivity act = (PLUSActivity)obj;
-		Activity a = factory.newActivity(getQualifiedName(act), obj.getName());
+		Activity a = factory.newActivity(getQualifiedName(act), s(obj.getName()));
 		
 		a.getOther().add(makeObjectProperty("inputs", act.getInputs()));
 		a.getOther().add(makeObjectProperty("outputs", act.getOutputs()));
@@ -306,14 +352,14 @@ public class PROVConverter {
 	public Activity invocationToActivity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isInvocation()) throw new PROVConversionException("Object is not an invocation: " + obj);
 		PLUSInvocation inv = (PLUSInvocation)obj;
-		Activity a = factory.newActivity(getQualifiedName(inv), obj.getName());		
+		Activity a = factory.newActivity(getQualifiedName(inv), s(obj.getName()));		
 		
 		return a;
 	}
 	
 	public Entity dataObjectToEntity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isDataItem()) throw new PROVConversionException("Object is not a data item: " + obj);		
-		Entity e = factory.newEntity(getQualifiedName((PLUSDataObject)obj), obj.getName());
+		Entity e = factory.newEntity(getQualifiedName((PLUSDataObject)obj), s(obj.getName()));
 		// factory.addType(e, DATA_TYPE, name.XSD_QNAME);
 		
 		if(obj instanceof PLUSFile) { 
@@ -322,6 +368,7 @@ public class PROVConverter {
 		} else if(obj instanceof PLUSURL) { 
 			PLUSURL u = (PLUSURL) obj;
 			try {
+				System.out.println("URL " + u.getURL());
 				e.getOther().add(makeObjectProperty("url", u.getURL()));
 			} catch (MalformedURLException e1) {
 				log.severe(e1.getMessage());
@@ -333,7 +380,7 @@ public class PROVConverter {
 	
 	public Agent actorToAgent(PLUSActor actor) throws PROVConversionException { 
 		// TODO attributes
-		Agent a = factory.newAgent(getQualifiedName(actor), actor.getName());
+		Agent a = factory.newAgent(getQualifiedName(actor), s(actor.getName()));
 		
 		return a;
 	}
@@ -375,7 +422,13 @@ public class PROVConverter {
 		serializer.serialiseDocument(System.out, d, true);		
 	}
 	
-	public static String asString(Document d) throws JAXBException { 
+	/**
+	 * Serialize a document as XML, and then turn it into one large string.
+	 * @param d a document
+	 * @return an XML serialized form of the document.
+	 * @throws JAXBException
+	 */
+	public static String asXMLString(Document d) throws JAXBException { 
 		Namespace.withThreadNamespace(d.getNamespace());
 		org.openprovenance.prov.xml.ProvSerialiser serializer = new org.openprovenance.prov.xml.ProvSerialiser();
 		StringWriter sw = new StringWriter();
