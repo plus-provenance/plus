@@ -123,7 +123,7 @@ public class ServiceUtility {
 		if(acceptsXML && !acceptsJSON) {
 			PROVConverter conv = new PROVConverter();
 			try {
-				String xml = PROVConverter.asString(conv.provenanceCollectionToPROV(col));
+				String xml = PROVConverter.asXMLString(conv.provenanceCollectionToPROV(col));
 				return Response.ok(xml, MediaType.APPLICATION_XML).build();
 			} catch (JAXBException | PLUSException e) {
 				e.printStackTrace();
