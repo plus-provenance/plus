@@ -99,7 +99,7 @@ public class PROVConverter {
 	 */
 	public Document provenanceCollectionToPROV(ProvenanceCollection col) throws PLUSException {		
 		for(PLUSActor a : col.getActors()) {
-			System.out.println(a);
+			// System.out.println(a);
 			Agent agent = actorToAgent(a);
 			agent.getOther().add(makeObjectProperty("created", a.getCreatedAsDate()));
 			provAgents.put(a.getId(), agent); 			
@@ -107,7 +107,7 @@ public class PROVConverter {
 		
 		for(PLUSObject o : col.getNodes()) {
 			HasOther item = null;
-			System.out.println(o);
+			// System.out.println(o);
 			
 			if(o.isActivity()) {
 				Activity a = activityToActivity(o);
@@ -152,13 +152,13 @@ public class PROVConverter {
 		}
 		
 		for(PLUSEdge e : col.getEdges()) {
-			System.out.println(e);
+			// System.out.println(e);
 			Statement stmt = edgeToStatement(e);
 			provStatements.put(e.getFrom().getId() + "/" + e.getTo().getId(), stmt); 
 		}
 				
 		for(NonProvenanceEdge npe : col.getNonProvenanceEdges()) {
-			System.out.println(npe);
+			// System.out.println(npe);
 			String oid = npe.getIncidentOID();
 			String npid = npe.getIncidentForeignID();
 			String type = npe.getType();
@@ -310,7 +310,7 @@ public class PROVConverter {
 			// the PROV library doesn't check for this.
 			String local = key.replaceAll("[^A-Za-z0-9]", "_");
 			if(!key.equals(local)) { 
-				System.out.println("METADATA: '" + key + "' '" + val + "'" + " local '" + local + "'");
+				// System.out.println("METADATA: '" + key + "' '" + val + "'" + " local '" + local + "'");
 			}
 			
 			Other o = factory.newOther(BASE_NAMESPACE, local, "metadata", val, name.XSD_STRING);		
@@ -346,7 +346,7 @@ public class PROVConverter {
 			value = ""+value;						
 		}
 		
-		if("npe".equals(prefix)) System.out.println("OBJECT PROPERTY: " + name + " " + value + " " + prefix + " " + nameType);
+		// if("npe".equals(prefix)) System.out.println("OBJECT PROPERTY: " + name + " " + value + " " + prefix + " " + nameType);
 		return factory.newOther(BASE_NAMESPACE, name, prefix, value, nameType);
 	} // End makeObjectProperty
 		
