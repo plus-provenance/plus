@@ -24,7 +24,6 @@ import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSURL;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
-import org.mitre.provenance.services.ServiceUtility;
 import org.mitre.provenance.simulate.DAGAholic;
 import org.mitre.provenance.simulate.SyntheticGraphProperties;
 import org.mitre.provenance.tools.PLUSUtils;
@@ -40,8 +39,11 @@ import org.openprovenance.prov.model.Namespace;
 import org.openprovenance.prov.model.Other;
 import org.openprovenance.prov.model.QualifiedName;
 import org.openprovenance.prov.model.Statement;
-import org.openprovenance.prov.xml.ProvFactory;
+import org.openprovenance.prov.model.Used;
+import org.openprovenance.prov.model.WasDerivedFrom;
 import org.openprovenance.prov.model.WasGeneratedBy;
+import org.openprovenance.prov.model.WasInformedBy;
+import org.openprovenance.prov.xml.ProvFactory;
 
 /**
  * A class that knows how to convert ProvenanceCollection objects into a PROV-DM representation. 
@@ -51,6 +53,15 @@ import org.openprovenance.prov.model.WasGeneratedBy;
  * sense.
  * 
  * <p>This is an initial cut - it is still in need of substantial development, testing, and verification.
+ * 
+ * <p><strong>Warning</strong>: the PROV API doesn't do good input checking when you use the factory to 
+ * create object instances.  Because the model objects need to get serialized several different ways, 
+ * this creates situations where the model is created just fine, but when you go to serialize, you get
+ * various exceptions due to invalid data.   PLUS data objects don't exist in the W3C/XML space, and so
+ * when we do this translation we're creating artifacts like QNames that don't natively exist in PLUS.
+ * Beware situations where data in PLUS translates into invalid XML NCNames, anyURI, and so on.  This
+ * won't be caught by the PROV API, but will cause failure to serialize.  
+ * 
  * @author moxious
  */
 public class PROVConverter {
@@ -88,6 +99,7 @@ public class PROVConverter {
 	 */
 	public Document provenanceCollectionToPROV(ProvenanceCollection col) throws PLUSException {		
 		for(PLUSActor a : col.getActors()) {
+			System.out.println(a);
 			Agent agent = actorToAgent(a);
 			agent.getOther().add(makeObjectProperty("created", a.getCreatedAsDate()));
 			provAgents.put(a.getId(), agent); 			
@@ -95,6 +107,7 @@ public class PROVConverter {
 		
 		for(PLUSObject o : col.getNodes()) {
 			HasOther item = null;
+			System.out.println(o);
 			
 			if(o.isActivity()) {
 				Activity a = activityToActivity(o);
@@ -120,30 +133,32 @@ public class PROVConverter {
 			if(item != null) {
 				convertMetadata(o, item);
 				convertOwnership(o);
-				
+								
 				item.getOther().add(makeObjectProperty("name", o.getName()));
 				item.getOther().add(makeObjectProperty("created", o.getCreatedAsDate()));
 				item.getOther().add(makeObjectProperty("plus_type", o.getObjectType()));
 				item.getOther().add(makeObjectProperty("plus_subtype", o.getObjectSubtype()));
-				
+					
 				for(PrivilegeClass pc : o.getPrivileges().getPrivilegeSet()) { 
 					item.getOther().add(makeObjectProperty("requires", pc.toString()));
 				}
 				
 				for(String sgf : o.getSGFs()) {
 					item.getOther().add(makeObjectProperty("hasSGF", sgf));
-				}
+				}				
 				
 				// System.out.println(item);
 			}
 		}
 		
 		for(PLUSEdge e : col.getEdges()) {
+			System.out.println(e);
 			Statement stmt = edgeToStatement(e);
 			provStatements.put(e.getFrom().getId() + "/" + e.getTo().getId(), stmt); 
 		}
 				
 		for(NonProvenanceEdge npe : col.getNonProvenanceEdges()) {
+			System.out.println(npe);
 			String oid = npe.getIncidentOID();
 			String npid = npe.getIncidentForeignID();
 			String type = npe.getType();
@@ -169,11 +184,7 @@ public class PROVConverter {
 		} // End for
 		
 		// Assemble final document.
-		Document d = factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());
-		//Namespace n = new Namespace();
-		//n.setDefaultNamespace(BASE_NAMESPACE);
-		//n.addKnownNamespaces();
-		
+		Document d = factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());		
 		Namespace n = Namespace.gatherNamespaces(d);
 		n.addKnownNamespaces();
 		n.setDefaultNamespace(BASE_NAMESPACE);
@@ -213,14 +224,18 @@ public class PROVConverter {
 			
 			if(!canConvert(e, ent, act)) return null;
 			
-			return factory.newUsed(getQualifiedName(e), act.getId(), ent.getId());  
+			Used u = factory.newUsed(getQualifiedName(e), act.getId(), ent.getId());
+			// System.out.println(u);
+			return u;
 		} else if(PLUSEdge.EDGE_TYPE_TRIGGERED.equals(edgeType)) {
 			Activity act1 = provActivities.get(e.getFrom().getId());
 			Activity act2 = provActivities.get(e.getTo().getId());
 			
 			if(!canConvert(e, act1, act2)) return null;
 			
-			return factory.newWasInformedBy(getQualifiedName(e), act2.getId(), act1.getId());
+			WasInformedBy wib = factory.newWasInformedBy(getQualifiedName(e), act2.getId(), act1.getId());
+			// System.out.println(wib);
+			return wib;
 		} else if(PLUSEdge.EDGE_TYPE_GENERATED.equals(edgeType)) {
 			Entity ent = provEntities.get(e.getTo().getId());
 			Activity act = provActivities.get(e.getFrom().getId());
@@ -228,7 +243,8 @@ public class PROVConverter {
 			if(!canConvert(e, act, ent)) return null;
 						
 			WasGeneratedBy wgb = factory.newWasGeneratedBy(getQualifiedName(e), ent.getId(), act.getId());
-			wgb.setTime(factory.newTime(e.getTo().getCreatedAsDate()));
+			//wgb.setTime(factory.newTime(e.getTo().getCreatedAsDate()));
+			//System.out.println(wgb);
 			return wgb;
 		} else if(PLUSEdge.EDGE_TYPE_MARKS.equals(edgeType) || PLUSEdge.EDGE_TYPE_UNSPECIFIED.equals(edgeType)) {
 			QualifiedName q1 = findEntityOrActivity(e.getFrom());
@@ -236,14 +252,18 @@ public class PROVConverter {
 			
 			if(!canConvert(e, q1, q2)) return null;
 			
-			return factory.newWasInformedBy(getQualifiedName(e), q2, q1);
+			WasInformedBy wib = factory.newWasInformedBy(getQualifiedName(e), q2, q1);
+			//System.out.println(wib);
+			return wib;
 		} else if(PLUSEdge.EDGE_TYPE_CONTRIBUTED.equals(edgeType)) {
 			Entity e1 = provEntities.get(e.getFrom().getId());
 			Entity e2 = provEntities.get(e.getTo().getId());
 
 			if(!canConvert(e, e1, e2)) return null;
 			
-			return factory.newWasDerivedFrom(getQualifiedName(e), e2.getId(), e1.getId());
+			WasDerivedFrom wdf = factory.newWasDerivedFrom(getQualifiedName(e), e2.getId(), e1.getId());
+			//System.out.println(wdf);
+			return wdf;
 		} else { 
 			log.warning("Don't understand edge " + e + " : skipping.");
 			return null;
@@ -284,8 +304,16 @@ public class PROVConverter {
 		Metadata md = obj.getMetadata();
 				
 		for(String key : md.keySet()) {
-			System.out.println("METADATA: '" + key + "' '" + md.get(key) + "'");
-			Other o = factory.newOther(BASE_NAMESPACE, key, "metadata", ""+md.get(key), name.XSD_STRING);		
+			String val = ""+md.get(key);
+						
+			// Sometimes metadata key names can contain invalid XML characters that cause syntax errors, because
+			// the PROV library doesn't check for this.
+			String local = key.replaceAll("[^A-Za-z0-9]", "_");
+			if(!key.equals(local)) { 
+				System.out.println("METADATA: '" + key + "' '" + val + "'" + " local '" + local + "'");
+			}
+			
+			Other o = factory.newOther(BASE_NAMESPACE, local, "metadata", val, name.XSD_STRING);		
 			convertedObj.getOther().add(o);
 		}
 	}
@@ -415,7 +443,7 @@ public class PROVConverter {
 		Namespace.withThreadNamespace(d.getNamespace());
 		
 		org.openprovenance.prov.xml.ProvSerialiser serializer = new org.openprovenance.prov.xml.ProvSerialiser();
-		serializer.serialiseDocument(System.out, d, true);		
+		serializer.serialiseDocument(System.out, d, true);
 	}
 	
 	/**
