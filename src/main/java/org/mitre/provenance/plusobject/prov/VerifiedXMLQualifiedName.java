@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  *
  */
 public class VerifiedXMLQualifiedName extends org.openprovenance.prov.xml.QualifiedName {
-	private static Pattern ncName = Pattern.compile("^[A-Za-z_][A-Za-z0-9_\\-\\.]*");
+	private static Pattern ncName = Pattern.compile("^[A-Za-z_][A-Za-z0-9_\\-\\.]*$");
 	
 	public VerifiedXMLQualifiedName(String namespaceURI, String localPart, String prefix) {
 		super(namespaceURI, localPart, prefix);

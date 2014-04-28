@@ -221,7 +221,7 @@
                             <basePath>http://localhost:8080/plus/api</basePath>
                             <outputTemplate>${basedir}/src/main/resources/apidocs.template</outputTemplate>                                     
                             <outputPath>${basedir}/src/main/webapp/apidocs.html</outputPath>
-                            <swaggerDirectory>src/main/webapp/api-docs</swaggerDirectory>
+                            <swaggerDirectory>src/main/webapp/apidocs</swaggerDirectory>
                             <useOutputFlatStructure>true</useOutputFlatStructure>
                             <mustacheFileRoot>${basedir}/src/main/resources/</mustacheFileRoot>
                         </apiSource>
