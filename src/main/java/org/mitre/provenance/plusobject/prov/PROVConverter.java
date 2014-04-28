@@ -408,18 +408,16 @@ public class PROVConverter {
 	}
 
 	public QualifiedName getQualifiedName(PLUSEdge e) { 
-		QualifiedName qn = new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + e.getClass().getSimpleName(), 
+		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + e.getClass().getSimpleName(), 
 				e.getFrom().getId() + ":" + e.getTo().getId(), 
-				e.getType().replaceAll(" ", "_"));
-		return qn;
+				e.getType().replaceAll(" ", "_"));		
 	}
 	
 	public QualifiedName getQualifiedName(PLUSObject obj) { 
 		String className = obj.getClass().getSimpleName();
-		QualifiedName qn = new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + className, 
+		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + className, 
 				obj.getId(), 
 				className.replaceAll("PLUS", "").toLowerCase());
-		return qn;
 	}
 				
 	public QualifiedName getQualifiedName(PLUSActor actor) { 
