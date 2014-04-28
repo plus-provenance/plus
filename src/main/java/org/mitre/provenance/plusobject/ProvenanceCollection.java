@@ -41,7 +41,7 @@ public class ProvenanceCollection {
 	public static final String TAG_VALUE_TRUE = "true";
 	public static final String TAG_FOOT = "foot";
 	public static final String TAG_HEAD = "head";
-	
+		
 	/**
 	 * This comparator will sort first by created, then name, then type, then subtype, then ID.
 	 */
@@ -262,7 +262,7 @@ public class ProvenanceCollection {
     public List<PLUSEdge> getEdgesByString(String pattern) {
     	return getEdgesByPattern(pattern);
     }
-    
+        
     /** Get the actors in this ProvenanceCollection */
     public Collection <PLUSActor> getActors() { return actors.values(); } 
     
