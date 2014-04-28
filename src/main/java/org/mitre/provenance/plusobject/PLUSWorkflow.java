@@ -41,9 +41,13 @@ public class PLUSWorkflow extends PLUSObject {
 		DEFAULT_WORKFLOW.setCreated(0);
 	}
 	
-	public PLUSWorkflow() { 
+	public PLUSWorkflow() {
+		this("Workflow");
+	}
+	
+	public PLUSWorkflow(String name) { 
 		super(); 
-		setName("Workflow"); 
+		setName(name); 
 		setObjectType(PLUS_TYPE_WORKFLOW);
 		setObjectSubtype(PLUS_SUBTYPE_EXECUTION);
 		when_start="Uninitialized"; 
