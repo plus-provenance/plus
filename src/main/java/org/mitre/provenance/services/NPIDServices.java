@@ -14,10 +14,12 @@
  */
 package org.mitre.provenance.services;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -40,7 +42,7 @@ public class NPIDServices {
 	 * @param the NPID you want to lookup
 	 * @return a D3 JSON document containing only the nodes that represent provenance objects attached to that NPID
 	 */
-	public Response getProvenanceForNPID(@PathParam("npid") String npid) {
+	public Response getProvenanceForNPID(@Context HttpServletRequest req, @PathParam("npid") String npid) {
 		if(npid == null || "".equals(npid)) return ServiceUtility.BAD_REQUEST("Missing npid");
 		
 		if(Neo4JStorage.getNPID(npid, false) == null)
@@ -48,7 +50,7 @@ public class NPIDServices {
 		
 		try { 
 			ProvenanceCollection col = Neo4JPLUSObjectFactory.getIncidentProvenance(npid, 50);
-			return ServiceUtility.OK(col);
+			return ServiceUtility.OK(col, req);
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());

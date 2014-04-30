@@ -62,7 +62,7 @@ public class WorkflowServices {
 			@ApiParam(value="maximum items to return", required=true) @DefaultValue("50") @QueryParam("n") int n) {
 		if(oid == null || "".equals(oid)) return ServiceUtility.BAD_REQUEST("Must specify an oid");
 		
-		if(n > 50 || n <= 0) n = 50;
+		if(n > 200 || n <= 0) n = 50;
 		
 		User user = ServiceUtility.getUser(req);
 		
@@ -74,7 +74,7 @@ public class WorkflowServices {
 			// TODO user
 			ProvenanceCollection col = Neo4JStorage.getMembers((PLUSWorkflow)obj, user, n);
 		
-			return ServiceUtility.OK(col);
+			return ServiceUtility.OK(col, req);
 		} catch(PLUSException exc) { 
 			return ServiceUtility.ERROR(exc.getMessage());
 		}				
@@ -100,7 +100,7 @@ public class WorkflowServices {
 			ProvenanceCollection col = new ProvenanceCollection();
 			for(PLUSWorkflow wf : workflows) col.addNode(wf); 
 		
-			return ServiceUtility.OK(col);
+			return ServiceUtility.OK(col, req);
 		} catch(PLUSException exc) { 
 			return ServiceUtility.ERROR(exc.getMessage()); 
 		}

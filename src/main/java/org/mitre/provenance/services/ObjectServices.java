@@ -70,12 +70,14 @@ public class ObjectServices {
 	@ApiResponses(value = {
 	  @ApiResponse(code = 400, message="Error processing search")	  
 	})			
-	public Response search(@ApiParam(value="the search term to use", required=true) @FormParam("searchTerm") String searchTerm) {
+	public Response search(@Context HttpServletRequest req,
+			@ApiParam(value="the search term to use", required=true) 
+	        @FormParam("searchTerm") String searchTerm) {
 		log.info("SEARCH POST '" + searchTerm + "'");
 		try { 			
 			//TODO : user
 			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(searchTerm, User.DEFAULT_USER_GOD);			
-			return ServiceUtility.OK(col);			
+			return ServiceUtility.OK(col, req);			
 		} catch(Exception exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());			
@@ -89,12 +91,14 @@ public class ObjectServices {
 	@ApiResponses(value = {
 	  @ApiResponse(code = 400, message="Error processing search")	  
 	})			
-	public Response searchTerm(@ApiParam(value = "The ID of the actor", required=true) @PathParam("term") String term) { 
+	public Response searchTerm(@Context HttpServletRequest req,
+			@ApiParam(value = "The ID of the actor", required=true) 
+	        @PathParam("term") String term) { 
 		log.info("SEARCH GET '" + term + "'");
 		try { 
 			//TODO
-			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(term, User.DEFAULT_USER_GOD);
-			return ServiceUtility.OK(col);			
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(term, ServiceUtility.getUser(req));
+			return ServiceUtility.OK(col, req);			
 		} catch(Exception exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());			
@@ -129,7 +133,7 @@ public class ObjectServices {
 			if(n == null) return ServiceUtility.NOT_FOUND("Invalid/non-existant oid");
 			PLUSObject obj = Neo4JPLUSObjectFactory.newObject(n); 			
 			ProvenanceCollection col = Taint.getAllTaintSources(obj, user);
-			return ServiceUtility.OK(col);			
+			return ServiceUtility.OK(col, req);			
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());
@@ -168,7 +172,7 @@ public class ObjectServices {
 			ProvenanceCollection c = new ProvenanceCollection();
 			
 			c.addNode(t);
-			return ServiceUtility.OK(c);
+			return ServiceUtility.OK(c, req);
 		} catch(PLUSException exc) {
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());
@@ -206,7 +210,7 @@ public class ObjectServices {
 			Taint.removeTaints(obj);
 			
 			// Return the list of taints found.
-			return ServiceUtility.OK(Taint.getAllTaintSources(obj, user));
+			return ServiceUtility.OK(Taint.getAllTaintSources(obj, user), req);
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());
@@ -235,7 +239,7 @@ public class ObjectServices {
 			
 			ProvenanceCollection col = Neo4JPLUSObjectFactory.getIncidentEdges(oids, ServiceUtility.getUser(req), "both", true, false);
 			
-			return ServiceUtility.OK(col);			
+			return ServiceUtility.OK(col, req);			
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());			
@@ -262,7 +266,7 @@ public class ObjectServices {
 		User user = ServiceUtility.getUser(req);
 		try {
 			ProvenanceCollection col = Neo4JPLUSObjectFactory.loadBySingleMetadataField(user, field, value);			
-			return ServiceUtility.OK(col);
+			return ServiceUtility.OK(col, req);
 		} catch (PLUSException e) {
 			e.printStackTrace();
 			return ServiceUtility.ERROR(e.getMessage());
@@ -308,7 +312,7 @@ public class ObjectServices {
 			} // End while
 			
 			tx.success();
-			return ServiceUtility.OK(col);			
+			return ServiceUtility.OK(col, req);			
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());			
@@ -339,7 +343,7 @@ public class ObjectServices {
 			ViewedCollection col = new ViewedCollection(ServiceUtility.getUser(req));
 			col.addNode(obj);
 						
-			return ServiceUtility.OK(col);			
+			return ServiceUtility.OK(col, req);			
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());			

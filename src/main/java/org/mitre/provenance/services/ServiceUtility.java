@@ -21,16 +21,15 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.xml.bind.JAXBException;
 
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.ViewedCollection;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.PLUSSerializer;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
-import org.mitre.provenance.plusobject.prov.PROVConverter;
 import org.mitre.provenance.user.User;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Node;
@@ -103,45 +102,88 @@ public class ServiceUtility {
 	}
 	
 	/**
-	 * Convenience function for returning HTTP OK response, with variable representation format depending on user request.
-	 * @param col the collection
-	 * @param req the request
+	 * Examine the "format" parameter, and the "Accept" header to guess at which representation is best for return.
+	 * Options:<br/>
+	 * text/turtle or format=ttl:  PROV-TTL<br/>
+	 * application/rdf+xml or format=rdf:  PROV-RDF<br/>
+	 * application/provenance+xml or format=xml: PROV-XML<br/>
+	 * json or format=json: D3 JSON<br/>
+	 * Default: D3 JSON
+	 * @param req
 	 * @return
 	 */
-	public static Response OK(ProvenanceCollection col, HttpServletRequest req) {
+	public static PLUSSerializer.Format suggestFormat(HttpServletRequest req) { 
 		String acceptedTypes = req.getHeader("Accept");
 		if(acceptedTypes == null) acceptedTypes = "";
 			
 		String format = req.getParameter("format");
 		if(format == null) format = "";
 
-		boolean acceptsXML = acceptedTypes.contains("application/provenance+xml") || "xml".equals(format);  
-		boolean acceptsJSON = acceptedTypes.contains("json") || "json".equals(format); 
-	
-		System.out.println("Accept: " + acceptedTypes + " format=" + format + " acceptsXML=" + acceptsXML + " acceptsJSON=" + acceptsJSON);
+		boolean acceptsTTL  = acceptedTypes.contains("text/turtle") || "ttl".equals(format) || "prov-ttl".equals(format);
+		boolean acceptsRDF  = acceptedTypes.contains("application/rdf+xml") || "rdf".equals(format) || "prov-rdf".equals(format);
+		boolean acceptsXML  = acceptedTypes.contains("application/provenance+xml") || "xml".equals(format) || "prov-xml".equals(format);
+		boolean acceptsJSON = acceptedTypes.contains("json") || "json".equals(format);
+
+		if(acceptsJSON) return PLUSSerializer.Format.D3_JSON;
+		if(acceptsRDF) return PLUSSerializer.Format.PROV_RDF;
+		if(acceptsXML) return PLUSSerializer.Format.PROV_XML;
+		if(acceptsTTL) return PLUSSerializer.Format.PROV_TTL;
 		
-		if(acceptsXML && !acceptsJSON) {
-			PROVConverter conv = new PROVConverter();
-			try {
-				String xml = PROVConverter.asXMLString(conv.provenanceCollectionToPROV(col));
-				return Response.ok(xml, MediaType.APPLICATION_XML).build();
-			} catch (JAXBException | PLUSException e) {
-				e.printStackTrace();
-				return ERROR("Could not build XML representation of this collection: " + e.getMessage());
-			}
-		} else return OK(col);
+		return PLUSSerializer.Format.D3_JSON;
+	} // End suggestFormat
+	
+	public static MediaType formatToMediaType(PLUSSerializer.Format fmt) { 
+		switch(fmt) {
+		case PROV_XML:
+			return new MediaType("application", "provenance+xml");
+		case PROV_TTL:
+			return new MediaType("application", "x-turtle");
+		case PROV_RDF:
+			return new MediaType("application", "rdf+xml"); 
+		case D3_JSON:
+		default:
+			return MediaType.APPLICATION_JSON_TYPE;
+		}
 	}
 	
 	/**
-	 * Convenience function for returning an HTTP OK response, with the D3 formatted JSON results from a 
-	 * provenance collection.
-	 * @param col
+	 * Convenience function for returning HTTP OK response, with variable representation format depending on user request.
+	 * @param col the collection
+	 * @param req the request
 	 * @return
+	 */
+	public static Response OK(ProvenanceCollection col, HttpServletRequest req) {		
+		PLUSSerializer.Format fmt = suggestFormat(req);
+
+		PLUSSerializer serializer = new PLUSSerializer();
+		try { 
+			String data = serializer.serialize(col, fmt);				
+			MediaType responseType = formatToMediaType(fmt);
+			
+			return Response.ok(data, responseType).build();
+		} catch(Exception exc) { 
+			exc.printStackTrace();
+			return ERROR(exc.getMessage());
+		}
+	} // End OK
+	
+	/**
+	 * Convenience function for returning an HTTP OK response, with the D3 formatted JSON results from a 
+	 * provenance collection.  If you want the response type to depend on the paramters of the request, then see alternative methods.
+	 * @param col
+	 * @return an application/json response containing D3-JSON
+	 * @see ServiceUtility#OK(ProvenanceCollection, HttpServletRequest)
 	 */
 	public static Response OK(ProvenanceCollection col) {		
 		return Response.ok(JSONConverter.provenanceCollectionToD3Json(col), MediaType.APPLICATION_JSON).build();
 	}
 	
+	/**
+	 * Convenience function for serializing a feed as rss/xml and returning an OK response.
+	 * @param feed
+	 * @return
+	 * @throws FeedException
+	 */
 	public static Response OK(SyndFeed feed) throws FeedException {
 		return Response.ok(new SyndFeedOutput().outputString(feed), "application/rss+xml").build();
 	}
@@ -155,6 +197,11 @@ public class ServiceUtility {
 		return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(msg).build();
 	}
 	
+	/**
+	 * Indicate that access to an item is forbidden.
+	 * @param msg
+	 * @return
+	 */
 	public static Response FORBIDDEN(String msg) {
 		return Response.status(Response.Status.FORBIDDEN).entity(msg).build();
 	}

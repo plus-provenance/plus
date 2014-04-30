@@ -214,7 +214,7 @@ public class DAGServices {
 			return ServiceUtility.ERROR(exc.getMessage());				
 		}
 
-		return ServiceUtility.OK(col);
+		return ServiceUtility.OK(col, req);
 	} // End newGraph
 
 	@POST
@@ -226,7 +226,9 @@ public class DAGServices {
 	 * @return a D3 JSON formatted provenance collection
 	 * @deprecated
 	 */
-	public Response search(@ApiParam(value = "A cypher query", required=true) @FormParam("query") String cypherQuery) {
+	public Response search(@Context HttpServletRequest req,
+			@ApiParam(value="A cypher query", required=true) 
+	 	    @FormParam("query") String cypherQuery) {
 		int limit = 100;		
 
 		// log.info("SEARCH " + cypherQuery);
@@ -289,7 +291,7 @@ public class DAGServices {
 			return ServiceUtility.ERROR(exc.getMessage());
 		}
 
-		return ServiceUtility.OK(col);		
+		return ServiceUtility.OK(col, req);		
 	} // End search
 	
 	protected Object formatLimitedSearchResult(Object o) { 

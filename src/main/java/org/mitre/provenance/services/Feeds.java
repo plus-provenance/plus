@@ -228,7 +228,7 @@ public class Feeds {
 			@ApiResponse(code = 400, message = "Bad n value"),
 	})						
 	public Response owners(@Context HttpServletRequest req, 
-			@ApiParam(value = "representation format; json or rss", required = true)
+			@ApiParam(value = "representation format; json or rss", required=true)
 			@DefaultValue("rss") @QueryParam("format") String format, 
 			@ApiParam(value = "total items to return", required = true)
 			@QueryParam("n") int maxItems) throws FeedException, PLUSException { 

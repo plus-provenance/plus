@@ -148,7 +148,7 @@ public class FitnessServices {
 		if(startingPoint == null) return ServiceUtility.NOT_FOUND("No such object " + oid);
 		
 		try (Transaction tx = Neo4JStorage.beginTx()) { 		
-			TraversalSettings s = new TraversalSettings();
+			TraversalSettings s = new TraversalSettings();			
 			s.n = 500;
 			s.maxDepth = -1;
 			s.backward = true;
@@ -175,7 +175,7 @@ public class FitnessServices {
 			log.severe("Failed transaction: " + exc.getMessage());
 		}
 			
-		return ServiceUtility.OK(col);
+		return ServiceUtility.OK(col, req);
 	} // End termFinder
 	
 	@GET 
