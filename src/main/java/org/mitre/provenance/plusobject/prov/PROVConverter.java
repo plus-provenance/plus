@@ -486,7 +486,7 @@ public class PROVConverter {
 		
 		int x=0;
 		while((x = br.read(buf)) > 0) {
-			b.append(buf);
+			b.append(buf, 0, x);			
 		}
 		
 		try { br.close(); } catch(Exception exc) { exc.printStackTrace(); } 
