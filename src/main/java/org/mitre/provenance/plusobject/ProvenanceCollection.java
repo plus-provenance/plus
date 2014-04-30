@@ -35,7 +35,7 @@ import org.mitre.provenance.tools.PLUSUtils;
  * @author DMALLEN
  * @see org.mitre.provenance.dag.LineageDAG
  */
-public class ProvenanceCollection {
+public class ProvenanceCollection implements Cloneable {
 	protected static Logger log = Logger.getLogger(ProvenanceCollection.class.getName());
 	public static final String TAINT_FLAG = "dag:taint";
 	public static final String TAG_VALUE_TRUE = "true";
@@ -363,6 +363,9 @@ public class ProvenanceCollection {
 		return false;
 	} // End addNonProvenanceEdge
 	
+	/** Remove an actor */
+	public PLUSActor removeActor(PLUSActor a) { return actors.remove(a); } 
+	
 	/** Equivalent to addActor(a, false)  */
 	public boolean addActor(PLUSActor a) { return addActor(a, false); } 
 	
@@ -402,19 +405,42 @@ public class ProvenanceCollection {
 	/**
 	 * Remove a node from the provenance collection.
 	 * @param node the node to remove
-	 * @return the node removed (if it was in the collection) or null if the node did not exist in the collection.
+	 * @param removeIncidentEdges if true, incident edges to that node will also be removed.  If false, they will remain.
+	 * @return the node removed (if it was in the collection) or null if it did not exist in the collection.
 	 */
-	public PLUSObject removeNode(PLUSObject node) { return removeNode(node.getId()); }
+	public PLUSObject removeNode(PLUSObject node, boolean removeIncidentEdges) {
+		if(node == null) return null;
+		if(!removeIncidentEdges) return removeNode(node.getId());
+		else { 
+			for(PLUSEdge e : getEdgesByNode(node.getId()))
+				removeEdge(e);
+			
+			return removeNode(node.getId());
+		}
+	}
 	
 	/**
-	 * Remove a node from the collection identified by an OID
+	 * Remove a node from the provenance collection.  Does not remove incident edges.
+	 * @param node the node to remove
+	 * @return the node removed (if it was in the collection) or null if the node did not exist in the collection.
+	 * @see ProvenanceCollection#removeNode(PLUSObject, boolean)
+	 */
+	public PLUSObject removeNode(PLUSObject node) { return removeNode(node, false); }
+	
+	/**
+	 * Remove a node from the collection identified by an OID.   Does not remove the edges incident to that node.
 	 * @param oid the ID of the node to remove
 	 * @return the removed node, or null if it was not in the collection.
+	 * @see ProvenanceCollection#removeNode(PLUSObject, boolean)
 	 */
-	public PLUSObject removeNode(String oid) {		
-		return nodes.remove(oid); 
+	public PLUSObject removeNode(String oid) {
+		return nodes.remove(oid);		 
 	} // End removeNode
 
+	public PLUSObject removeNode(String oid, boolean removeIncidentEdges) { 
+		return removeNode(getNode(oid), removeIncidentEdges);
+	}
+	
 	public String toString() { 
 		return ("ProvenanceCollection with " + countNodes() + " nodes " + countEdges() + " edges " + 
 				metadata.size() + " metadata " + countActors() + " actors " + countNPEs() + " NPEs");
@@ -423,8 +449,16 @@ public class ProvenanceCollection {
 	/** Equivalent to addAll(other, false); */
 	public int addAll(ProvenanceCollection other) { return addAll(other, false); } 
 	
-	public ProvenanceCollection clone() { 
-		ProvenanceCollection pc = new ProvenanceCollection();
+	public ProvenanceCollection clone() { 		
+		ProvenanceCollection pc;
+		try {
+			pc = (ProvenanceCollection)super.clone();
+		} catch (CloneNotSupportedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return null;
+		}
+		
 		Metadata md = new Metadata();
 		for(String k : getMetadata().keySet()) md.put(k, getMetadata().get(k));
 		pc.setMetadata(md);

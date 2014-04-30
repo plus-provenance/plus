@@ -9,6 +9,7 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
+import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSInvocation;
@@ -39,9 +40,6 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	protected PLUSWorkflow wf = PLUSWorkflow.DEFAULT_WORKFLOW;
 	protected User viewer = User.PUBLIC;
 	protected ContentHasher hasher = null;
-	
-	/** An enumeration of the types of objects a collection can contain; NODE, EDGE, ACTOR, and NPE. */
-	public enum MemberType { NODE, EDGE, ACTOR, NPE };
 	
 	public DeclarativeBuilder() {
 		this(PLUSWorkflow.DEFAULT_WORKFLOW, User.PUBLIC);		
@@ -110,19 +108,42 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 		
 		return link(head, tail); 
 	}
+		
+	public DeclarativeBuilder excise(DeclarativeBuilder items) { 
+		return excise(items, false);
+	}
 	
 	/**
-	 * Remove all PLUSEdge objects found in the argument, from this object.   This modifies the present object.
-	 * @param links
-	 * @return this
+	 * Remove all items found in one builder from this, and returns a new builder.  Removes all edges incident to nodes
+	 * being removed.
+	 * @param items the list of items you want removed
+	 * @param removeWorkflows if true, workflow nodes will be removed as well.  If false, they won't be.
+	 * @return new declarative builder
 	 */
-	public DeclarativeBuilder sever(DeclarativeBuilder links) { 
-		for(PLUSEdge e : links.getEdges()) {
-			removeEdge(e);
+	public DeclarativeBuilder excise(DeclarativeBuilder items, boolean removeWorkflows) {
+		DeclarativeBuilder db = new DeclarativeBuilder(this);
+			
+		for(PLUSEdge e : items.getEdges()) {
+			db.removeEdge(e);
 		}
 		
-		return this;
-	}
+		for(PLUSObject o : items.getNodes()) {
+			if(o.isWorkflow() && !removeWorkflows) continue;
+			
+			System.out.println("Removing " + o); 
+			db.removeNode(o, true);  // Remove incident edges too.
+		}
+	
+		for(PLUSActor a : items.getActors()) {
+			db.removeActor(a);
+		}
+		
+		for(NonProvenanceEdge npe : items.getNonProvenanceEdges()) {
+			db.removeNonProvenanceEdge(npe);
+		} 
+		
+		return db;
+	} // End excise
 	
 	public DeclarativeBuilder findLinks(String headName, String tailName) throws PLUSException { 
 		DeclarativeBuilder db = new DeclarativeBuilder(wf, viewer);
@@ -173,10 +194,27 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	} // End link
 	
 	/**
+	 * Find nodes whose names match a patter, and return that as a new builder.   
+	 * @param pattern the name pattern.
+	 * @return a DeclarativeBuilder with zero or more nodes
+	 */
+	public DeclarativeBuilder nodesMatching(String pattern) { 
+		DeclarativeBuilder db = new DeclarativeBuilder();
+		
+		for(PLUSObject o : getNodes()) { 
+			if(o.getName().matches(pattern)) { db.addNode(o); } 
+		}
+		
+		return db;
+	} // End nodesMatching
+	
+	/**
 	 * Find a node with the given name in the current DeclarativeBuilder, and return a new builder containing only that node.
-	 * If the node cannot be found, the result will be empty.
+	 * If the node cannot be found, the result will be empty.   This will return the first result only.  So if there is more than
+	 * one node with the same name, only the first will be returned.
 	 * @param name
-	 * @return
+	 * @return a DeclarativeBuilder containing one or zero nodes.
+	 * @see DeclarativeBuilder#nodesMatching(String)
 	 */
 	public DeclarativeBuilder nodeNamed(String name) {		
 		DeclarativeBuilder db = new DeclarativeBuilder();
@@ -301,13 +339,6 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 			return db.newWorkflowNamed(instanceName, owner);
 		}
 	}
-	
-	public Object getSingle(MemberType mt) { 
-    	if(mt == MemberType.NODE) return getNodes().iterator().next();
-    	if(mt == MemberType.EDGE) return getEdges().iterator().next();
-    	if(mt == MemberType.ACTOR) return getActors().iterator().next();
-    	return getNonProvenanceEdges().iterator().next();
-    }
 	
 	public static void main(String [] args) throws Exception { 
 		DeclarativeBuilder db = new DeclarativeBuilder();
