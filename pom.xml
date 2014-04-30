@@ -242,7 +242,21 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>			
+            </plugin>
+
+			<!-- Maven's javadoc plugin is extremely strict, and starts with a default parameter -Xdoclint.
+			This causes all javadoc generation to fail if ANY tag is missing in ANY file.  We need to turn this
+			off to enable documentation generation.
+			 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.9</version>
+				<configuration>
+					<failOnError>false</failOnError>
+					<additionalparam>-Xdoclint:none</additionalparam>
+				</configuration>
+			</plugin>			
 		</plugins>
 	</build>
 

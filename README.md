@@ -42,9 +42,23 @@ The PLUS system has four main components: capture, storage, usage and admin.
 
 Code tutorials can be found in the org.mitre.provenance.tutorialcode package, covering elements of provenance creation, fetching from databases, associating access control information with provenance, and query.
 
-## API Reference
+## Java API Reference
 
-(LINK TO JAVADOCS HERE)
+Javadocs are not yet available online; the maven build system provides a way of automatically generating the javadocs.   To do this, just go to the main directory and type:
+
+	mvn javadoc:javadoc
+	
+The generated documentation ends up deposited in `plus/target/site/apidocs/`.
+
+## RESTful API Reference
+
+RESTful API documentation is in the works, via Swagger.  For now, when the maven `compile` goal is run, documentation is generated
+and placed in `src/main/webapp/apidocs.html`.
+
+Implementations of RESTful services can be found in `org.mitre.provenance.services`, and contain a number of relevant JAX-RS and Swagger
+annotations for inspection.
+
+Additionally, many services support multiple representation types corresponding to D3-JSON (the default), PROV-XML, PROV-RDF, and PROV-TTL.
 
 ## Tests
 
