@@ -1,7 +1,14 @@
 package org.mitre.provenance.plusobject.prov;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.nio.CharBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,6 +36,7 @@ import org.mitre.provenance.simulate.SyntheticGraphProperties;
 import org.mitre.provenance.tools.PLUSUtils;
 import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.User;
+import org.openprovenance.prov.interop.InteropFramework;
 import org.openprovenance.prov.model.Activity;
 import org.openprovenance.prov.model.Agent;
 import org.openprovenance.prov.model.Document;
@@ -43,7 +51,7 @@ import org.openprovenance.prov.model.Used;
 import org.openprovenance.prov.model.WasDerivedFrom;
 import org.openprovenance.prov.model.WasGeneratedBy;
 import org.openprovenance.prov.model.WasInformedBy;
-import org.openprovenance.prov.xml.ProvFactory;
+import org.openprovenance.prov.model.ProvFactory;
 
 /**
  * A class that knows how to convert ProvenanceCollection objects into a PROV-DM representation. 
@@ -69,6 +77,8 @@ public class PROVConverter {
 	public static final String METADATA_NAMESPACE = BASE_NAMESPACE + "metadata";
 	private static Logger log = Logger.getLogger(PROVConverter.class.getName());
 	
+	public enum Format { RDF, XML, TTL };
+	
 	protected ProvFactory factory = null;
 	protected Name name = null;
 	
@@ -87,7 +97,7 @@ public class PROVConverter {
 	 * Create a new converter object.
 	 */
 	public PROVConverter() { 
-		factory = new ProvFactory();
+		factory = new org.openprovenance.prov.xml.ProvFactory();
 		name = factory.getName();
 	} 
 	
@@ -183,12 +193,13 @@ public class PROVConverter {
 			makeObjectProperty(type, npid, "npe");
 		} // End for
 		
-		// Assemble final document.
-		Document d = factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());		
+		// Assemble final document.		
+		Document d =  factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());		
 		Namespace n = Namespace.gatherNamespaces(d);
 		n.addKnownNamespaces();
 		n.setDefaultNamespace(BASE_NAMESPACE);
 		d.setNamespace(n);
+		
 		return d;
 	} // End provenanceCollectionToPROV
 	
@@ -309,6 +320,7 @@ public class PROVConverter {
 			// Sometimes metadata key names can contain invalid XML characters that cause syntax errors, because
 			// the PROV library doesn't check for this.
 			String local = key.replaceAll("[^A-Za-z0-9]", "_");
+			
 			if(!key.equals(local)) { 
 				// System.out.println("METADATA: '" + key + "' '" + val + "'" + " local '" + local + "'");
 			}
@@ -438,10 +450,47 @@ public class PROVConverter {
 		}
 		
 		Document d = new PROVConverter().provenanceCollectionToPROV(col);
-		Namespace.withThreadNamespace(d.getNamespace());
+
+		System.out.println("Writing...");
 		
-		org.openprovenance.prov.xml.ProvSerialiser serializer = new org.openprovenance.prov.xml.ProvSerialiser();
-		serializer.serialiseDocument(System.out, d, true);
+		System.out.println(consume(formatAs(Format.XML, d))); 
+		System.out.println(consume(formatAs(Format.RDF, d)));
+		System.out.println(consume(formatAs(Format.TTL, d)));
+	}
+
+	public static BufferedReader formatAs(Format fmt, Document d) throws IOException { 
+		InteropFramework fmk = new InteropFramework();
+		
+		String suffix = ".xml";
+		
+		if(fmt == Format.XML)      { suffix = ".xml"; } 
+		else if(fmt == Format.TTL) { suffix = ".ttl"; } 
+		else if(fmt == Format.RDF) { suffix = ".rdf"; }
+		else { suffix = ".xml"; } 
+		
+		File f = File.createTempFile("prov", suffix);
+		f.deleteOnExit();
+		String target = f.getAbsolutePath();
+		// System.out.println("Tmpfile: " + target);
+		
+		fmk.writeDocument(target, d);
+		
+		BufferedReader br = new BufferedReader(new FileReader(target)); 
+		return br;
+	}
+	
+	public static String consume(BufferedReader br) throws IOException { 
+		StringBuffer b = new StringBuffer();
+		
+		char [] buf = new char[1024*4];
+		
+		int x=0;
+		while((x = br.read(buf)) > 0) {
+			b.append(buf);
+		}
+		
+		try { br.close(); } catch(Exception exc) { exc.printStackTrace(); } 
+		return b.toString();
 	}
 	
 	/**
