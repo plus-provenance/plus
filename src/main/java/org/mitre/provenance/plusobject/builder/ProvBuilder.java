@@ -50,12 +50,12 @@ import org.mitre.provenance.user.User;
  *  
  * @author moxious
  */
-public class DeclarativeBuilder extends ProvenanceCollection {
+public class ProvBuilder extends ProvenanceCollection {
 	protected PLUSWorkflow wf = PLUSWorkflow.DEFAULT_WORKFLOW;
 	protected User viewer = User.PUBLIC;
 	protected ContentHasher hasher = null;
 	
-	public DeclarativeBuilder() {
+	public ProvBuilder() {
 		this(PLUSWorkflow.DEFAULT_WORKFLOW, User.PUBLIC);		
 	}
 		
@@ -65,7 +65,7 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @param viewer
 	 * @throws PLUSException
 	 */
-	public DeclarativeBuilder(PLUSWorkflow wf, User viewer) {
+	public ProvBuilder(PLUSWorkflow wf, User viewer) {
 		super();
 		
 		if(wf == null) wf = PLUSWorkflow.DEFAULT_WORKFLOW;
@@ -80,13 +80,13 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 		catch(Exception exc) { ; } 
 	} // End DeclarativeBuilder
 	
-	public DeclarativeBuilder(DeclarativeBuilder ... builders) { 
+	public ProvBuilder(ProvBuilder ... builders) { 
 		this();
 		
 		merge(builders);
 	}
 	
-	public DeclarativeBuilder(PLUSObject ... items) {
+	public ProvBuilder(PLUSObject ... items) {
 		this();
 		for(PLUSObject o : items) addNode(o);
 	}
@@ -97,15 +97,15 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	}
 		
 	public User getUser() { return viewer; } 
-	public DeclarativeBuilder setUser(User viewer) { this.viewer = viewer; return this; } 
+	public ProvBuilder setUser(User viewer) { this.viewer = viewer; return this; } 
 	
 	/**
 	 * Combine all the provided builders into the current one, modifying the current one.
 	 * @param builders
 	 * @return
 	 */
-	public DeclarativeBuilder merge(DeclarativeBuilder ... builders) {
-		for(DeclarativeBuilder db : builders) addAll(db);
+	public ProvBuilder merge(ProvBuilder ... builders) {
+		for(ProvBuilder db : builders) addAll(db);
 		return this;
 	}
 	
@@ -116,14 +116,14 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @return a new DeclarativeBuilder containing the linkage
 	 * @throws PLUSException
 	 */
-	public DeclarativeBuilder link(String headName, String tailName) throws PLUSException { 
-		DeclarativeBuilder head = nodeNamed(headName);
-		DeclarativeBuilder tail = nodeNamed(tailName);
+	public ProvBuilder link(String headName, String tailName) throws PLUSException { 
+		ProvBuilder head = nodeNamed(headName);
+		ProvBuilder tail = nodeNamed(tailName);
 		
 		return link(head, tail); 
 	}
 		
-	public DeclarativeBuilder excise(DeclarativeBuilder items) { 
+	public ProvBuilder excise(ProvBuilder items) { 
 		return excise(items, false);
 	}
 	
@@ -134,8 +134,8 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @param removeWorkflows if true, workflow nodes will be removed as well.  If false, they won't be.
 	 * @return new declarative builder
 	 */
-	public DeclarativeBuilder excise(DeclarativeBuilder items, boolean removeWorkflows) {
-		DeclarativeBuilder db = new DeclarativeBuilder(this);
+	public ProvBuilder excise(ProvBuilder items, boolean removeWorkflows) {
+		ProvBuilder db = new ProvBuilder(this);
 			
 		for(PLUSEdge e : items.getEdges()) {
 			db.removeEdge(e);
@@ -159,8 +159,8 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 		return db;
 	} // End excise
 	
-	public DeclarativeBuilder findLinks(String headName, String tailName) throws PLUSException { 
-		DeclarativeBuilder db = new DeclarativeBuilder(wf, viewer);
+	public ProvBuilder findLinks(String headName, String tailName) throws PLUSException { 
+		ProvBuilder db = new ProvBuilder(wf, viewer);
 		
 		PLUSObject head = null;
 		PLUSObject tail = null;
@@ -184,11 +184,11 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @param tails
 	 * @return this
 	 */
-	public DeclarativeBuilder link(ProvenanceCollection heads, ProvenanceCollection tails) throws PLUSException {
+	public ProvBuilder link(ProvenanceCollection heads, ProvenanceCollection tails) throws PLUSException {
 		if(heads == null || heads.countNodes() <= 0) throw new PLUSException("Heads must be non-empty and non-null.");
 		if(tails == null || tails.countNodes() <= 0) throw new PLUSException("Tails must be non-empty and non-null."); 
 		
-		DeclarativeBuilder db = new DeclarativeBuilder(this.wf, this.viewer);
+		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		
 		for(PLUSObject head : heads.getNodes()) {			
 			db.addNode(head);
@@ -212,8 +212,8 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @param pattern the name pattern.
 	 * @return a DeclarativeBuilder with zero or more nodes
 	 */
-	public DeclarativeBuilder nodesMatching(String pattern) { 
-		DeclarativeBuilder db = new DeclarativeBuilder();
+	public ProvBuilder nodesMatching(String pattern) { 
+		ProvBuilder db = new ProvBuilder();
 		
 		for(PLUSObject o : getNodes()) { 
 			if(o.getName().matches(pattern)) { db.addNode(o); } 
@@ -228,10 +228,10 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * one node with the same name, only the first will be returned.
 	 * @param name
 	 * @return a DeclarativeBuilder containing one or zero nodes.
-	 * @see DeclarativeBuilder#nodesMatching(String)
+	 * @see ProvBuilder#nodesMatching(String)
 	 */
-	public DeclarativeBuilder nodeNamed(String name) {		
-		DeclarativeBuilder db = new DeclarativeBuilder();
+	public ProvBuilder nodeNamed(String name) {		
+		ProvBuilder db = new ProvBuilder();
 		
 		for(PLUSObject o : getNodes()) {
 			if(o.getName().equals(name)) { db.addNode(o); break; } 
@@ -240,19 +240,19 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 		return db;
 	}	
 	
-	public DeclarativeBuilder newActorNamed(String name) throws PLUSException {
-		DeclarativeBuilder db = new DeclarativeBuilder(this.wf, this.viewer);
+	public ProvBuilder newActorNamed(String name) throws PLUSException {
+		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		PLUSActor a = Neo4JPLUSObjectFactory.getActor(name, true);
 		db.addActor(a);
 		return db;
 	}
 	
-	public DeclarativeBuilder newWorkflowNamed(String name) { 
+	public ProvBuilder newWorkflowNamed(String name) { 
 		return newWorkflowNamed(name, null); 
 	}
 	
-	public DeclarativeBuilder newWorkflowNamed(String name, PLUSActor owner) { 
-		DeclarativeBuilder db = new DeclarativeBuilder(this.wf, this.viewer);
+	public ProvBuilder newWorkflowNamed(String name, PLUSActor owner) { 
+		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		PLUSWorkflow w = new PLUSWorkflow();
 		w.setName(name);
 		if(owner != null) { w.setOwner(owner); db.addActor(owner); } 
@@ -265,7 +265,7 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @param name
 	 * @return 
 	 */
-	public DeclarativeBuilder newDataNamed(String name, String ...metadataKeyValuePairs) { 
+	public ProvBuilder newDataNamed(String name, String ...metadataKeyValuePairs) { 
 		return newDataNamed(name, null, metadataKeyValuePairs); 
 	}
 	
@@ -275,9 +275,9 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	 * @param owner
 	 * @return 
 	 */
-	public DeclarativeBuilder newDataNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) { 
+	public ProvBuilder newDataNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) { 
 		PLUSString s = new PLUSString(name);
-		DeclarativeBuilder db = new DeclarativeBuilder(this.wf, this.viewer);
+		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		
 		try {
 			s.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, generateHash());
@@ -292,12 +292,12 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 		return db;
 	}
 	
-	public DeclarativeBuilder newInvocationNamed(String name, String ... metadataKeyValuePairs) throws PLUSException { 
+	public ProvBuilder newInvocationNamed(String name, String ... metadataKeyValuePairs) throws PLUSException { 
 		return newInvocationNamed(name, null, metadataKeyValuePairs); 
 	}
 	
-	public DeclarativeBuilder newInvocationNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) {
-		DeclarativeBuilder db = new DeclarativeBuilder(this.wf, this.viewer);
+	public ProvBuilder newInvocationNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) {
+		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		PLUSInvocation inv = new PLUSInvocation();
 		inv.setName(name);		
 		
@@ -336,12 +336,12 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 		return b.toString();
 	}
 	
-	public DeclarativeBuilder generate(NodeTemplate tmpl, String varName, String varValue) {
+	public ProvBuilder generate(NodeTemplate tmpl, String varName, String varValue) {
 		return generate(tmpl, varName, varValue, null); 
 	}
 	
-	public DeclarativeBuilder generate(NodeTemplate tmpl, String varName, String varValue, PLUSActor owner) { 
-		DeclarativeBuilder db = new DeclarativeBuilder();
+	public ProvBuilder generate(NodeTemplate tmpl, String varName, String varValue, PLUSActor owner) { 
+		ProvBuilder db = new ProvBuilder();
 		
 		String instanceName = tmpl.name.replaceAll("\\{" + varName + "\\}", varValue);
 		
@@ -355,7 +355,7 @@ public class DeclarativeBuilder extends ProvenanceCollection {
 	}
 	
 	public static void main(String [] args) throws Exception { 
-		DeclarativeBuilder db = new DeclarativeBuilder();
-		System.out.println(new DeclarativeBuilder().link(db.newDataNamed("Data input"), db.newInvocationNamed("Foo")));
+		ProvBuilder db = new ProvBuilder();
+		System.out.println(new ProvBuilder().link(db.newDataNamed("Data input"), db.newInvocationNamed("Foo")));
 	}
 } // End DeclarativeBuilder
