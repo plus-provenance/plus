@@ -224,6 +224,14 @@ public class ViewedCollection extends ProvenanceCollection {
 		return super.addAll(copy, force);
 	}
 	
+	public ViewedCollection clone() { 
+		ViewedCollection col = (ViewedCollection)super.clone();
+		col.viewer = this.viewer;
+		col.focus = this.focus;
+		
+		return col;
+	} // End clone
+	
 	/** @see ProvenanceCollection#addAll(ProvenanceCollection) */
 	public int addAll(ProvenanceCollection other) { return addAll(other, false); }
 } // End ViewedCollection

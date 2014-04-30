@@ -81,6 +81,14 @@ public class LineageDAG extends ViewedCollection {
 		empty(); 
 	}
 	
+	public LineageDAG clone() { 
+		LineageDAG dag = (LineageDAG)super.clone();
+		dag.taintSources = this.taintSources;
+		dag.fingerPrint = this.fingerPrint;
+		
+		return dag;
+	} // End clone
+	
 	/** Get the fingerprint associated with this DAG */
 	public FingerPrint getFingerPrint() { return fingerPrint; } 
 	
