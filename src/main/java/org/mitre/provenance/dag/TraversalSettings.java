@@ -70,6 +70,9 @@ public class TraversalSettings {
 	/** Whether or not to traverse backwards in the DAG */
 	public boolean backward = true;
 	
+	/** Whether or not to expand workflows. */
+	public boolean expandWorkflows = true; 
+	
 	private TraversalSettings(int n, int maxDepth, boolean breadthFirst, boolean includeNodes, boolean includeEdges, 
 			boolean includeNPEs, boolean followNPIDs, boolean forward, boolean backward) {
 		this.n = n;
@@ -86,6 +89,12 @@ public class TraversalSettings {
 	public TraversalSettings() {
 		this(200, 10, true, true, true, true, true, true, true);
 	}
+	
+	/** Traversal will not expand workflows (that is, will keep them individual nodes) */
+	public TraversalSettings dontExpandWorkflows() { expandWorkflows = false; return this; } 
+	
+	/** Traversal will expand workflows (that is, expand their members and traverse them) */
+	public TraversalSettings expandWorkflows() { expandWorkflows = true; return this; } 
 	
 	/** Traversal will not follow non-provenance edges/IDs */
 	public TraversalSettings ignoreNPIDs() { followNPIDs = false; return this; }
