@@ -40,21 +40,33 @@ import org.mitre.provenance.user.User;
  * <p>Most types return a DeclarativeBuilder for easy method chaining.   Almost all methods do <strong>not</strong> modify the state
  * of the current object, they return a new object.
  * 
- *  <p>Below is some sample code that illustrates building a simple workflow.
+ *  <p>Below is some sample code that illustrates building a simple workflow.   Let's say that we want to model 
+ *  two pieces of data ("X" and "Y" with values "3" and "4" respectively) being fed into an "addition" process, resulting in 
+ *  a piece of data "Z" (value 7).  That code might look like this:
  *  <pre>
- *  DeclarativeBuilder db = new DeclarativeBuilder(new PLUSWorkflow("Sample Workflow"), null);
- *  db.addAll(db.newInvocationNamed("Browse")
- *  	addAll(link(new DeclarativeBuilder(nodeNamed("Browse"), nodeNamed("View")), 
-				newInvocationNamed("Save Links", "App", "Word, Sharepoint", "User", "Alice")));	
- *  </pre>
+ *  ProvBuilder pb = new ProvBuilder(new PLUSWorkflow("Simple Addition"), null);
  *  
+ *  ProvBuilder inputs = new ProvBuilder(
+ *     pb.newNodeNamed("X", "value", "3"),
+ *     pb.newNodeNamed("Y", "value", "4"));
+ *     
+ *  ProvBuilder process = pb.newInvocationNamed("Addition");
+ *  ProvBuilder output = pb.newNodeNamed("Z", "value", "7");
+ *  return pb.merge(pb.link(inputs, process), pb.link(process, output));
+ * </pre>
+ *
+ *  A number of methods take an arbitrary number of Strings called "metadataKeyValuePairs".   Java doesn't permit
+ *  static initialization of maps, so this is how some basic metadata can be specified in creating a new object.  For example,
+ *  if you call newDataNamed("Foo", "X", "hello", "Y", "world") then you'll get an object named Foo, with two metadata pairs:
+ *  X=hello, and Y=world.
  * @author moxious
  */
 public class ProvBuilder extends ProvenanceCollection {
 	protected PLUSWorkflow wf = PLUSWorkflow.DEFAULT_WORKFLOW;
 	protected User viewer = User.PUBLIC;
 	protected ContentHasher hasher = null;
-	
+
+	/** Create a new builder object with the default workflow, viewed by User PUBLIC. */
 	public ProvBuilder() {
 		this(PLUSWorkflow.DEFAULT_WORKFLOW, User.PUBLIC);		
 	}
@@ -80,18 +92,30 @@ public class ProvBuilder extends ProvenanceCollection {
 		catch(Exception exc) { ; } 
 	} // End DeclarativeBuilder
 	
+	/**
+	 * Create a new builder as the union of all of the arguments.
+	 * @param builders
+	 */
 	public ProvBuilder(ProvBuilder ... builders) { 
-		this();
-		
+		this();		
 		merge(builders);
 	}
 	
+	/**
+	 * Create a new builder containing all of the arguments.
+	 * @param items
+	 */
 	public ProvBuilder(PLUSObject ... items) {
 		this();
 		for(PLUSObject o : items) addNode(o);
 	}
 	
-	public String generateHash() throws IOException { 
+	/**
+	 * Utility method to generate a new random SHA-256 hash 
+	 * @return a String representing a hex-encoded, random SHA-256 hash.
+	 * @throws IOException
+	 */
+	protected String generateHash() throws IOException { 
 		String uuid = UUID.randomUUID().toString();		
 		return ContentHasher.formatAsHexString(hasher.hash(new ByteArrayInputStream(uuid.getBytes())));
 	}
@@ -123,6 +147,12 @@ public class ProvBuilder extends ProvenanceCollection {
 		return link(head, tail); 
 	}
 		
+	/**
+	 * Same as excise(items, false)
+	 * @see ProvBuilder#excise(ProvBuilder, boolean)
+	 * @param items the items you want removed
+	 * @return a new builder
+	 */
 	public ProvBuilder excise(ProvBuilder items) { 
 		return excise(items, false);
 	}
@@ -159,6 +189,13 @@ public class ProvBuilder extends ProvenanceCollection {
 		return db;
 	} // End excise
 	
+	/**
+	 * Returns a new builder containing only those edges that go between nodes named headName, and nodes named tailName.
+	 * @param headName
+	 * @param tailName
+	 * @return
+	 * @throws PLUSException
+	 */
 	public ProvBuilder findLinks(String headName, String tailName) throws PLUSException { 
 		ProvBuilder db = new ProvBuilder(wf, viewer);
 		
@@ -240,6 +277,12 @@ public class ProvBuilder extends ProvenanceCollection {
 		return db;
 	}	
 	
+	/**
+	 * Create a new actor in the local database, and return a builder containing that actor.
+	 * @param name name of the actor.
+	 * @return
+	 * @throws PLUSException
+	 */
 	public ProvBuilder newActorNamed(String name) throws PLUSException {
 		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		PLUSActor a = Neo4JPLUSObjectFactory.getActor(name, true);
@@ -250,7 +293,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	public ProvBuilder newWorkflowNamed(String name) { 
 		return newWorkflowNamed(name, null); 
 	}
-	
+
 	public ProvBuilder newWorkflowNamed(String name, PLUSActor owner) { 
 		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		PLUSWorkflow w = new PLUSWorkflow();
