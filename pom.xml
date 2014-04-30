@@ -131,9 +131,16 @@
 
 		<dependency>
 			<groupId>org.openprovenance.prov</groupId>
+			<artifactId>prov-interop</artifactId>
+			<version>${openprov-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.openprovenance.prov</groupId>
 			<artifactId>prov-json</artifactId>
 			<version>${openprov-version}</version>
 		</dependency>
+
 		<dependency>
 		  <groupId>com.wordnik</groupId>
 		  <artifactId>swagger-jersey-jaxrs_2.10</artifactId>
