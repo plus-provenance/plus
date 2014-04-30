@@ -666,7 +666,8 @@ public class Neo4JPLUSObjectFactory {
 	 *  
 	 */	
 	public static LineageDAG newDAG(String id, User user, TraversalSettings settings) throws PLUSException {
-		// TODO 
+		// TODO workflow expansion - see TraversalSettings
+		
 		// This method needs refactoring.  It traverses by nodes, but then lists edges individually.  When doing so, it has the
 		// side-effect of looking up nodes and creating new ones.  It would probably be more efficient to just traverse by
 		// edges, and create the nodes as you go.
@@ -846,7 +847,7 @@ public class Neo4JPLUSObjectFactory {
 	 * @return a LineageDAG object.
 	 * @throws PLUSException
 	 */
-	public static LineageDAG newDAG(Iterable<String>ids, User user, int maxNodes, 
+	public static LineageDAG __newDAG(Iterable<String>ids, User user, int maxNodes, 
 			int maxHops, 
 			boolean includeNodes, boolean includeEdges,
 			boolean includeNonProvenanceEdges, 
