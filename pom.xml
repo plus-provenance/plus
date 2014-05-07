@@ -15,6 +15,7 @@
 	<version>3.0.0</version>
 	<name>PLUS Provenance</name>
 	<url>http://www.mitre.org/</url>
+	
 	<dependencies>
 		<!-- Spring -->
 		<dependency>
@@ -257,6 +258,16 @@
 					<additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
 			</plugin>			
+						
+	      <plugin>
+	        <groupId>org.apache.maven.plugins</groupId>
+	        <artifactId>maven-compiler-plugin</artifactId>
+	        <version>3.1</version>
+	        <configuration>
+	          <source>1.7</source>
+	          <target>1.7</target>
+	        </configuration>
+	      </plugin>
 		</plugins>
 	</build>
 
