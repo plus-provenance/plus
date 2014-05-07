@@ -52,11 +52,9 @@ The generated documentation ends up deposited in `plus/target/site/apidocs/`.
 
 ## RESTful API Reference
 
-RESTful API documentation is in the works, via Swagger.  For now, when the maven `compile` goal is run, documentation is generated
-and placed in `src/main/webapp/apidocs.html`.
+RESTful API documentation is provided via [Swagger](https://github.com/wordnik/swagger-ui).  For now, when the maven `compile` goal is run, documentation is generated dynamically.  When the jetty server is run, you will find the documentation located at `http://yourhost/plus/docs/index.html`
 
-Implementations of RESTful services can be found in `org.mitre.provenance.services`, and contain a number of relevant JAX-RS and Swagger
-annotations for inspection.
+Implementations of RESTful services can be found in `org.mitre.provenance.services`, and contain a number of relevant JAX-RS and Swagger annotations for inspection.
 
 Additionally, many services support multiple representation types corresponding to D3-JSON (the default), PROV-XML, PROV-RDF, and PROV-TTL.
 
