@@ -147,6 +147,11 @@ public class ProvBuilder extends ProvenanceCollection {
 		return link(head, tail); 
 	}
 		
+	public PLUSObject singleNode() {
+		if(countNodes() > 1) log.warning("Collection has more than one node!");
+		return getNodes().iterator().next();
+	}
+	
 	/**
 	 * Same as excise(items, false)
 	 * @see ProvBuilder#excise(ProvBuilder, boolean)
@@ -174,7 +179,7 @@ public class ProvBuilder extends ProvenanceCollection {
 		for(PLUSObject o : items.getNodes()) {
 			if(o.isWorkflow() && !removeWorkflows) continue;
 			
-			System.out.println("Removing " + o); 
+			// System.out.println("Removing " + o); 
 			db.removeNode(o, true);  // Remove incident edges too.
 		}
 	
