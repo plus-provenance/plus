@@ -105,8 +105,8 @@
 		<tr>
 			<td><a href="/plus/"><img src="media/img/tci_logo.png" border="0" alt="Provenance: Linking and Understanding Sources (PLUS)"/></a></td>
 			<td><h1><a href="/plus/">Provenance</a></h1></td>
-			<td width='50%'><div style='vertical-align: center; text-align:right;'>Welcome, <%=user.getEmail()%></div></td>
-		</tr>
+			<td width='50%'><div style='vertical-align: center; text-align:right;'>Welcome, <%=user.getEmail()%></div></td>			
+		</tr>		
 	</table>
 	
 	</div>
@@ -196,6 +196,8 @@
 			<div id='dashboardQueryResults'>&nbsp;</div>			
 		</div>
 	</div>
+	
+	<div>(c) MITRE 2014 / <a href="docs/index.html">API documentation</a> / <a href="https://github.com/plus-provenance/plus">GitHub Repo</a></div>
 </div>
 </body>
 </html>
