@@ -2,13 +2,10 @@ package org.mitre.provenance.plusobject.prov;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
-import java.nio.CharBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,22 +40,23 @@ import org.openprovenance.prov.model.Document;
 import org.openprovenance.prov.model.Entity;
 import org.openprovenance.prov.model.HasOther;
 import org.openprovenance.prov.model.Name;
+import org.openprovenance.prov.model.NamedBundle;
 import org.openprovenance.prov.model.Namespace;
 import org.openprovenance.prov.model.Other;
+import org.openprovenance.prov.model.ProvFactory;
 import org.openprovenance.prov.model.QualifiedName;
 import org.openprovenance.prov.model.Statement;
 import org.openprovenance.prov.model.Used;
 import org.openprovenance.prov.model.WasDerivedFrom;
 import org.openprovenance.prov.model.WasGeneratedBy;
 import org.openprovenance.prov.model.WasInformedBy;
-import org.openprovenance.prov.model.ProvFactory;
 
 /**
  * A class that knows how to convert ProvenanceCollection objects into a PROV-DM representation. 
+ * Information on PROV-DM can be found at http://www.w3.org/TR/prov-dm/
  * 
  * <p>This code follows mappings provided in the MAPPINGS-PLUS-TO-PROV-DM.txt file found in the source
- * distribution.  Without consulting that file, the mappings in this source code likely won't make much 
- * sense.
+ * distribution.  The mappings in that file are necessary to understand what is happening with this code.
  * 
  * <p>This is an initial cut - it is still in need of substantial development, testing, and verification.
  * 
@@ -68,7 +66,7 @@ import org.openprovenance.prov.model.ProvFactory;
  * various exceptions due to invalid data.   PLUS data objects don't exist in the W3C/XML space, and so
  * when we do this translation we're creating artifacts like QNames that don't natively exist in PLUS.
  * Beware situations where data in PLUS translates into invalid XML NCNames, anyURI, and so on.  This
- * won't be caught by the PROV API, but will cause failure to serialize.  
+ * won't be caught by the PROV API, but can cause failure to serialize.  
  * 
  * @author moxious
  */
@@ -124,7 +122,7 @@ public class PROVConverter {
 				item = a;
 				provActivities.put(o.getId(), a); 
 			} else if(o.isWorkflow()) {
-				Entity e = workflowToPlan(o);				
+				Entity e = workflowToBundle(o);				
 				item = e;
 				provEntities.put(o.getId(), e);
 			} else if(o.isDataItem()) { 
@@ -190,8 +188,19 @@ public class PROVConverter {
 				continue;
 			}
 			
-			makeObjectProperty(type, npid, "npe");
+			// TODO NPEs are basically not yet supported.
+			// makeObjectProperty(type, npid, "npe");
 		} // End for
+		
+		/*
+		NamedBundle collectionBundle = factory.newNamedBundle(getQualifiedName(col), 
+				provActivities.values(),
+				provEntities.values(),
+				provAgents.values(),
+				provStatements.values());
+				
+		collectionBundle.
+		*/
 		
 		// Assemble final document.		
 		Document d =  factory.newDocument(provActivities.values(), provEntities.values(), provAgents.values(), provStatements.values());		
@@ -203,6 +212,13 @@ public class PROVConverter {
 		return d;
 	} // End provenanceCollectionToPROV
 	
+	/**
+	 * Indicates whether or not a given edge can be converted.
+	 * @param e the edge
+	 * @param f the PROV object corresponding to the from part
+	 * @param t the PROV object corresponding to the to part
+	 * @return false if the edge cannot be converted; true if it can be.
+	 */
 	private boolean canConvert(PLUSEdge e, Object f, Object t) { 
 		if(f == null || t == null) { 
 			log.warning("Will not convert dangling edge " + e + 
@@ -214,6 +230,12 @@ public class PROVConverter {
 		return true;
 	} // End canConvert
 	
+	/**
+	 * Locate the PROV "HasOther" object associated with a given PLUSObject in the collection being converted.
+	 * 
+	 * @param obj
+	 * @return
+	 */
 	public HasOther getHasOther(PLUSObject obj) { 
 		if(provEntities.containsKey(obj.getId())) return provEntities.get(obj.getId());
 		if(provActivities.containsKey(obj.getId())) return provActivities.get(obj.getId());
@@ -226,6 +248,13 @@ public class PROVConverter {
 		return null;
 	}
 	
+	/**
+	 * Convert a general PLUSEdge object into a PROV Statement.
+	 * See the mappings file for description of which kinds of edges are translated into which kinds of statements.
+	 * @param e the edge to convert
+	 * @return
+	 * @throws PROVConversionException
+	 */
 	protected Statement edgeToStatement(PLUSEdge e) throws PROVConversionException { 
 		String edgeType = e.getType();
 		
@@ -330,6 +359,12 @@ public class PROVConverter {
 		}
 	}
 	
+	/**
+	 * Make a general object property under the prefix prop.
+	 * @param name
+	 * @param value
+	 * @return
+	 */
 	protected Other makeObjectProperty(String name, Object value) { 
 		return makeObjectProperty(name, value, "prop");
 	}
@@ -362,7 +397,15 @@ public class PROVConverter {
 		return factory.newOther(BASE_NAMESPACE, name, prefix, value, nameType);
 	} // End makeObjectProperty
 		
-	public Entity workflowToPlan(PLUSObject obj) throws PROVConversionException { 		
+	/**
+	 * TODO PLUSWorkflow objects should likely get converted into PROV Bundles.
+	 * Right now, workflows are just turned into generic entities, which often lack connection to other
+	 * Entities and so on.
+	 * @param obj
+	 * @return
+	 * @throws PROVConversionException
+	 */
+	public Entity workflowToBundle(PLUSObject obj) throws PROVConversionException { 		
 		if(!obj.isWorkflow()) throw new PROVConversionException("Object is not a workflow: " + obj);
 		PLUSWorkflow w = (PLUSWorkflow)obj;
 		
@@ -374,6 +417,12 @@ public class PROVConverter {
 		return e;
 	}
 	
+	/**
+	 * Convert a PLUSActivity into a PROV Activity.
+	 * @param obj
+	 * @return
+	 * @throws PROVConversionException if the input isn't a PLUSActivity.
+	 */
 	public Activity activityToActivity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isActivity()) throw new PROVConversionException("Object is not an activity: " + obj);
 		PLUSActivity act = (PLUSActivity)obj;
@@ -385,6 +434,12 @@ public class PROVConverter {
 		return a;
 	}
 	
+	/**
+	 * Convert a PLUSInvocation to a PROV Activity.
+	 * @param obj
+	 * @return
+	 * @throws PROVConversionException if the input isn't an invocation.
+	 */
 	public Activity invocationToActivity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isInvocation()) throw new PROVConversionException("Object is not an invocation: " + obj);
 		PLUSInvocation inv = (PLUSInvocation)obj;
@@ -393,6 +448,12 @@ public class PROVConverter {
 		return a;
 	}
 	
+	/**
+	 * Convert a PLUSDataObject into a PROV Entity.
+	 * @param obj
+	 * @return
+	 * @throws PROVConversionException if input isn't a data item.
+	 */
 	public Entity dataObjectToEntity(PLUSObject obj) throws PROVConversionException { 
 		if(!obj.isDataItem()) throw new PROVConversionException("Object is not a data item: " + obj);		
 		Entity e = factory.newEntity(getQualifiedName((PLUSDataObject)obj), obj.getName());
@@ -423,6 +484,11 @@ public class PROVConverter {
 		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + e.getClass().getSimpleName(), 
 				e.getFrom().getId() + ":" + e.getTo().getId(), 
 				e.getType().replaceAll(" ", "_"));		
+	}
+	
+	public QualifiedName getQualifiedName(ProvenanceCollection col) { 
+		return new org.openprovenance.prov.xml.QualifiedName(BASE_NAMESPACE + "ProvenanceCollection",
+				col.getId(), "provcollection");
 	}
 	
 	public QualifiedName getQualifiedName(PLUSObject obj) { 
