@@ -15,10 +15,18 @@
 package org.mitre.provenance.plusobject.builder;
 
 /**
- * Helper class to repetitively generate many DeclarativeBuilders based on a template.
+ * Helper class to repetitively generate many ProvBuilders based on a template.
  * The name template should contain variable names in curly braces, e.g. "Data item {x}".
  * With a template with that name, generate() can then be called with varName="x" and various values
  * to generate novel data items. 
+ * 
+ * <p>As an example, one might create a NodeTemplate such as:
+ * <pre>NodeTemplate tmpl = new NodeTemplate(NodeType.DATA, "Communication {x}");</pre>
+ * 
+ * When generating objects based on that template, the results would be ProvBuidler objects containing a single node, always data,
+ * with various substitutions of names based on the value of {x}.
+ * 
+ * @see ProvBuilder
  * @author moxious
  */
 public class NodeTemplate {

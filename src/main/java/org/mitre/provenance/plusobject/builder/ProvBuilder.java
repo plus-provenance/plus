@@ -120,7 +120,17 @@ public class ProvBuilder extends ProvenanceCollection {
 		return ContentHasher.formatAsHexString(hasher.hash(new ByteArrayInputStream(uuid.getBytes())));
 	}
 		
+	/**
+	 * Return the user that is the "viewer" of this builder
+	 * @return
+	 */
 	public User getUser() { return viewer; } 
+	
+	/**
+	 * Modify the user that is the viewer of this builder.
+	 * @param viewer
+	 * @return
+	 */
 	public ProvBuilder setUser(User viewer) { this.viewer = viewer; return this; } 
 	
 	/**
@@ -147,6 +157,11 @@ public class ProvBuilder extends ProvenanceCollection {
 		return link(head, tail); 
 	}
 		
+	/**
+	 * Return the first node in this collection.  This is primarily useful when the collection is a holder of a singleton;
+	 * for more fine-grained control over which node to get, use other methods inherited from ProvenanceCollection.
+	 * @return the very first node in the collection.
+	 */
 	public PLUSObject singleNode() {
 		if(countNodes() > 1) log.warning("Collection has more than one node!");
 		return getNodes().iterator().next();
@@ -340,10 +355,24 @@ public class ProvBuilder extends ProvenanceCollection {
 		return db;
 	}
 	
+	/**
+	 * Create a new invocation with the specified name and metadata.
+	 * @param name
+	 * @param metadataKeyValuePairs
+	 * @return a ProvBuilder containing a single PLUSInvocation.
+	 * @throws PLUSException
+	 */
 	public ProvBuilder newInvocationNamed(String name, String ... metadataKeyValuePairs) throws PLUSException { 
 		return newInvocationNamed(name, null, metadataKeyValuePairs); 
 	}
 	
+	/**
+	 * Create a new invocation with the specified name, owner, and metadata.
+	 * @param name
+	 * @param owner
+	 * @param metadataKeyValuePairs
+	 * @return a ProvBuilder with a single PLUSInvocation.
+	 */
 	public ProvBuilder newInvocationNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) {
 		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
 		PLUSInvocation inv = new PLUSInvocation();
@@ -356,6 +385,12 @@ public class ProvBuilder extends ProvenanceCollection {
 		return db;
 	}
 	
+	/**
+	 * Convenience method to associate a set of metadata key/value pairs with a specified PLUSObject.
+	 * @param obj
+	 * @param metadataKeyValuePairs
+	 * @return
+	 */
 	private PLUSObject tagMetadata(PLUSObject obj, String ... metadataKeyValuePairs) {
 		for(int x=0; x<metadataKeyValuePairs.length; x+=2) {
 			String key = metadataKeyValuePairs[x];
@@ -384,10 +419,28 @@ public class ProvBuilder extends ProvenanceCollection {
 		return b.toString();
 	}
 	
+	/**
+	 * Generates an instance of a ProvBuilder, by substituting varValue for a variable named varName in the specified template.
+	 * @param tmpl
+	 * @param varName
+	 * @param varValue
+	 * @return a ProvBuilder object.
+	 * @see NodeTemplate
+	 */
 	public ProvBuilder generate(NodeTemplate tmpl, String varName, String varValue) {
 		return generate(tmpl, varName, varValue, null); 
 	}
 	
+	/**
+	 * Generates an instance of a ProvBuilder, by substituting varValue for a variable named varName in the specified template.  Ensures
+	 * that the resulting objects are owned by the specified owner.
+	 * @param tmpl
+	 * @param varName
+	 * @param varValue
+	 * @param owner
+	 * @return a ProvBuilder containing the result of the generation.
+	 * @see NodeTemplate
+	 */
 	public ProvBuilder generate(NodeTemplate tmpl, String varName, String varValue, PLUSActor owner) { 
 		ProvBuilder db = new ProvBuilder();
 		
@@ -402,6 +455,11 @@ public class ProvBuilder extends ProvenanceCollection {
 		}
 	}
 	
+	/**
+	 * Sample main method to demonstrate employment; meant only for instruction.
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String [] args) throws Exception { 
 		ProvBuilder db = new ProvBuilder();
 		System.out.println(new ProvBuilder().link(db.newDataNamed("Data input"), db.newInvocationNamed("Foo")));
