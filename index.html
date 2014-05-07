@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Plus by plus-provenance</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Plus</h1>
+          <h2>Provenance: Linking and Understanding Sources</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/plus-provenance/plus/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/plus-provenance/plus/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/plus-provenance/plus" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h2>
+<a name="synopsis" class="anchor" href="#synopsis"><span class="octicon octicon-link"></span></a>Synopsis</h2>
+
+<p>PLUS is a system for capturing and managing provenance information, originally created at the MITRE Corporation.</p>
+
+<p>Data provenance is "information that helps determine the derivation history of a data product...[It includes] the ancestral data product(s) from which this data product evolved, and the process of transformation of these ancestral data product(s)."</p>
+
+<h2>
+<a name="quick-start" class="anchor" href="#quick-start"><span class="octicon octicon-link"></span></a>Quick Start</h2>
+
+<p>PLUS comes bundled with a web application that can be deployed to a container, which permits visualizing and querying provenance.</p>
+
+<pre><code>git clone https://github.com/plus-provenance/plus.git
+mvn jetty:run
+</code></pre>
+
+<p>Wait until jetty finishes starting up, and then go to <a href="http://localhost:8080/plus/">http://localhost:8080/plus/</a>.  The first time PLUS starts up, it may take a bit of extra time as it pre-populates your provenance store with some example workflows and data.  In general, your provenance database will be stored in your user's home directory under the name <code>provenance.db</code>.</p>
+
+<h2>
+<a name="capturing-some-test-provenance" class="anchor" href="#capturing-some-test-provenance"><span class="octicon octicon-link"></span></a>Capturing some Test Provenance</h2>
+
+<p>If you're on a linux system, you can capture some test provenance of programs currently running on your system, by running the PROCtor capture agent.  This can be executed with the following maven command.</p>
+
+<pre><code>mvn exec:java  -Dexec.mainClass=org.mitre.provenance.capture.linux.PROCtor
+</code></pre>
+
+<p>This program will run as long as you permit it to; hit Ctrl-C or send it a SIGINT to stop capturing.  Once you're finished capturing test provenance, start your web server (via <code>mvn jetty:run</code>) and view the latest reported objects. </p>
+
+<h2>
+<a name="components-of-the-plus-system" class="anchor" href="#components-of-the-plus-system"><span class="octicon octicon-link"></span></a>Components of the PLUS System</h2>
+
+<p>The PLUS system has four main components: capture, storage, usage and admin.</p>
+
+<p><em>Provenance Capture</em> refers to observing or deriving provenance information about what occured in a particular program. Capture Agents report provenance information from applications to PLUS.  For instance, if a user edits a document in Word, a Capture Agent would report to PLUS the file(s) modified and the user.   PLUS provides an API for creating, managing, and reporting provenance objects to a database.  To create your own provenance capture agent, or to "instrument" a piece of software to collect provenance, it's as simple as creating objects that correspond to graph nodes and edges, and then saving them to a database.  </p>
+
+<p><em>Provenance Storage</em> refers to where PLUS stores the reported provenance information. PLUS currently uses a <a href="http://www.neo4j.org/">Neo4J database</a> for its storage needs, providing the ability to perform arbitrary graph queries.  The web application that you'd start via <code>mvn jetty:run</code> is the primary front-end interface to this database.</p>
+
+<p><em>Provenance Usage</em> refers to how PLUS can be used to answer questions using the provenance data.  Provenance is a data stream that can be used for many purposes. Examples of usage currently implemented in PLUS include:    </p>
+
+<ul>
+<li>ROI Analysis on Data Sources (Determine which sources are used most frequently)</li>
+<li>Unique Source Counts (I.e. how many distinct sources of information went into creating a report)</li>
+<li>Custom Data Fitness Assessments (is this data source good for my purpose?)</li>
+</ul><p><em>Provenance Admin</em> refers to how PLUS manages and protects the provenance information. This includes topics such as:</p>
+
+<ul>
+<li>Access Control Model</li>
+<li>Surrogates </li>
+</ul><h2>
+<a name="code-examples" class="anchor" href="#code-examples"><span class="octicon octicon-link"></span></a>Code Examples</h2>
+
+<p>Code tutorials can be found in the org.mitre.provenance.tutorialcode package, covering elements of provenance creation, fetching from databases, associating access control information with provenance, and query.</p>
+
+<h2>
+<a name="java-api-reference" class="anchor" href="#java-api-reference"><span class="octicon octicon-link"></span></a>Java API Reference</h2>
+
+<p>Javadocs are not yet available online; the maven build system provides a way of automatically generating the javadocs.   To do this, just go to the main directory and type:</p>
+
+<pre><code>mvn javadoc:javadoc
+</code></pre>
+
+<p>The generated documentation ends up deposited in <code>plus/target/site/apidocs/</code>.</p>
+
+<h2>
+<a name="restful-api-reference" class="anchor" href="#restful-api-reference"><span class="octicon octicon-link"></span></a>RESTful API Reference</h2>
+
+<p>RESTful API documentation is provided via <a href="https://github.com/wordnik/swagger-ui">Swagger</a>.  For now, when the maven <code>compile</code> goal is run, documentation is generated dynamically.  When the jetty server is run, you will find the documentation located at <code>http://yourhost/plus/docs/index.html</code></p>
+
+<p>Implementations of RESTful services can be found in <code>org.mitre.provenance.services</code>, and contain a number of relevant JAX-RS and Swagger annotations for inspection.</p>
+
+<p>Additionally, many services support multiple representation types corresponding to D3-JSON (the default), PROV-XML, PROV-RDF, and PROV-TTL.</p>
+
+<h2>
+<a name="tests" class="anchor" href="#tests"><span class="octicon octicon-link"></span></a>Tests</h2>
+
+<p>JUnit test code is provided in the org.mitre.provenance.test package.  Test coverage is evolving.</p>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p><a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a></p>
+
+<h2>
+<a name="provenance-basics--nodes-and-edges" class="anchor" href="#provenance-basics--nodes-and-edges"><span class="octicon octicon-link"></span></a>Provenance Basics:  Nodes and Edges</h2>
+
+<p>There are several kinds of nodes that you can use in provenance graphs, to express what kind of computation happened:</p>
+
+<ul>
+<li>
+<strong>Data</strong> nodes refer to some piece of information, of any type.</li>
+<li>
+<strong>Invocation</strong> nodes refer to a process that was actually executed at a particular time. An example of an invocation would be "Algorithm 27 run on Tuesday at 2:00PM".</li>
+<li>
+<strong>Activity</strong> nodes refer to abstract processes, not necessarily executed. An example of an activity is "Algorithm 27". Notice the difference between the algorithm (an activity) and a particular run of the algorithm (which is an invocation)</li>
+<li>
+<strong>Workflow</strong> nodes are ways of grouping lots of provenance nodes into a cohesive graph. So you might create a special workflow node, then associate it with many different invocations, to illustrate that they all happened as part of one cohesive workflow. </li>
+</ul><p>There are different types of edges as well, that correspond to different semantics:</p>
+
+<ul>
+<li>
+<strong>Input to</strong> indicates that the head of the edge is data, that was input to the tail of the edge (an invocation)</li>
+<li>
+<strong>Generated</strong> indicates that the head of the edge is an invocation, which produced as an output the tail of the edge (data).</li>
+<li>
+<strong>Triggered</strong> indicates that both the head and the tail of the edge are invocations, one of which triggered the other.</li>
+</ul><h2>
+<a name="non-provenance-edges-and-node-metadata" class="anchor" href="#non-provenance-edges-and-node-metadata"><span class="octicon octicon-link"></span></a>Non-Provenance Edges and Node Metadata</h2>
+
+<p>Provenance itself is very limiting; many times you'll want to capture and express extra information that doesn't fall into the category of a provenance edge or node type. For that reason, Non-Provenance Edges (NPEs) and node metadata are provided.</p>
+
+<p>All provenance nodes can contain arbitrarily many key/value pairs of node metadata. So for example, you can assign latitude and longitude information to any data node, if that's meaningful for your application. There is no schema or data constraint available for node metadata, but it provides a way of storing just about anything along with a node.</p>
+
+<p>NPEs permit linking two provenance nodes via non-provenance semantics. For example, some users might create links saying that file A is "similar to" file B. That isn't a provenance edge, but it is something that you can assert using PLUS. Note that because NPEs don't follow provenance semantics, it is possible to introduce cycles into the graph via NPEs - and that's perfectly OK. </p>
+
+<h2>
+<a name="selected-academic-bibliography-relevant-to-plus" class="anchor" href="#selected-academic-bibliography-relevant-to-plus"><span class="octicon octicon-link"></span></a>Selected Academic Bibliography Relevant to PLUS</h2>
+
+<p>PLUS was created within the MITRE Corporation as part of sponsored research into data provenance.  The articles below are a selected list of academic reading on the concepts and motivation behind this code base:</p>
+
+<ul>
+<li><a href="http://www.mitre.org/publications/technical-papers/provenance-capture-and-use-a-practical-guide">Provenance Capture and Use: A Practical Guide</a></li>
+<li>
+<a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6009558&amp;tag=1">PLUS: A Provenance Manager for Integrated Information</a> Information Reuse and Integration (IRI), 2011 IEEE International Conference on. IEEE, 2011.</li>
+<li>
+<a href="http://dl.acm.org/citation.cfm?id=2002979">Surrogate Parenthood: Protected and Informative Graphs</a> Proceedings of the VLDB Endowment 4.8 (2011): 518-525.</li>
+<li>
+<a href="http://rd.springer.com/chapter/10.1007/978-3-642-17819-1_12#page-1">Capturing Provenance in the Wild</a> Provenance and Annotation of Data and Processes. Springer Berlin Heidelberg, 2010. 98-101.</li>
+<li>
+<a href="https://www.usenix.org/system/files/conference/tapp12/tapp12-final8.pdf">It’s about the data: Provenance as a tool for assessing data fitness</a> Proceedings of the 4th USENIX Workshop on the Theory and Practice of Provenance (TAPP’12). 2012.</li>
+<li>
+<a href="http://static.usenix.org/legacy/events/tapp11/tech/final_files/Allen.pdf">Getting it Together: Enabling Multi-Organization Provenance Exchange</a> TaPP 2011. </li>
+<li>
+<a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6144820">Provenance for collaboration: Detecting suspicious behaviors and assessing trust in information</a> Collaborative Computing: Networking, Applications and Worksharing (CollaborateCom), 2011 7th International Conference on. IEEE, 2011.</li>
+</ul>
+        </section>
+
+        <footer>
+          Plus is maintained by <a href="https://github.com/plus-provenance">plus-provenance</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
