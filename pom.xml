@@ -226,7 +226,7 @@
                         <apiSource>
                             <locations>org.mitre.provenance.services;</locations>
                             <apiVersion>v1</apiVersion>
-                            <basePath>http://localhost:8080/plus/api</basePath>
+                            <basePath>http://localhost:8080/plus/apidocs</basePath>
                             <outputTemplate>${basedir}/src/main/resources/apidocs.template</outputTemplate>                                     
                             <outputPath>${basedir}/src/main/webapp/apidocs.html</outputPath>
                             <swaggerDirectory>src/main/webapp/apidocs</swaggerDirectory>
