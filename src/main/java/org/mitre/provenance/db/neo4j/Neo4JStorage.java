@@ -50,7 +50,6 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.index.IndexHits;
@@ -59,9 +58,14 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
 
 /**
  * Storage layer for provenance.  Handles the storage and loading of objects from
- * Neo4J into the PLUS API
+ * Neo4J into the PLUS API.
+ * 
+ * <p><b>Note!</b> If you want to report provenance, you probably shouldn't be using this class.
+ * To report provenance to a database either locally or remotely, please investigate the AbstractProvenanceClient class, and
+ * its child implementing classes.
+ * 
  * @see org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory
- * @author DMALLEN
+ * @author moxious
  */
 public class Neo4JStorage {
 	protected static Logger log = Logger.getLogger(Neo4JStorage.class.getName());
@@ -990,7 +994,8 @@ public class Neo4JStorage {
 		// log.info("Storing provenance collection " + col);
 		try (Transaction tx = db.beginTx()) {
 			// Actors need to be stored first because some other things may depend on their
-			// existence.
+			// existence.   For example, if a node is owned by an actor that isn't in the database, then trying to store
+			// it is going to create problems.
 			for(PLUSActor a : col.getActors()) {
 				if(Neo4JStorage.store(a) != null) x++;				
 			}

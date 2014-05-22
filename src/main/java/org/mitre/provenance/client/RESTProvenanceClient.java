@@ -42,7 +42,10 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 /**
  * This class acts as a client for a remote provenance server which can serve up provenance or permit reporting
  * of new provenance via RESTful services.
- * @author DMALLEN
+ * 
+ * <p>Use this class if you want to report provenance to a foreign host that is running PLUS.
+ * 
+ * @author moxious
  */
 public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String VERSION = "0.5";

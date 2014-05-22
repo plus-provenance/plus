@@ -21,7 +21,7 @@ import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * Interface that describes an object that can be written to/restored from a Neo4J database. 
- * @author DMALLEN
+ * @author moxious
  * @see org.mitre.provenance.db.neo4j.Neo4JStorage
  */
 public interface Neo4JCapable {
@@ -42,4 +42,4 @@ public interface Neo4JCapable {
 	 * @throws PLUSException
 	 */
 	public Object setProperties(PropertyContainer props) throws PLUSException;
-}
+} // End Neo4JCapable

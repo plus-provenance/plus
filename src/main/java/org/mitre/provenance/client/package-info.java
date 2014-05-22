@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /**
- * @author DMALLEN
+ * @author moxious
  * This package contains classes relevant to provenance reporting clients.
  */
 package org.mitre.provenance.client;

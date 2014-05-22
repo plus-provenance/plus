@@ -55,7 +55,6 @@ import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
-import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
@@ -65,8 +64,13 @@ import org.neo4j.graphdb.traversal.Uniqueness;
 
 /**
  * A factory to create provenance objects from things in the Neo4J storage layer.  This class permits
- * users to load objects from the database, abstracting away the details of the database.
- * @author DMALLEN
+ * the API to load objects from the database, abstracting away the details of the database.
+ * 
+ * <p><b>Note!</b> If you want to report provenance, you probably shouldn't be using this class.
+ * To report provenance to a database either locally or remotely, please investigate the AbstractProvenanceClient class, and
+ * its child implementing classes.
+
+ * @author moxious
  */
 public class Neo4JPLUSObjectFactory {
 	protected static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(500);
@@ -89,6 +93,7 @@ public class Neo4JPLUSObjectFactory {
 	 */
 	public static int MAX_OBJECTS = 500;
 	
+	/** The number of search results you get when you don't specify how many you want. */
 	public static int DEFAULT_SEARCH_RESULTS = 30;
 	
 	/**
