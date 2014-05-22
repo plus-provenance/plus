@@ -14,8 +14,9 @@
  */
 package org.mitre.provenance.tutorialcode;
 
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSString;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.surrogate.sgf.StringRedactionSurrogateFunction;
 import org.mitre.provenance.user.PrivilegeClass;
 
@@ -25,8 +26,7 @@ import org.mitre.provenance.user.PrivilegeClass;
  * assign a separate "Surrogate computation function" to return a less secret version of
  * the same data to a different user.
  * 
- * @author DMALLEN
- *
+ * @author moxious
  */
 public class Tutorial3 {
 	public static void main(String [] args) throws Exception { 
@@ -41,8 +41,11 @@ public class Tutorial3 {
 		// this item run through the StringRedactionSurrogateFunction.  (See javadocs)
 		node.useSurrogateComputation(new StringRedactionSurrogateFunction());
 				
+		ProvenanceCollection col = new ProvenanceCollection();
+		col.addNode(node);
+		
 		// Write the node to database and finish up.
-		Neo4JStorage.store(node);
+		new LocalProvenanceClient().report(col);
 		
 		System.out.println("Done!");		
 	} // End main

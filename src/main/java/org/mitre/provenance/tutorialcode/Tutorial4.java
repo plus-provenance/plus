@@ -20,10 +20,10 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 
 import org.mitre.provenance.Metadata;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSInvocation;
@@ -35,7 +35,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * This tutorial demonstrates the use of content hashing, lookup by hash, and JSON serialization.
- * @author DMALLEN
+ * @author moxious
  */
 public class Tutorial4 {
 	public static void main(String [] args) throws Exception { 
@@ -84,7 +84,8 @@ public class Tutorial4 {
 		col.addNonProvenanceEdge(new NonProvenanceEdge(someInput, someOutput, "Foo"));
 		
 		// All of the database storage is done here, in a single line.
-		Neo4JStorage.store(col);
+		LocalProvenanceClient client = new LocalProvenanceClient();
+		client.report(col);
 				
 		System.out.println("The identity of the process is:  " + someProcess.getId());
 		
@@ -95,7 +96,7 @@ public class Tutorial4 {
 		// OK now this code basically says, 
 		// Grab everything from the database that matches *ALL* of the metadata items in the
 		// map we gave it (inSearchOfTheseItems); return a maximum of 10 results, and use the "god" user
-		// (meaning we're permitted to see everything)
+		// (meaning we're permitted to see everything)		
 		ProvenanceCollection results = Neo4JPLUSObjectFactory.loadByMetadata(User.DEFAULT_USER_GOD, inSearchOfTheseItems, 10);
 		
 		for(PLUSObject result : results.getNodes()) {

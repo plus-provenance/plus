@@ -14,16 +14,20 @@
  */
 package org.mitre.provenance.tutorialcode;
 
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
- * <b>Tutorial 1</b> - creating basic lineage in the PLUS store.
+ * <b>Tutorial 1</b> - creating basic provenance graph in the PLUS store.
  * 
- * <p>This particular tutorial creates a simple string of items in the lineage store.   
- * @author DMALLEN
+ * <p>This particular tutorial creates a simple string of items in the provenance store.  The intent of 
+ * this tutorial is to show the basic graph structure of provenance, and how to create simple nodes and 
+ * edges in a directed graph.
+ *    
+ * @author moxious
  */
 public class Tutorial1 {
 	public static void main(String [] args) throws Exception { 
@@ -50,14 +54,22 @@ public class Tutorial1 {
 				                     C,
 				                     PLUSWorkflow.DEFAULT_WORKFLOW,
 				                     PLUSEdge.EDGE_TYPE_CONTRIBUTED);
+	
 		
-		// At this point, we have the whole model built up, but it's not in the lineage
-		// store yet.  Now we just write things to the database, and we're done.
-		Neo4JStorage.store(A);
-		Neo4JStorage.store(B);
-		Neo4JStorage.store(C);
-		Neo4JStorage.store(AtoB);
-		Neo4JStorage.store(BtoC);
+		// Create a client to talk to the local database.
+		LocalProvenanceClient client = new LocalProvenanceClient();
+		
+		// Create a provenance collection to hold the items we're reporting.
+		ProvenanceCollection col = new ProvenanceCollection();
+		
+		col.addNode(A);
+		col.addNode(B);
+		col.addNode(C);
+		col.addEdge(AtoB);
+		col.addEdge(BtoC);
+		
+		// Report the collection.   This actually stores the whole thing in the local database.
+		client.report(col);
 				
 		System.out.println("Done!");		
 		System.exit(0); 

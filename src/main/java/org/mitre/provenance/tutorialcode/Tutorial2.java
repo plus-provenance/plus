@@ -14,14 +14,15 @@
  */
 package org.mitre.provenance.tutorialcode;
 
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSString;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.PrivilegeClass;
 
 /**
  * This tutorial steps through how to set various options on the nodes to be more informative.
- * @author DMALLEN
+ * @author moxious
  */
 public class Tutorial2 {
 	public static void main(String [] args) throws Exception {
@@ -32,7 +33,7 @@ public class Tutorial2 {
 		// just a simple hashtable containing key/value pairs.  Let's associate some metadata
 		// with this object.
 		node.getMetadata().put("operating system", "Red Hat Linux");
-		node.getMetadata().put("original owner", "dmallen@mitre.org");
+		node.getMetadata().put("original owner", "foo@bar.com");
 		node.getMetadata().put("format", "text/plain");
 		
 		// Let's associate some permissions with this node, so that not everybody can see it.
@@ -55,15 +56,20 @@ public class Tutorial2 {
 		// 85% chance this data is accurate.
 		node.setUncertainty((float)0.85);
 		
+		ProvenanceCollection col = new ProvenanceCollection();
+		
+		col.addNode(node);
+		
 		// Let's create ourselves as a new "actor".
 		PLUSActor ncel = new PLUSActor("NCEL");
-		Neo4JStorage.store(ncel);
 		
+		// Provenance collections can contain actors as well.
+		col.addActor(ncel);
+		
+		// Indicate that this particular node is owned by that actor.
 		node.setOwner(ncel);
 		
-		// Write the finished object to the database, and quit.
-		Neo4JStorage.store(node);
-		
+		new LocalProvenanceClient().report(col);		
 		System.out.println("Done!");
 	} // End main
 } // End Tutorial2
