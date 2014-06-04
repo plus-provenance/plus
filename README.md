@@ -44,7 +44,9 @@ Code tutorials can be found in the org.mitre.provenance.tutorialcode package, co
 
 ## Java API Reference
 
-Javadocs are not yet available online; the maven build system provides a way of automatically generating the javadocs.   To do this, just go to the main directory and type:
+Javadocs are [available online](http://plus-provenance.github.io/plus/javadocs/index.html).
+
+Additionally, the maven build system provides a way of automatically generating the javadocs.   To do this, just go to the main directory and type:
 
 	mvn javadoc:javadoc
 	
