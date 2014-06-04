@@ -31,7 +31,6 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.OpenIDUser;
@@ -125,7 +124,7 @@ public class OpenIDInterceptorFilter extends GenericFilterBean {
 			oid2User.addPrivilege(PrivilegeClass.PUBLIC);
 			
 			try { 
-				if(Neo4JStorage.actorExists(oid2User.getId()) == null)
+				if(client.actorExists(oid2User.getId()) == null)
 					client.report(ProvenanceCollection.collect(oid2User));
 			} catch(PLUSException exc) { 
 				log.severe("Could not save new user entry " + oid2User);
@@ -182,7 +181,7 @@ public class OpenIDInterceptorFilter extends GenericFilterBean {
 			System.err.println("FILTER: new user " + newUser);
 
 			try { 
-				if(Neo4JStorage.actorExists(newUser.getId()) == null)
+				if(client.actorExists(newUser.getId()) == null)
 					client.report(ProvenanceCollection.collect(newUser));
 			} catch(PLUSException exc) { 
 				log.severe("Could not save new user entry " + newUser);
