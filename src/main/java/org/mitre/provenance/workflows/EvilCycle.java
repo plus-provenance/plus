@@ -18,7 +18,8 @@ import java.util.Date;
 import java.util.Random;
 
 import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
@@ -27,6 +28,8 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 public class EvilCycle extends ProvenanceCollection {
+	protected AbstractProvenanceClient client = new LocalProvenanceClient();
+	
 	public EvilCycle() throws PLUSException { 
 		super();
 		PLUSWorkflow wf = new PLUSWorkflow();
@@ -55,7 +58,7 @@ public class EvilCycle extends ProvenanceCollection {
 			new PLUSActor("Group 5"), 
 		};
 		
-		for(int x=0; x<actors.length; x++) Neo4JStorage.store(actors[x]); 
+		client.report(ProvenanceCollection.collect(actors));
 		
 		int jangleCount = 20;
 		

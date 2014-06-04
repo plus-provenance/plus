@@ -15,7 +15,8 @@
 package org.mitre.provenance.workflows;
 
 import org.mitre.provenance.Metadata;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -29,8 +30,9 @@ import org.mitre.provenance.workflowengine.activity.Activity;
 import org.mitre.provenance.workflowengine.activity.PLUSObjectEmittingActivity;
 
 public class TBMCSWorkflow extends TracedWorkflow {	
-	Workflow w;
-	RelationalLineageCapture tracer; 
+	protected Workflow w;
+	protected RelationalLineageCapture tracer; 
+	protected AbstractProvenanceClient client = new LocalProvenanceClient();
 	
 	public TBMCSWorkflow() throws Exception { 
 		tracer = new RelationalLineageCapture();
@@ -43,8 +45,7 @@ public class TBMCSWorkflow extends TracedWorkflow {
 		PLUSActor subord = new PLUSActor("Air Expeditionary Wings");
 		PLUSActor actor = new PLUSActor("TBMCS");
 		
-		Neo4JStorage.store(subord);
-		Neo4JStorage.store(actor);
+		client.report(ProvenanceCollection.collect(subord, actor));
 		
 		PLUSObjectEmittingActivity GCCSI3 = new PLUSObjectEmittingActivity("GCCS-I3"); 
 		PLUSObjectEmittingActivity MAAP   = new PLUSObjectEmittingActivity("MAAP and Theater Air Battle Planner (TAP)");

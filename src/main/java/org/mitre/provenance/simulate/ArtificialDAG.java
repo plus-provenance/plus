@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.Random;
 
 import org.mitre.provenance.Metadata;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.dag.LineageDAG;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
@@ -27,6 +29,7 @@ import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.surrogate.SurrogateGeneratingFunction;
 import org.mitre.provenance.user.PrivilegeClass;
 
@@ -43,6 +46,8 @@ public class ArtificialDAG {
 	public static Random randGen = new Random();
 	
 	public SurrogateGeneratingFunction SGF = null;
+	
+	public AbstractProvenanceClient client = new LocalProvenanceClient();
 	
 	public ArtificialDAG(PLUSWorkflow wf, int components, float connectivity, SurrogateGeneratingFunction SGF) throws Exception { 
 		componentCount = components;
@@ -101,8 +106,9 @@ public class ArtificialDAG {
 		} // End for
 		
 		System.out.println("Writing invocations and edges..."); 
-		for(int x=0; x<componentCount; x++) Neo4JStorage.store(comps[x]);
-		for(int x=0; x<edges.size(); x++) Neo4JStorage.store(edges.get(x)); 
+		for(int x=0; x<componentCount; x++) client.report(comps[x]);
+		//for(int x=0; x<edges.size(); x++) client.report(ProvenanceCollection.collect(edges.get(x))); 		
+		client.report(ProvenanceCollection.collect(edges.toArray(new PLUSEdge[]{})));
 		System.out.println("Done!"); 
 	} // End connectComponents
 	
