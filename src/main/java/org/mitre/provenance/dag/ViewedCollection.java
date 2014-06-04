@@ -17,6 +17,7 @@ package org.mitre.provenance.dag;
 import java.util.ArrayList;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -32,39 +33,38 @@ public class ViewedCollection extends ProvenanceCollection {
 	/** The user that's viewing the DAG */
 	protected User viewer;
 		
-	/** The starting node of the DAG */
-	protected PLUSObject focus; 
-
 	public ViewedCollection(User viewer) {
 		super();
+		
+		if(viewer == null) viewer = User.PUBLIC;		
 		this.viewer = viewer;
+	} // End ViewedCollection
+	
+	public ViewedCollection(User viewer, PLUSObject ...objects) {
+		this(viewer);
+		for(PLUSObject obj : objects) addNode(obj);
+	}
+	
+	public ViewedCollection(User viewer, PLUSEdge ...edges) { 
+		this(viewer);
+		for(PLUSEdge e : edges) addEdge(e); 
+	}
+	
+	public ViewedCollection(User viewer, NonProvenanceEdge ...npes) { 
+		this(viewer);
+		for(NonProvenanceEdge e : npes) addNonProvenanceEdge(e);
 	}
 	
 	/**
-	 * Update the focus of the graph; this node should be thought of as the entry point to the graph, or the user's focus on 
-	 * the graph.
-	 * @param focus
+	 * Change the viewer of this graph.  Note that you usually shouldn't do this; if you change the viewer to one with
+	 * fewer privileges, this will not guarantee that everything in the collection is still suitable for the new user.
+	 * @param user the user who views this DAG.  If null, user PUBLIC will be used.
 	 */
-	protected void setFocus(PLUSObject focus) { this.focus = focus; } 
-	
-	/**
-	 * Change the viewer of this graph.  It is <b>highly</b> recommended that you call populate() after doing this, since
-	 * your new graph viewer may not be permitted to see some of the items cached in the graph.
-	 * <b>This function does not automatically repopulate the graph according to the new user's credentials!</b>
-	 * @param user the user who views this DAG
-	 * @see LineageDAG#populate()
-	 */
-	protected void setViewer(User user) { this.viewer = user; }
-	
-	/** Returns the "focus" of the DAG.
-	 * The focus is the object used to create and populate the DAG from the beginning.  This
-	 * usually corresponds to a  "node of interest" for a user.
-	 * @return the focus of the DAG
-	 */
-	public PLUSObject getFocus() { 
-		return focus; 
+	protected void setViewer(User user) {
+		if(user == null) user = User.PUBLIC;
+		this.viewer = user;
 	}
-	
+		
 	/**
 	 * The user associated with this lineage DAG.  The DAG contains only items this viewer is permitted to see, 
 	 * or suitable surrogates for those items.
@@ -227,7 +227,6 @@ public class ViewedCollection extends ProvenanceCollection {
 	public ViewedCollection clone() { 
 		ViewedCollection col = (ViewedCollection)super.clone();
 		col.viewer = this.viewer;
-		col.focus = this.focus;
 		
 		return col;
 	} // End clone
