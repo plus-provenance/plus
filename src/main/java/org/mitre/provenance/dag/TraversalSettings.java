@@ -105,6 +105,9 @@ public class TraversalSettings {
 	/** Traversal will go both forwards and backwards (upstream/downstream) */
 	public TraversalSettings bothWays() { forward = true; backward = true; return this; } 
 	
+	/** Set the maximum number of nodes to return */
+	public TraversalSettings setN(int n) { this.n = n; return this; } 
+	
 	/** Traversal will go forward only */
 	public TraversalSettings onlyForward() { forward = true; backward = false; return this; }
 	
