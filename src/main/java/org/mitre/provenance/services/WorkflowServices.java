@@ -43,7 +43,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * Workflow services encompass RESTful services which provide access to workflows and their members.
- * @author david
+ * @author moxious
  */
 @Path("/workflow/")
 @Api(value = "/workflow", description = "Provenance Workflows")

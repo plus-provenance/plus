@@ -61,7 +61,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
  * database that are too large to be loaded into memory.  For that reason, they do not
  * provide interfaces that return ProvenanceCollection objects.
  * 
- * @author david
+ * @author moxious
  */
 @Path("/fitness")
 @Api(value = "/fitness", description = "Provenance Fitness Assessments")

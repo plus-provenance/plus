@@ -16,7 +16,7 @@ package org.mitre.provenance;
 
 /**
  * A standard exception.  Nothing special, but very frequently used in the PLUS classes.
- * @author david
+ * @author moxious
  */
 public class PLUSException extends Exception {
 	static final long serialVersionUID = 1130010014L;

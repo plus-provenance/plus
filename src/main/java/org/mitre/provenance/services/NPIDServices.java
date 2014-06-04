@@ -30,7 +30,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
  * Services related to non-provenance identifiers.
- * @author david
+ * @author moxious
  */
 @Path("/npid")
 public class NPIDServices {

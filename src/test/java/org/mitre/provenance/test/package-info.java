@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /**
- * @author david
+ * @author moxious
  * Various tests for PLUS.  
  */
 package org.mitre.provenance.test;

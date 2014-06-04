@@ -21,7 +21,7 @@ package org.mitre.provenance.capture.linux;
  * # define __O_CLOEXEC   02000000
  * </pre>
  * 
- * @author david
+ * @author moxious
  *
  */
 public class ProcFDInfo {

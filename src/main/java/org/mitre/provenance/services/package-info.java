@@ -16,6 +16,6 @@
  * The services package contains the RESTful API to PLUS.
  */
 /**
- * @author david
+ * @author moxious
  */
 package org.mitre.provenance.services;
