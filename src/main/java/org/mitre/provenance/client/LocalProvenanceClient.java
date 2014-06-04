@@ -21,6 +21,7 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -64,6 +65,16 @@ public class LocalProvenanceClient extends AbstractProvenanceClient {
 		} catch (PLUSException e) { throw new ProvenanceClientException(e); } 
 	}
 
+	public PLUSObject exists(String oid) throws ProvenanceClientException { 
+		org.neo4j.graphdb.Node n = Neo4JStorage.oidExists(oid);
+		if(n == null) return null;
+		try {
+			return Neo4JPLUSObjectFactory.newObject(n);
+		} catch (PLUSException e) {
+			throw new ProvenanceClientException("Cannot convert object node", e);			
+		}		
+	}
+	
 	public ProvenanceCollection latest() throws ProvenanceClientException {
 		// TODO Auto-generated method stub
 		return Neo4JPLUSObjectFactory.getRecentlyCreated(user, 20);	
@@ -113,4 +124,17 @@ public class LocalProvenanceClient extends AbstractProvenanceClient {
 			throw new ProvenanceClientException(e); 
 		} 
 	} // End getSingleNode
+
+	public PLUSActor actorExists(String aid) throws ProvenanceClientException {
+		org.neo4j.graphdb.Node n = Neo4JStorage.actorExists(aid);
+		if(n != null) {
+			try {
+				return Neo4JPLUSObjectFactory.newActor(n);
+			} catch (PLUSException e) {
+				throw new ProvenanceClientException("Cannot convert actor", e);
+			}
+		} 
+		
+		return null;
+	}
 } // End LocalProvenanceClient

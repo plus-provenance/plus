@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.dag.TraversalSettings;
+import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -72,6 +73,14 @@ public abstract class AbstractProvenanceClient {
 	public PLUSObject exists(PLUSObject obj) throws ProvenanceClientException { 
 		return exists(obj.getId());
 	}
+	
+	/** 
+	 * Checks to see if an actor exists by an AID. 
+	 * @param aid
+	 * @return the PLUSActor, or null if it doesn't exist.
+	 * @throws ProvenanceClientException
+	 */
+	public abstract PLUSActor actorExists(String aid) throws ProvenanceClientException;
 	
 	/**
 	 * Determine whether or not an object exists.

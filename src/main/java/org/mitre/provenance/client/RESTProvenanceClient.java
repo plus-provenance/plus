@@ -16,6 +16,7 @@ package org.mitre.provenance.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -23,6 +24,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.npe.NonProvenanceEdge;
+import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSString;
@@ -31,8 +33,10 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
 import org.mitre.provenance.plusobject.json.ProvenanceCollectionDeserializer;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -58,6 +62,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected String port = "80";
 	
 	protected static final String SEARCH_PATH = "/plus/api/object/search?format=json";
+	protected static final String GET_ACTOR_PATH = "/plus/api/actor/";
 	protected static final String GET_ACTORS_PATH = "/plus/api/feeds/objects/owners?format=json";
 	protected static final String NEW_GRAPH_PATH = "/plus/api/graph/new";	
 	protected static final String GET_GRAPH_PATH = "/plus/api/graph/";
@@ -295,4 +300,17 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		if(col.containsObjectID(oid)) return col.getNode(oid);		
 		return null;
 	} // End getSingleNode
+
+	public PLUSActor actorExists(String aid) throws ProvenanceClientException {
+		WebResource r = client.resource(buildURL(GET_ACTOR_PATH) + aid + "?format=json");
+		
+		String response = r
+				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .header("User-Agent", UA)				 
+				 .get(String.class);		
+		
+		Gson g = new GsonBuilder().create();
+		JsonElement elem = g.fromJson(response, JsonElement.class);
+		return ProvenanceCollectionDeserializer.convertOwner(elem); 
+	}
 } // End RESTProvenanceClient
