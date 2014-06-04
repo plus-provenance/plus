@@ -25,7 +25,8 @@ import org.mitre.provenance.user.User;
 
 /**
  * This class defines the methods that all provenance clients must implement.
- * @author david
+ * @author moxious
+ * @TODO this class should have functionality that unifies the RESTful API with Neo4JStorage.  Many more methods to add.
  */
 public abstract class AbstractProvenanceClient {
 	protected User viewer = User.PUBLIC;
@@ -61,6 +62,37 @@ public abstract class AbstractProvenanceClient {
 	 * @see org.mitre.provenance.dag.TraversalSettings
 	 */
 	public abstract ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException;
+
+	/**
+	 * Determine whether or not an object exists.
+	 * @param obj the object to check
+	 * @return the object that's stored by the same ID, or null if it does not exist.
+	 * @throws ProvenanceClientException 
+	 */
+	public PLUSObject exists(PLUSObject obj) throws ProvenanceClientException { 
+		return exists(obj.getId());
+	}
+	
+	/**
+	 * Determine whether or not an object exists.
+	 * @param oid
+	 * @return
+	 * @throws ProvenanceClientException 
+	 */
+	public PLUSObject exists(String oid) throws ProvenanceClientException { 
+		TraversalSettings s = new TraversalSettings()
+		 						.excludeEdges()
+		 						.excludeNPEs()
+		 						.includeNodes()
+		 						.setMaxDepth(1)
+		 						.dontExpandWorkflows()
+		 						.ignoreNPIDs()
+		 						.setN(1);
+		
+		ProvenanceCollection col = getGraph(oid, s);
+		if(col.isEmpty()) return null;
+		return col.getNode(oid);
+	} // End exists
 	
 	/**
 	 * Fetch provenance from a store, using the default traversal settings.
