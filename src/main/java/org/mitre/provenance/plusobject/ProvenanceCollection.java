@@ -607,4 +607,37 @@ public class ProvenanceCollection implements Cloneable {
 		
 		return issues;
 	} // End graphLint
+	
+	/**
+	 * Create a new collection from a list of objects.
+	 * @param objs
+	 * @return
+	 */
+	public static ProvenanceCollection collect(PLUSObject ... objs) { 
+		ProvenanceCollection c = new ProvenanceCollection();
+		for(PLUSObject o : objs) c.addNode(o);
+		return c;
+	}
+	
+	/**
+	 * Create a new collection from a list of edges. 
+	 * @param edges
+	 * @return
+	 */
+	public static ProvenanceCollection collect(PLUSEdge ... edges) { 
+		ProvenanceCollection c = new ProvenanceCollection();
+		for(PLUSEdge e : edges) c.addEdge(e);
+		return c;
+	}
+	
+	/**
+	 * Create a new collection from a list of actors.
+	 * @param actors
+	 * @return
+	 */
+	public static ProvenanceCollection collect(PLUSActor ... actors) { 
+		ProvenanceCollection c = new ProvenanceCollection();
+		for(PLUSActor a : actors) c.addActor(a);
+		return c;
+	}
 } // End ProvenanceCollection
