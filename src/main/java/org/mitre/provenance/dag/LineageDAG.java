@@ -29,6 +29,7 @@ import org.mitre.provenance.EdgeMarking;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.npe.NonProvenanceEdge;
+import org.mitre.provenance.plusobject.FocusedCollection;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
@@ -52,7 +53,7 @@ import org.mitre.provenance.user.User;
  * paper.  To generate new LineageDAGs from raw provenance, using the surrogate algorithm, see the fromCollection() method.
  * @author DMALLEN
  */
-public class LineageDAG extends ViewedCollection {
+public class LineageDAG extends ViewedCollection implements FocusedCollection {
 	private static final Logger log = Logger.getLogger(LineageDAG.class.getName());
 			
 	/** This tag will be associated with a node OID in the graph, when it is known that
@@ -67,6 +68,9 @@ public class LineageDAG extends ViewedCollection {
 	/** Nodes in DAG that are a source of taint, i.e. those directly tainted. **/
 	protected Map <PLUSObject,List<Taint>> taintSources = new HashMap<PLUSObject,List<Taint>> ();      			
 			
+	/** The starting node of the DAG */
+	protected PLUSObject focus; 
+	
 	/**
 	 * Create a new lineage dag for a given viewer.
 	 * @param viewer the user who is viewing the DAG
@@ -85,6 +89,7 @@ public class LineageDAG extends ViewedCollection {
 		LineageDAG dag = (LineageDAG)super.clone();
 		dag.taintSources = this.taintSources;
 		dag.fingerPrint = this.fingerPrint;
+		dag.focus = this.focus;
 		
 		return dag;
 	} // End clone
@@ -277,10 +282,10 @@ public class LineageDAG extends ViewedCollection {
 	} // End addNode
 	
 	/**
-	 * @see ViewedCollection#setFocus(PLUSObject) 
+	 * Modify the focus of the DAG 
 	 */
 	public void setFocus(PLUSObject focus) {
-		super.setFocus(focus);
+		this.focus = focus;
 		fingerPrint.setStartId(focus.getId());  
 	} 
 	
@@ -1006,4 +1011,6 @@ public class LineageDAG extends ViewedCollection {
 		
 		return d;
 	} // End fromCollection
+
+	public PLUSObject getFocus() { return focus; }  
 } // End LineageDAG
