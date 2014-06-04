@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
@@ -28,7 +29,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 /** 
  * Path harvester creates a series of provenance objects from files on a path.   This is useful for pre-creating objects
  * when you know they will be referenced, and capturing hashes from a large set of files.
- * @author david
+ * @author moxious
  */
 public class PathHarvester {
 	protected static final Logger log = Logger.getLogger(PathHarvester.class.getName());
@@ -92,7 +93,9 @@ public class PathHarvester {
 		PathHarvester ph = new PathHarvester(new File("c:\\users\\dmallen\\desktop\\task planning"));
 		ProvenanceCollection col = ph.harvest(true);
 		
-		Neo4JStorage.store(col);
+		LocalProvenanceClient client = new LocalProvenanceClient();
+		
+		client.report(col);
 		
 		for(PLUSObject obj : col.getNodes()) { 
 			System.out.println(obj);
