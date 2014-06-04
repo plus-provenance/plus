@@ -33,10 +33,11 @@ import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
@@ -66,13 +67,14 @@ import org.mitre.provenance.user.User;
  * Which assets the process is using vary dramatically (particularly for long-lived processes) depending on when you hit it in 
  * the lifecycle.  Improvements should focus around appending in subsequent polls. 
  * 
- * @author david
+ * @author moxious
  */
 public class PROCtor {
 	protected static final Logger log = Logger.getLogger(PROCtor.class.getName());
 	protected String myPID = null;
 	public static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(1000); 
 	
+	protected AbstractProvenanceClient client = new LocalProvenanceClient();
 	protected SHA256ContentHasher hasher = new SHA256ContentHasher();
 	
 	public static final String UUID_KEY = "file_uuid";
@@ -227,7 +229,7 @@ public class PROCtor {
 		
 		boolean revisiting = false;
 		
-		if(Neo4JStorage.exists(inv) != null) revisiting = true;
+		if(client.exists(inv) != null) revisiting = true;
 		else pcol.addNode(inv);
 		
 		List<String> inputs = new ArrayList<String>();
@@ -299,12 +301,12 @@ public class PROCtor {
 			if(o != null) pcol.addEdge(new PLUSEdge(o, inv, PLUSWorkflow.DEFAULT_WORKFLOW, PLUSEdge.EDGE_TYPE_CONTRIBUTED));
 		}
 							
-		int written = 0; 
+		boolean written = false; 
 		
 		if(pcol.countNodes() > 0)
-			written = Neo4JStorage.store(pcol);
+			written = client.report(pcol);
 		
-		if(written > 0)
+		if(written)
 			log.info((revisiting ? "REVISITED" : "NEW") + ": " + inv.getMetadata().get("cmdline") + 
 					" PID " + inv.getMetadata().get("pid") + " => " + 
 					inputs.size() + " inputs, " + outputs.size() + " outputs.  Total written=" + written);
