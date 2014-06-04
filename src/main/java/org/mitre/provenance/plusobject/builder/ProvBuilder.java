@@ -16,12 +16,14 @@ package org.mitre.provenance.plusobject.builder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
+import org.mitre.provenance.dag.ViewedCollection;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
@@ -36,8 +38,8 @@ import org.mitre.provenance.user.User;
 /**
  * A tool to help build provenance graphs more easily, and to make code to do so more readable.
  * For example, to create a simple two-node graph that shows a data item input to a process, this code can be used:
- * <p><pre>new DeclarativeBuilder().link(db.dataNamed("Data input"), db.invocationNamed("Process Foo"))</pre>
- * <p>Most types return a DeclarativeBuilder for easy method chaining.   Almost all methods do <strong>not</strong> modify the state
+ * <p><pre>new ProvBuilder().link(db.dataNamed("Data input"), db.invocationNamed("Process Foo"))</pre>
+ * <p>Most types return a ProvBuilder for easy method chaining.   Almost all methods do <strong>not</strong> modify the state
  * of the current object, they return a new object.
  * 
  *  <p>Below is some sample code that illustrates building a simple workflow.   Let's say that we want to model 
@@ -61,9 +63,8 @@ import org.mitre.provenance.user.User;
  *  X=hello, and Y=world.
  * @author moxious
  */
-public class ProvBuilder extends ProvenanceCollection {
-	protected PLUSWorkflow wf = PLUSWorkflow.DEFAULT_WORKFLOW;
-	protected User viewer = User.PUBLIC;
+public class ProvBuilder extends ViewedCollection {
+	protected PLUSWorkflow wf = PLUSWorkflow.DEFAULT_WORKFLOW;	
 	protected ContentHasher hasher = null;
 
 	/** Create a new builder object with the default workflow, viewed by User PUBLIC. */
@@ -72,25 +73,23 @@ public class ProvBuilder extends ProvenanceCollection {
 	}
 		
 	/**
-	 * Create a new DeclarativeBuilder object connected to a specified workflow and user "viewer".
+	 * Create a new ProvBuilder object connected to a specified workflow and user "viewer".
 	 * @param wf 
 	 * @param viewer
 	 * @throws PLUSException
 	 */
-	public ProvBuilder(PLUSWorkflow wf, User viewer) {
-		super();
+	public ProvBuilder(PLUSWorkflow wf, User viewer, PLUSObject ...objs) {
+		super(viewer, objs);
 		
-		if(wf == null) wf = PLUSWorkflow.DEFAULT_WORKFLOW;
-		if(viewer == null) viewer = User.PUBLIC;
+		if(wf == null) wf = PLUSWorkflow.DEFAULT_WORKFLOW;		
 		
-		this.wf = wf;
-		this.viewer = viewer;
+		this.wf = wf;		
 		
 		if(wf != PLUSWorkflow.DEFAULT_WORKFLOW) addNode(wf);
 		
 		try { hasher = new SHA256ContentHasher(); }
 		catch(Exception exc) { ; } 
-	} // End DeclarativeBuilder
+	} // End ProvBuilder
 	
 	/**
 	 * Create a new builder as the union of all of the arguments.
@@ -106,8 +105,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	 * @param items
 	 */
 	public ProvBuilder(PLUSObject ... items) {
-		this();
-		for(PLUSObject o : items) addNode(o);
+		this(null, null, items);		
 	}
 	
 	/**
@@ -147,7 +145,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	 * Link the first object found under headName with the first object found under tailName
 	 * @param headName
 	 * @param tailName
-	 * @return a new DeclarativeBuilder containing the linkage
+	 * @return a new ProvBuilder containing the linkage
 	 * @throws PLUSException
 	 */
 	public ProvBuilder link(String headName, String tailName) throws PLUSException { 
@@ -245,7 +243,7 @@ public class ProvBuilder extends ProvenanceCollection {
 		if(heads == null || heads.countNodes() <= 0) throw new PLUSException("Heads must be non-empty and non-null.");
 		if(tails == null || tails.countNodes() <= 0) throw new PLUSException("Tails must be non-empty and non-null."); 
 		
-		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
+		ProvBuilder db = new ProvBuilder(getWorkflow(), this.viewer);
 		
 		for(PLUSObject head : heads.getNodes()) {			
 			db.addNode(head);
@@ -267,7 +265,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	/**
 	 * Find nodes whose names match a patter, and return that as a new builder.   
 	 * @param pattern the name pattern.
-	 * @return a DeclarativeBuilder with zero or more nodes
+	 * @return a ProvBuilder with zero or more nodes
 	 */
 	public ProvBuilder nodesMatching(String pattern) { 
 		ProvBuilder db = new ProvBuilder();
@@ -280,15 +278,33 @@ public class ProvBuilder extends ProvenanceCollection {
 	} // End nodesMatching
 	
 	/**
-	 * Find a node with the given name in the current DeclarativeBuilder, and return a new builder containing only that node.
+	 * Return a new provenance builder with the same settings as this one, but empty.  This does not modify the object it operates on.
+	 */
+	public ProvBuilder newEmpty() { 
+		return new ProvBuilder(getWorkflow(), getViewer());
+	}
+	
+	/**
+	 * Find the most recent node (by creation date) and return a new builder containing only that node.
+	 * If there are no nodes, the result will be empty.
+	 * @return a ProvBuilder
+	 */
+	public ProvBuilder mostRecent() {
+		List<PLUSObject> l = getNodesInOrderedList();
+		if(l.size() > 0) return new ProvBuilder(null, getViewer(), l.get(0));
+		return new ProvBuilder(null, getViewer());
+	}
+	
+	/**
+	 * Find a node with the given name in the current ProvBuilder, and return a new builder containing only that node.
 	 * If the node cannot be found, the result will be empty.   This will return the first result only.  So if there is more than
 	 * one node with the same name, only the first will be returned.
 	 * @param name
-	 * @return a DeclarativeBuilder containing one or zero nodes.
+	 * @return a ProvBuilder containing one or zero nodes.
 	 * @see ProvBuilder#nodesMatching(String)
 	 */
 	public ProvBuilder nodeNamed(String name) {		
-		ProvBuilder db = new ProvBuilder();
+		ProvBuilder db = new ProvBuilder(null, getViewer());
 		
 		for(PLUSObject o : getNodes()) {
 			if(o.getName().equals(name)) { db.addNode(o); break; } 
@@ -304,18 +320,24 @@ public class ProvBuilder extends ProvenanceCollection {
 	 * @throws PLUSException
 	 */
 	public ProvBuilder newActorNamed(String name) throws PLUSException {
-		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
+		ProvBuilder db = newEmpty();
 		PLUSActor a = Neo4JPLUSObjectFactory.getActor(name, true);
 		db.addActor(a);
 		return db;
 	}
+	
+	/**
+	 * Returns the workflow associated with this builder, which may be null if it was not needed or specified in the constructor.
+	 * @return a PLUSWorkflow or null.
+	 */
+	public PLUSWorkflow getWorkflow() { return wf; } 
 	
 	public ProvBuilder newWorkflowNamed(String name) { 
 		return newWorkflowNamed(name, null); 
 	}
 
 	public ProvBuilder newWorkflowNamed(String name, PLUSActor owner) { 
-		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
+		ProvBuilder db = newEmpty();
 		PLUSWorkflow w = new PLUSWorkflow();
 		w.setName(name);
 		if(owner != null) { w.setOwner(owner); db.addActor(owner); } 
@@ -340,7 +362,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	 */
 	public ProvBuilder newDataNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) { 
 		PLUSString s = new PLUSString(name);
-		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
+		ProvBuilder db = newEmpty();
 		
 		try {
 			s.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, generateHash());
@@ -374,7 +396,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	 * @return a ProvBuilder with a single PLUSInvocation.
 	 */
 	public ProvBuilder newInvocationNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) {
-		ProvBuilder db = new ProvBuilder(this.wf, this.viewer);
+		ProvBuilder db = newEmpty();
 		PLUSInvocation inv = new PLUSInvocation();
 		inv.setName(name);		
 		
@@ -405,7 +427,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	public String toString() {
 		StringBuffer b = new StringBuffer("");
 		
-		b.append("DeclarativeBuilder " + super.toString() + " containing [\n");
+		b.append("ProvBuilder " + super.toString() + " containing [\n");
 		
 		for(PLUSObject o : getNodes()) { 
 			b.append(o.toString() + "\n");
@@ -442,7 +464,7 @@ public class ProvBuilder extends ProvenanceCollection {
 	 * @see NodeTemplate
 	 */
 	public ProvBuilder generate(NodeTemplate tmpl, String varName, String varValue, PLUSActor owner) { 
-		ProvBuilder db = new ProvBuilder();
+		ProvBuilder db = newEmpty();
 		
 		String instanceName = tmpl.name.replaceAll("\\{" + varName + "\\}", varValue);
 		
@@ -464,4 +486,4 @@ public class ProvBuilder extends ProvenanceCollection {
 		ProvBuilder db = new ProvBuilder();
 		System.out.println(new ProvBuilder().link(db.newDataNamed("Data input"), db.newInvocationNamed("Foo")));
 	}
-} // End DeclarativeBuilder
+} // End ProvBuilder
