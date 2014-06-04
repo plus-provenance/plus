@@ -34,6 +34,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.dag.LineageDAG;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
@@ -118,11 +120,13 @@ public class DAGServices {
 		if(maxNodes <= 0) return ServiceUtility.BAD_REQUEST("n must be greater than zero");		
 		if(maxHops <= 0) return ServiceUtility.BAD_REQUEST("Max hops must be greater than zero");		
 		
-		try { 
-			if((Neo4JStorage.oidExists(oid) == null) && (Neo4JStorage.getNPID(oid, false) == null))  
-				return Response.status(Response.Status.NOT_FOUND).entity("Entity not found for " + oid).build();
+		try {
+			AbstractProvenanceClient client = new LocalProvenanceClient(ServiceUtility.getUser(req)); 
 			
-			LineageDAG col = Neo4JPLUSObjectFactory.newDAG(oid, ServiceUtility.getUser(req), ts);
+			if((client.exists(oid) == null) && (Neo4JStorage.getNPID(oid, false) == null))  
+				return Response.status(Response.Status.NOT_FOUND).entity("Entity not found for " + oid).build();
+						
+			ProvenanceCollection col = client.getGraph(oid, ts);
 			log.info("D3 Graph for " + oid + " returned " + col); 
 			
 			return ServiceUtility.OK(col, req);					

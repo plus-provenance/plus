@@ -49,7 +49,7 @@ import com.google.gson.JsonParseException;
 
 /**
  * A utility class that plugs into Google GSON that turns a set of JsonElements into a ProvenanceCollection.
- * @author DMALLEN
+ * @author moxious
  */
 public class ProvenanceCollectionDeserializer implements JsonDeserializer<ProvenanceCollection> {
 	private static Logger log = Logger.getLogger(ProvenanceCollectionDeserializer.class.getName());
@@ -196,7 +196,7 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		return (val == null) || "".equals(val) || "".equals(val.trim());
 	}
 	
-	protected static PLUSActor convertOwner(JsonElement elem) throws JsonParseException {
+	public static PLUSActor convertOwner(JsonElement elem) throws JsonParseException {
 		if(elem.isJsonObject()) {
 			JsonObject jsobj = (JsonObject)elem;
 			

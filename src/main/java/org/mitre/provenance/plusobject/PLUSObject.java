@@ -543,6 +543,7 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		try { 
 			String aid = (String)props.getProperty("ownerid", null);
 			if(aid != null && !"".equals(aid) && !"null".equals(aid)) {
+				// TODO refactor to get rid of references to Neo4JStorage.
 				PLUSActor a = Neo4JPLUSObjectFactory.newActor(Neo4JStorage.actorExists(aid));
 				setOwner(a);
 			} else setOwner(null);

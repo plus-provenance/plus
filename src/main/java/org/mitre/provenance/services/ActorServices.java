@@ -17,19 +17,19 @@ package org.mitre.provenance.services;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSActor;
-import org.mitre.provenance.plusobject.ProvenanceCollection;
-import org.neo4j.graphdb.Node;
 
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
@@ -51,14 +51,13 @@ public class ActorServices {
 	@ApiResponses(value = {
 	  @ApiResponse(code = 404, message = "Actor doesn't exist or can't be found")	  
 	})			
-	public Response getActor(
-			@ApiParam(value = "The ID of the actor", required=true) @PathParam("aid") String actorID) { 
-		Map<String,Object> map = new HashMap<String,Object>();		
+	public Response getActor(@Context HttpServletRequest req,
+			@ApiParam(value = "The ID of the actor", required=true) @PathParam("aid") String actorID) { 				
 		try { 
-			Node n = Neo4JStorage.actorExists(actorID);		
-			if(n == null) return ServiceUtility.NOT_FOUND("No such actor " + actorID);		
-			PLUSActor a = Neo4JPLUSObjectFactory.newActor(n);			
-			map = a.getStorableProperties();			
+			AbstractProvenanceClient client = new LocalProvenanceClient(ServiceUtility.getUser(req));
+			PLUSActor a = client.actorExists(actorID);		
+			if(a == null) return ServiceUtility.NOT_FOUND("No such actor " + actorID);		
+			Map<String,Object> map = a.getStorableProperties();			
 			return ServiceUtility.OK(map);
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
