@@ -70,8 +70,16 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
 public class Neo4JStorage {
 	protected static Logger log = Logger.getLogger(Neo4JStorage.class.getName());
 	
+	/** Caching is a legacy feature from a previous implementation.  It's probably not a good idea to use PLUS node caching
+	 * because Neo4J offers better options itself.  See Neo's documentation on memory mapping files for options on how to 
+	 * greatly speed up database access and keep nodes cached in memory: http://docs.neo4j.org/chunked/stable/configuration-io-examples.html
+	 */
 	protected static final boolean USE_CACHING = false;
-	protected static LRUCache<String,Node> cache = new LRUCache<String,Node>(1000);
+	protected static LRUCache<String,Node> cache = new LRUCache<String,Node>(1); 
+	
+	static { 
+		if(USE_CACHING) cache = new LRUCache<String,Node>(1000);
+	}
 	
 	public static final String METADATA_PREFIX = "metadata";
 	
