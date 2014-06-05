@@ -284,7 +284,7 @@
 	    <skipTests>true</skipTests>
 		<java-version>1.7</java-version>
 		<org.springframework-version>3.2.3.RELEASE</org.springframework-version>
-		<jersey-version>1.17.1</jersey-version>
+		<jersey-version>1.18</jersey-version>
 		<openprov-version>0.5.0</openprov-version>
 		<org.neo4j-version>2.0.2</org.neo4j-version>
 		<copyright>MITRE 2014</copyright>
