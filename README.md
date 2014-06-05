@@ -60,6 +60,33 @@ Implementations of RESTful services can be found in `org.mitre.provenance.servic
 
 Additionally, many services support multiple representation types corresponding to D3-JSON (the default), PROV-XML, PROV-RDF, and PROV-TTL.
 
+## Upgrading from old versions of Neo4J
+
+As Neo4J software releases continue, occasionally the database format is changed.  If you see errors relating to the need to upgrade your database,
+that can be done as follows.   If you have a pre-existing PLUS database based on neo4j 2.0 or 2.0.1, this is a necessary step to get it
+working with neo4j 2.1.x.
+
+	$ echo allow_store_upgrade=true > neo4j.properties
+	$ neo4j-shell -path /path/to/your/provenance.db -config neo4j.properties 
+	Starting upgrade of database store files
+	.......... 10%
+	.......... 20%
+	.......... 30%
+	.......... 40%
+	# dense nodes: 1, which is 0 %
+	.......... 50%
+	.......... 60%
+	.......... 70%
+	.......... 80%
+	.......... 90%
+	.......... 100%
+	Finished upgrade of database store files
+	
+This process creates a properties file that instructs neo4j it's OK to update the database format.  Calling the shell actually performs the update.  
+Once completed, the database can be used as normal. 	
+
+General notes about upgrading neo4j databases can be found [in the neo4j documentation](http://docs.neo4j.org/chunked/stable/deployment-upgrading.html).
+
 ## Tests
 
 JUnit test code is provided in the org.mitre.provenance.test package.  Test coverage is evolving.
