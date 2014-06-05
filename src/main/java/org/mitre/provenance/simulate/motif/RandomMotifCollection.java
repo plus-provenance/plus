@@ -15,7 +15,7 @@
 package org.mitre.provenance.simulate.motif;
 
 import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
@@ -129,7 +129,7 @@ public class RandomMotifCollection extends SyntheticGraph {
 		RandomMotifCollection rmc = new RandomMotifCollection(p);
 		
 		System.out.println("Storing: " + rmc);
-		Neo4JStorage.store(rmc);
+		new LocalProvenanceClient().report(rmc);
 		System.out.println("Done.");
 	}
 } // End RandomMotifCollection

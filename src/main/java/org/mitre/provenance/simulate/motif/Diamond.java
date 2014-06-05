@@ -14,7 +14,7 @@
  */
 package org.mitre.provenance.simulate.motif;
 
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSString;
 
@@ -44,6 +44,6 @@ public class Diamond extends Motif {
 
 	public static void main(String [] args) throws Exception { 
 		Diamond d = new Diamond();
-		Neo4JStorage.store(d);		
+		new LocalProvenanceClient().report(d); 		
 	}
 } // End Diamond

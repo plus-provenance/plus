@@ -16,9 +16,11 @@ package org.mitre.provenance.test;
 
 import org.junit.Test;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSString;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.surrogate.SurrogateGeneratingFunction;
 import org.mitre.provenance.surrogate.sgf.GenericSGF;
 import org.mitre.provenance.surrogate.sgf.RandomInferMarker;
@@ -26,6 +28,8 @@ import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.User;
 
 public class TestSerializeDeserialize {
+	AbstractProvenanceClient client = new LocalProvenanceClient();
+	
 	@Test
 	public void testPrivilegeSetsAndSGFs() throws PLUSException {
 		PLUSString s = new PLUSString("Foo", "Bar");
@@ -42,7 +46,7 @@ public class TestSerializeDeserialize {
 			s.useSurrogateComputation(c);
 		}
 				
-		Neo4JStorage.store(s);
+		client.report(ProvenanceCollection.collect(s));
 		
 		PLUSString o = (PLUSString)Neo4JPLUSObjectFactory.load(s.getId(), User.DEFAULT_USER_GOD);
 		

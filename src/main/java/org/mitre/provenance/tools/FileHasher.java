@@ -19,9 +19,10 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
 
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
  * A simple tool to ease hashing of local files.
@@ -39,6 +40,8 @@ public class FileHasher {
 		
 		String line = null;
 		
+		LocalProvenanceClient client = new LocalProvenanceClient();
+		
 		while((line = br.readLine()) != null) { 
 			String filename = line.trim();
 			File f = new File(filename);
@@ -53,14 +56,16 @@ public class FileHasher {
 			String hash = fl.hash();
 			NonProvenanceEdge npe = new NonProvenanceEdge(fl, hash, NonProvenanceEdge.NPE_TYPE_CONTENT_HASH);
 						
-			Neo4JStorage.store(fl);
-			Neo4JStorage.store(npe);
+			ProvenanceCollection c = ProvenanceCollection.collect(fl);
+			c.addNonProvenanceEdge(npe);
+
+			client.report(c);
 			
 			try { 
 				URI u = new URI("http", "//" + filename, null);	
 				npe = new NonProvenanceEdge(fl.getId(), u.toString(), NonProvenanceEdge.NPE_TYPE_URI);
 				//log.info("Wrote URL " + u); 
-				Neo4JStorage.store(npe);
+				client.report(ProvenanceCollection.collect(npe)); 
 			} catch(Exception exc) {  
 				System.err.println("Illegal URI: " + filename + " - " + exc.getMessage());
 			}

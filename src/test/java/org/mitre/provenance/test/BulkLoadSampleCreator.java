@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
@@ -35,6 +37,8 @@ import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
 
 public class BulkLoadSampleCreator {
+	static AbstractProvenanceClient client = new LocalProvenanceClient();
+	
 	public static void addSomeMore() throws Exception {
 		PrivilegeSet ps = new PrivilegeSet();
 		ps.addPrivilege(PrivilegeClass.PUBLIC);
@@ -43,7 +47,7 @@ public class BulkLoadSampleCreator {
 		RandomMotifCollection rmc = new RandomMotifCollection(p);
 		
 		System.out.println("Storing some more, including: " + rmc.getNodesInOrderedList().get(0).getCreatedAsDate());
-		Neo4JStorage.store(rmc);		
+		client.report(rmc);		
 	}
 	
 	public static ProvenanceCollection hashDir(File f) throws PLUSException, IOException {
@@ -72,8 +76,8 @@ public class BulkLoadSampleCreator {
 	public static void main(String [] args) throws Exception {
 		// addSomeMore();
 		
-		Neo4JStorage.store(hashDir(new File("C:\\Users\\dmallen\\Desktop\\eclipse\\configuration\\.settings")));
-		
+		client.report(hashDir(new File("C:\\Users\\dmallen\\Desktop\\eclipse\\configuration\\.settings")));
+				
 		ProvenanceCollection col = Neo4JPLUSObjectFactory.getRecentlyCreated(User.DEFAULT_USER_GOD, 5);
 		
 		System.out.println("LATEST 5"); 

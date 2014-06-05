@@ -14,12 +14,13 @@
  */
 package org.mitre.provenance.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 
 import org.junit.Test;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -31,6 +32,7 @@ import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
 
 public class TestTaint {
+	AbstractProvenanceClient client = new LocalProvenanceClient();
 	
 	@Test
 	public void testTaint() throws Exception {		
@@ -39,7 +41,7 @@ public class TestTaint {
 		RandomMotifCollection rmc = new RandomMotifCollection(p);
 		
 		System.out.println("Storing test collection.");
-		Neo4JStorage.store(rmc);
+		client.report(rmc);
 		
 		// Pick the very first thing in the graph, and taint it (ensuring most everything else is tainted)
 		PLUSObject earliest = rmc.getNodesInOrderedList(ProvenanceCollection.SORT_BY_CREATION).get(0);

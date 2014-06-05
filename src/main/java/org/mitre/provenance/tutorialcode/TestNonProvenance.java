@@ -17,8 +17,8 @@ package org.mitre.provenance.tutorialcode;
 import java.util.HashSet;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -35,14 +35,14 @@ public class TestNonProvenance {
 		PLUSString A = new PLUSString("A", "I am a simple string named A");
 		PLUSString B = new PLUSString("B", "I am a simple string named B");
 
-		// Store A and B to the database...
-		Neo4JStorage.store(A);
-		Neo4JStorage.store(B);
+		LocalProvenanceClient client = new LocalProvenanceClient();
+		
+		client.report(ProvenanceCollection.collect(A, B));
 		
 		try {
 			NonProvenanceEdge failureEdge = new NonProvenanceEdge(A.getId(), "awjawejklf", 
 															NonProvenanceEdge.NPE_TYPE_CONTAINMENT);			
-			Neo4JStorage.store(failureEdge);
+			client.report(ProvenanceCollection.collect(failureEdge));
 		}
 		catch (PLUSException ex) {
 			System.err.println("Caught expected exception when trying to add a NonProvenanceEdge between two non-PLUSObjects.");
@@ -55,14 +55,13 @@ public class TestNonProvenance {
 				                     				   B.getId(),   // to B....
 				                     				   NonProvenanceEdge.NPE_TYPE_CONTAINMENT);
 				
-		Neo4JStorage.store(AtoB);
+		client.report(ProvenanceCollection.collect(AtoB));
 
 		for(String anIdentifier : new String[] {A.getId(), B.getId() }) {
 			AtoB = null;
 			HashSet<String> identifiers = new HashSet<String>();
 			identifiers.add(anIdentifier);
-			
-			
+						
 			ProvenanceCollection col = Neo4JPLUSObjectFactory.getIncidentEdges(identifiers, User.DEFAULT_USER_GOD);
 			if (col.countNPEs() == 0) { break; }
 			

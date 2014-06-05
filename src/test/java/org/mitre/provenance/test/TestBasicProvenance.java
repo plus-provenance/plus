@@ -19,6 +19,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 
 import org.junit.Test;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
@@ -34,6 +36,8 @@ import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
 
 public class TestBasicProvenance {
+	AbstractProvenanceClient client = new LocalProvenanceClient(User.DEFAULT_USER_GOD);
+	
 	public TestBasicProvenance() {
 		Neo4JStorage.initialize();
 	}
@@ -87,7 +91,9 @@ public class TestBasicProvenance {
 	
 	@Test
 	public void testRetrieval() throws Exception { 
-		List<PLUSWorkflow> wfs = Neo4JStorage.listWorkflows(User.DEFAULT_USER_GOD, 5);
+		client.listWorkflows(5);
+		
+		List<PLUSWorkflow> wfs = client.listWorkflows(5);		
 		ProvenanceCollection objs = Neo4JPLUSObjectFactory.getRecentlyCreated(User.DEFAULT_USER_GOD, 5);
 		ProvenanceCollection actors = Neo4JStorage.getActors(5);
 
@@ -97,12 +103,12 @@ public class TestBasicProvenance {
 		
 		System.out.println("Fetching members of workflow " + wfs.get(0)); 
 		for(PLUSWorkflow wf : wfs) {
-			ProvenanceCollection col = Neo4JStorage.getMembers(wf, User.DEFAULT_USER_GOD, 5);
+			ProvenanceCollection col = client.getWorkflowMembers(wf.getId(), 5);
 			assertTrue("Can fetch workflow members", (col != null));
 		}
 			
-		PLUSObject firstObj = objs.getNodesInOrderedList().get(0);
-		ProvenanceCollection col = Neo4JPLUSObjectFactory.newDAG(firstObj.getId(), User.DEFAULT_USER_GOD, new TraversalSettings());
+		PLUSObject firstObj = objs.getNodesInOrderedList().get(0);		
+		ProvenanceCollection col = client.getGraph(firstObj.getId(), new TraversalSettings());
 		
 		assertTrue("Can fetch a DAG", (col != null && col.countNodes() > 0));
 	}

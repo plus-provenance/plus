@@ -20,10 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.dag.LineageDAG;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -148,9 +148,11 @@ public class Motif extends ProvenanceCollection {
 		motifs.add(new InvertedTree()); 
 		motifs.add(new Tree()); 
 		
+		LocalProvenanceClient client = new LocalProvenanceClient();
+		
 		for(Motif m : motifs) {
 			System.out.println("Writing " + m.getWorkflow().getName()); 
-			Neo4JStorage.store(m);
+			client.report(m);
 		} // End for
 		
 		System.out.println("Done"); 
