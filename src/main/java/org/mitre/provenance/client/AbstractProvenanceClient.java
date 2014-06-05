@@ -64,6 +64,10 @@ public abstract class AbstractProvenanceClient {
 	 */
 	public abstract ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException;
 
+	public ProvenanceCollection getGraph(PLUSObject obj, TraversalSettings desc) throws ProvenanceClientException { 
+		return getGraph(obj.getId(), desc); 
+	}
+	
 	/**
 	 * Determine whether or not an object exists.
 	 * @param obj the object to check
