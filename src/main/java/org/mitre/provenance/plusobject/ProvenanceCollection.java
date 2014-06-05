@@ -640,4 +640,15 @@ public class ProvenanceCollection implements Cloneable {
 		for(PLUSActor a : actors) c.addActor(a);
 		return c;
 	}
+	
+	/**
+	 * Create a new collection from a list of NPEs.
+	 * @param npes
+	 * @return
+	 */
+	public static ProvenanceCollection collect(NonProvenanceEdge ... npes) { 
+		ProvenanceCollection c = new ProvenanceCollection();
+		for(NonProvenanceEdge npe : npes) c.addNonProvenanceEdge(npe);
+		return c;
+	}
 } // End ProvenanceCollection
