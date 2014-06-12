@@ -28,9 +28,17 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.UserPrincipal;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
@@ -38,6 +46,7 @@ import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
+import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
@@ -55,7 +64,7 @@ import org.mitre.provenance.user.User;
  * <p>Basically, this polls available OS information about processes that are running, and then saves that information as provenance.
  * The OS will tell us for example which process IDs (PIDs) have which files open for read and write, and what the command line is
  * of the application that executed.
- * 
+ * r
  * <p>We have to apply a few basic fingerprinting techniques to avoid logging duplicates.
  * 
  * <p>This code could doubtless see many improvements, but it's a basic proof of concept for how to collect provenance in real systems.
@@ -74,6 +83,7 @@ public class PROCtor {
 	protected String myPID = null;
 	public static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(1000); 
 	
+	protected HashSet<String> pollPIDs = new HashSet<String>();
 	protected AbstractProvenanceClient client = new LocalProvenanceClient();
 	protected SHA256ContentHasher hasher = new SHA256ContentHasher();
 	
@@ -90,6 +100,10 @@ public class PROCtor {
 		public PLUSObject getObject() { return o; } 
 	}
 	
+	public void addPID(String pid) { 
+		pollPIDs.add(pid);
+	}
+	
 	//HashMap<String,PLUSObject> cache = new HashMap<String,PLUSObject>();	
 	protected static File PROC = new File("/proc"); 
 		
@@ -97,10 +111,15 @@ public class PROCtor {
 		myPID = PROCtor.getMyPID();
 	}
 	
-	public void run(long pollTimeoutMs) throws Exception { 
+	public void run(long pollTimeoutMs, int times) throws Exception { 
+		int x=0;
+		
 		while(true) { 
-			poll();
+			if(times > 0 && x >= times) break;
+			
+			poll();			
 			Thread.sleep(pollTimeoutMs);
+			x++;
 		}		
 	}
 	
@@ -169,7 +188,9 @@ public class PROCtor {
 		
 		for(String pid : PIDs) { 
 			if(pid.equals(myPID)) continue;  // Don't process myself.
-			processPID(new File(PROC, pid)); 	
+			
+			if(pollPIDs.isEmpty() || pollPIDs.contains(pid))
+				processPID(new File(PROC, pid)); 	
 		}		
 	}
 	
@@ -416,15 +437,19 @@ public class PROCtor {
 				
 		if(cache.containsKey(id)) throw new ExistsException(cache.get(id)); 
 		
+		ProvenanceCollection results = null;
+		
 		try { 
-			ProvenanceCollection results = Neo4JPLUSObjectFactory.loadBySingleMetadataField(User.DEFAULT_USER_GOD, UUID_KEY, id, 1);
-			if(results != null && results.countNodes() > 0) {
-				PLUSObject o = (PLUSObject) results.getNodes().toArray()[0];
-				cache.put(id, o); 
-				throw new ExistsException(o);
-			}
+			results = Neo4JPLUSObjectFactory.loadBySingleMetadataField(User.DEFAULT_USER_GOD, UUID_KEY, id, 1);
 		} catch(PLUSException exc) { 
-			exc.printStackTrace(); 
+			exc.printStackTrace();
+			throw new RuntimeException(exc);
+		}
+		
+		if(results != null && results.countNodes() > 0) {
+			PLUSObject o = (PLUSObject) results.getNodes().toArray()[0];
+			cache.put(id, o); 
+			throw new ExistsException(o);
 		}
 			
 		PLUSFile pf = new PLUSFile(f);
@@ -459,23 +484,82 @@ public class PROCtor {
 		return pf;
 	}
 	
+	public static Options makeCLIOptions() { 
+		Options options = new Options();
+		
+		options.addOption(OptionBuilder.withArgName("pid")
+				          .hasArg()
+				          .isRequired(false)
+				          .withDescription("If specified, capture only provenance for this single PID and its children.")
+				          .create("pid"));
+		
+		options.addOption(OptionBuilder.withArgName("once")
+						  .hasArg(false)
+						  .isRequired(false)
+						  .withDescription("Poll the PID fs once, and then quit")
+						  .create("once"));
+		
+		options.addOption(OptionBuilder.withArgName("poll")
+						  .hasArg(false)
+						  .isRequired(false)
+						  .withDescription("Poll continuously until user interrupts.")
+						  .create("poll"));
+		
+		return options;
+	}
+	
+	public static void usage() { 
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("PROCtor", makeCLIOptions());
+	}
+	
 	/**
 	 * If provided with arguments, the program processes only those PIDs. If given no arguments, it starts in polling mode.
 	 */
 	public static void main(String [] args) throws Exception {
-		PROCtor p = new PROCtor();
+		CommandLineParser parser = new GnuParser();
 		
 		if(!PROC.exists()) {
 			log.severe("This utility is intended to run on Linux systems with a PROC filesystem. You do not appear to have one (or it is not readable)");
 			System.exit(1);
 		}
 		
-		if(args.length > 0) { 
-			for(int x=0; x<args.length; x++)
-				p.processPID(new File(PROC, args[x]));
-		} else {
-			log.info("Starting PROCtor in polling mode.  Hit Ctrl-C to end logging.");
-			p.run(5000);		
+		try { 
+			CommandLine line = parser.parse(makeCLIOptions(), args);
+			String pidArg = line.getOptionValue("pid");
+			
+			
+			boolean once = line.hasOption("once");
+			boolean poll = line.hasOption("poll");
+			
+			System.out.println("Once " + once + " poll " + poll);
+			
+			PROCtor p = new PROCtor();
+			
+			if(once && poll) { 
+				System.err.println("You can't specify both to run once and to poll.");
+				usage();
+				System.exit(1);
+			}
+			
+			// Default is to poll if user hasn't otherwise specified.
+			if(!poll && !once) poll = true;
+			
+			if(pidArg != null) { 
+				System.out.println("PID=" + pidArg);
+				String[] pids = pidArg.split(" +");
+				
+				for(String pid : pids) { 
+					p.addPID(pid);
+				}
+			} 
+		
+			if(poll)
+				p.run(5000, -1);
+			else p.run(5000, 1);
+		} catch(ParseException exc) {
+			usage();
+			System.exit(1);
 		}
 	}
 } // End PROCtor
