@@ -103,9 +103,8 @@ public class Neo4JPLUSObjectFactory {
 	 */
 	public static List<PrivilegeClass> listPrivilegeClasses() throws PLUSException {
 		ArrayList<PrivilegeClass> results = new ArrayList<PrivilegeClass>();
-
-		System.out.println("label is " + Neo4JStorage.LABEL_PRIVCLASS);
-		String query = "match (n:" + Neo4JStorage.LABEL_PRIVCLASS.name() + ") " +
+		
+		String query = "match (n:" + Neo4JStorage.getLabel(Neo4JStorage.LabelType.PRIVCLASS).name() + ") " +
                 "return n " +
 				"order by n.created desc " + 
 		        "limit " + MAX_OBJECTS;
@@ -170,8 +169,8 @@ public class Neo4JPLUSObjectFactory {
 			whereClause.append("n.`" + propName + "`=\"" + Neo4JStorage.formatProperty(fields.get(k)) + "\" ");
 			if(i.hasNext()) whereClause.append("and ");
 		}
-		
-		String query = "match (n:" + Neo4JStorage.LABEL_NODE.name() + ") " + 
+				
+		String query = "match (n:" + Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE) + ") " + 
 		        "where " + whereClause +  
                 "return n " + 
 		        "limit " + maxReturn;
@@ -711,7 +710,7 @@ public class Neo4JPLUSObjectFactory {
 					break;			
 				}
 							
-				if(!n.hasLabel(Neo4JStorage.LABEL_NODE)) {
+				if(!n.hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE))) {
 					dag.getFingerPrint().startTimer("TraverseIterator");
 					continue;
 				}
@@ -1106,7 +1105,7 @@ public class Neo4JPLUSObjectFactory {
 			max = MAX_OBJECTS;
 		}
 		
-		String query = "match (n:" + Neo4JStorage.LABEL_NODE.name() + ") " +
+		String query = "match (n:" + Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE).name() + ") " +
 				       "return n " + 
 	                   "order by n.created desc " + 
 	                   "limit " + max;
@@ -1220,11 +1219,11 @@ public class Neo4JPLUSObjectFactory {
 	 * @throws PLUSException
 	 */
 	protected static Object transmogrify(Node n) throws PLUSException { 
-		if(n.hasLabel(Neo4JStorage.LABEL_NODE)) {
+		if(n.hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE))) {
 			return newObject(n);
-		} else if(n.hasLabel(Neo4JStorage.LABEL_ACTOR)) {
+		} else if(n.hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.ACTOR))) {
 			return newActor(n); 
-		} else if(n.hasLabel(Neo4JStorage.LABEL_NONPROV)) {
+		} else if(n.hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NONPROV))) {
 			Iterator<Relationship> rels = n.getRelationships(Direction.INCOMING, Neo4JStorage.NPE).iterator();						
 			if(rels.hasNext()) return newNonProvenanceEdge(rels.next());
 		}		
@@ -1239,9 +1238,9 @@ public class Neo4JPLUSObjectFactory {
 	 * @throws PLUSException
 	 */
 	protected static Object transmogrify(Relationship r) throws PLUSException { 
-		if(r.getStartNode().hasLabel(Neo4JStorage.LABEL_NODE) && r.getEndNode().hasLabel(Neo4JStorage.LABEL_NODE))					
+		if(r.getStartNode().hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE)) && r.getEndNode().hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE)))					
 			return newEdge(r);
-		else if(r.getStartNode().hasLabel(Neo4JStorage.LABEL_NODE) && r.getEndNode().hasLabel(Neo4JStorage.LABEL_NONPROV)) {
+		else if(r.getStartNode().hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NODE)) && r.getEndNode().hasLabel(Neo4JStorage.getLabel(Neo4JStorage.LabelType.NONPROV))) {
 			return newNonProvenanceEdge(r); 
 		} else { 
 			log.info("Unrecognized/unsupported relationship " + r + " of type " + r.getType());

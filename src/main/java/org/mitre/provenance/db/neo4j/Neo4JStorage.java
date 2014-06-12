@@ -150,17 +150,32 @@ public class Neo4JStorage {
 	protected static GraphDatabaseService db = null;	
 	
 	/** Label affixed to all provenance object nodes */
-	protected static Label LABEL_NODE = null;
+	private static Label LABEL_NODE = null;
 	
 	/** Label affixed to all PrivilegeClass nodes */ 
-	protected static Label LABEL_PRIVCLASS = null;
+	private static Label LABEL_PRIVCLASS = null;
 	
 	/** Label affixed to all PLUSActor nodes */
-	protected static Label LABEL_ACTOR = null;	
+	private static Label LABEL_ACTOR = null;	
 	
 	/** Label affixed to all non provenance ID nodes */
-	protected static Label LABEL_NONPROV = null;
+	private static Label LABEL_NONPROV = null;
+	
+	public static enum LabelType { NODE, PRIVCLASS, ACTOR, NONPROV };
+	
+	public static Label getLabel(LabelType type) { 
+		if(db == null) initialize();
 		
+		switch(type) { 
+		case NODE: return LABEL_NODE;
+		case PRIVCLASS: return LABEL_PRIVCLASS;
+		case ACTOR: return LABEL_ACTOR;
+		case NONPROV: return LABEL_NONPROV;
+		}
+
+		throw new RuntimeException("Unknown label type "+ type);
+	}
+	
 	/**
 	 * Class that defines relationship types in Neo4J
 	 * @see org.neo4j.graphdb.RelationshipType
@@ -299,12 +314,15 @@ public class Neo4JStorage {
 	 * @see #Neo4JStorage{@link #LABEL_NODE}
 	 */
 	private static void initLabels() {
+		log.info("Initializing labels.");
 		try (Transaction tx = db.beginTx()) {
 			LABEL_NODE = DynamicLabel.label("Provenance");
 			LABEL_ACTOR = DynamicLabel.label("Actor");
 			LABEL_PRIVCLASS = DynamicLabel.label("PrivilegeClass");
 			LABEL_NONPROV = DynamicLabel.label("NonProvenance");
 			tx.success();
+			
+			log.info("LABEL_NODE=" + LABEL_NODE);
 		}		
 	}
 	
