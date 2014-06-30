@@ -461,7 +461,10 @@ public class PROVConverter {
 		
 		if(obj instanceof PLUSFile) { 
 			PLUSFile f = (PLUSFile)obj;
-			e.getOther().add(makeObjectProperty("path", f.getFile().getAbsolutePath()));
+			try { e.getOther().add(makeObjectProperty("path", f.getFile().getAbsolutePath())); }
+			catch(Exception exc) { 
+				log.warning(exc.getMessage());
+			}
 		} else if(obj instanceof PLUSURL) { 
 			PLUSURL u = (PLUSURL) obj;
 			try {				

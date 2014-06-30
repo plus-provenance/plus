@@ -22,7 +22,6 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSFile;

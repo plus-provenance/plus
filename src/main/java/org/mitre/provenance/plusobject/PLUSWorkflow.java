@@ -17,7 +17,7 @@ package org.mitre.provenance.plusobject;
 import java.util.Map;
 
 import org.mitre.provenance.PLUSException;
-import org.neo4j.graphdb.PropertyContainer;
+import org.mitre.provenance.PropertySet;
 
 /**
  * An abstract workflow.   This is usually used to group a set of provenance objects together into a cohesive set of operations.
@@ -69,7 +69,7 @@ public class PLUSWorkflow extends PLUSObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 		setWhenStart(""+props.getProperty("when_start"));
 		setWhenEnd("" + props.getProperty("when_end"));

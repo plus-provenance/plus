@@ -17,7 +17,7 @@ package org.mitre.provenance.plusobject;
 import java.util.Map;
 
 import org.mitre.provenance.PLUSException;
-import org.neo4j.graphdb.PropertyContainer;
+import org.mitre.provenance.PropertySet;
 
 /**
  * An abstract activity description.  Note that this is *not* an instance of the activity's execution.  For that,
@@ -97,7 +97,7 @@ public class PLUSActivity extends PLUSObject
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 		setInputs(Integer.parseInt((String)props.getProperty("inputs", "0")));
 		setOutputs(Integer.parseInt((String)props.getProperty("outputs", "0")));

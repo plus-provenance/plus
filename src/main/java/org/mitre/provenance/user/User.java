@@ -14,14 +14,13 @@
  */
 package org.mitre.provenance.user;
 
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * A PLUS User, that is, an individual or organization using the provenance system.
@@ -181,7 +180,7 @@ public class User extends PLUSActor {
 		return map;
 	}	
 	
-	public Object setProperties(PropertyContainer props) throws PLUSException {		
+	public Object setProperties(PropertySet props) throws PLUSException {		
 		super.setProperties(props);
 		displayName = ""+props.getProperty("displayName");
 		return this;

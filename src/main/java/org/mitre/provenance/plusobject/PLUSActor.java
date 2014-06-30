@@ -20,16 +20,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.db.neo4j.Neo4JCapable;
+import org.mitre.provenance.PropertyCapable;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.tools.PLUSUtils;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * An individual or organization that can do stuff.  Part of the OPM model, and useful to modeling multiple
  * participants in a PLUS federation. 
  * @author DMALLEN
  */
-public class PLUSActor implements Neo4JCapable {
+public class PLUSActor implements PropertyCapable {
 	/** Name of the actor */
 	protected String name;
 	/** Unique ID in the database; same format as OIDs (that is, 52-char UUIDs) */
@@ -113,7 +113,7 @@ public class PLUSActor implements Neo4JCapable {
 		return m;
 	}
 	
-	public Object setProperties(PropertyContainer props) throws PLUSException {
+	public Object setProperties(PropertySet props) throws PLUSException {
 		setId(""+props.getProperty("aid"));
 		setName(""+props.getProperty("name"));
 		setCreated((Long)props.getProperty("created"));

@@ -21,13 +21,13 @@ import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertyCapable;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.StopWatch;
-import org.mitre.provenance.db.neo4j.Neo4JCapable;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.tools.PLUSUtils;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * A FingerPrint is a statistical profile of a LineageDAG that stores basic information
@@ -36,7 +36,7 @@ import org.neo4j.graphdb.PropertyContainer;
  * @see LineageDAG#getFingerPrint()
  * @author DMALLEN
  */
-public class FingerPrint extends DAGWatcher implements Neo4JCapable {
+public class FingerPrint extends DAGWatcher implements PropertyCapable {
 	private static final Logger log = Logger.getLogger(FingerPrint.class.getName());
 	
 	protected String id = null;
@@ -282,7 +282,7 @@ public class FingerPrint extends DAGWatcher implements Neo4JCapable {
 		return m;
 	}
 
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException {
+	public PLUSObject setProperties(PropertySet props) throws PLUSException {
 		// TODO Auto-generated method stub
 		throw new PLUSException("Implement me"); 
 	}

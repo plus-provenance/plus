@@ -26,10 +26,10 @@ import java.util.Map;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * A generic file existing in some abstract path.
@@ -137,7 +137,7 @@ public class PLUSFile extends PLUSDataObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 		setOriginalPath(""+props.getProperty("originalPath"));
 		return this;

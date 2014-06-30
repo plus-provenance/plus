@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
-import org.neo4j.graphdb.PropertyContainer;
+import org.mitre.provenance.PropertySet;
 
 public class OpenIDUser extends User {
 	protected static Logger log = Logger.getLogger(OpenIDUser.class.getName());
@@ -54,7 +54,7 @@ public class OpenIDUser extends User {
 		return map;
 	}	
 	
-	public Object setProperties(PropertyContainer props) throws PLUSException {		
+	public Object setProperties(PropertySet props) throws PLUSException {		
 		super.setProperties(props);
 		userIdentifier = ""+props.getProperty("userIdentifier");
 		email = ""+props.getProperty("email", "");

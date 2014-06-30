@@ -200,9 +200,9 @@ public class Neo4JPLUSObjectFactory {
 			
 			PLUSActor result =  null;
 			
-			if(OpenIDUser.OPENID_USER_TYPE.equals(type)) result = (PLUSActor)new OpenIDUser().setProperties(n);		
-			else if("user".equals(type)) result = (PLUSActor)new User().setProperties(n);
-			else result = (PLUSActor)new PLUSActor().setProperties(n);
+			if(OpenIDUser.OPENID_USER_TYPE.equals(type)) result = (PLUSActor)new OpenIDUser().setProperties(new Neo4JPropertySet(n));		
+			else if("user".equals(type)) result = (PLUSActor)new User().setProperties(new Neo4JPropertySet(n));
+			else result = (PLUSActor)new PLUSActor().setProperties(new Neo4JPropertySet(n));
 			
 			tx.success();
 			return result;
@@ -212,7 +212,7 @@ public class Neo4JPLUSObjectFactory {
 	public static PrivilegeClass newPrivilegeClass(Node n) throws PLUSException { 
 		if(n == null) throw new PLUSException("null Privilege node");
 		PrivilegeClass pc = new PrivilegeClass(1);
-		pc.setProperties(n);
+		pc.setProperties(new Neo4JPropertySet(n));
 		return pc;
 	}
 	
@@ -290,27 +290,29 @@ public class Neo4JPLUSObjectFactory {
 			
 			PLUSObject o = null;
 			
+			Neo4JPropertySet props = new Neo4JPropertySet(n);
+			
 			if(PLUSInvocation.PLUS_SUBTYPE_INVOCATION.equals(st)) { 
-				o = new PLUSInvocation().setProperties(n);
+				o = new PLUSInvocation().setProperties(props);
 			} else if(PLUSWorkflow.PLUS_TYPE_WORKFLOW.equals(t)) { 
-				o = new PLUSWorkflow().setProperties(n);
+				o = new PLUSWorkflow().setProperties(props);
 			} else if(st.equals(PLUSString.PLUS_SUBTYPE_STRING)) {
-				o = new PLUSString().setProperties(n);
+				o = new PLUSString().setProperties(props);
 			} else if(PLUSFile.PLUS_SUBTYPE_FILE.equals(st)) { 
-				o = new PLUSFile().setProperties(n);
+				o = new PLUSFile().setProperties(props);
 			} else if(PLUSFileImage.PLUS_SUBTYPE_FILE_IMAGE.equals(st)) {  
-				o = new PLUSFileImage().setProperties(n);
+				o = new PLUSFileImage().setProperties(props);
 			} else if(PLUSURL.PLUS_SUBTYPE_URL.equals(st)) { 
-				o = new PLUSURL().setProperties(n);
+				o = new PLUSURL().setProperties(props);
 			} else if(PLUSActivity.PLUS_TYPE_ACTIVITY.equals(t)) { 
-				o = new PLUSActivity().setProperties(n);	
+				o = new PLUSActivity().setProperties(props);	
 			} else if(PLUSRelational.PLUS_SUBTYPE_RELATIONAL.equals(st)) {  
-				o = new PLUSRelational().setProperties(n);		
+				o = new PLUSRelational().setProperties(props);		
 			} else if(Taint.PLUS_SUBTYPE_TAINT.equals(st)) {
-				o = new Taint().setProperties(n);
+				o = new Taint().setProperties(props);
 			} else {
 				log.info("Couldn't find more specific type for " + t + "/" + st + " so loading as generic."); 
-				o = new PLUSGeneric().setProperties(n);
+				o = new PLUSGeneric().setProperties(props);
 			}
 			
 			int x=0;

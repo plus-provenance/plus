@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
-import org.neo4j.graphdb.PropertyContainer;
+import org.mitre.provenance.PropertySet;
 
 /**
  * A PLUSObject that is attached to a relational database.
@@ -161,7 +161,7 @@ public class PLUSRelational extends PLUSDataObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 		setKeyFieldName(""+props.getProperty("keyFieldName", ""));
 		setKeyFieldValue(""+props.getProperty("keyFieldValue", ""));

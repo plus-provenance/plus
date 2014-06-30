@@ -19,9 +19,9 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.db.neo4j.DoesNotExistException;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * Models an invocation as a type of PLUS node.
@@ -161,7 +161,7 @@ public class PLUSInvocation extends PLUSObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 				
 		String aid = ""+props.getProperty("activity");		

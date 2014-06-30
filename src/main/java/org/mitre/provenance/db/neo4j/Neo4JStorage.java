@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertyCapable;
 import org.mitre.provenance.dag.ViewedCollection;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActivity;
@@ -973,7 +974,7 @@ public class Neo4JStorage {
 		}
 
 		try (Transaction tx = db.beginTx()) {						
-			Node provObj = store((Neo4JCapable)o);
+			Node provObj = store((PropertyCapable)o);
 
 			provObj.addLabel(LABEL_NODE);
 			
@@ -1044,7 +1045,7 @@ public class Neo4JStorage {
 		return x;
 	}
 	
-	public static Node store(Neo4JCapable n4jc) throws PLUSException {
+	public static Node store(PropertyCapable n4jc) throws PLUSException {
 		if(db == null) initialize(); 
 		if(n4jc == null) throw new PLUSException("Cannot store null object."); 
 		

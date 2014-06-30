@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.dag.ViewedCollection;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
@@ -36,7 +37,6 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.User;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * Taints are special kinds of PLUSObjects that are asserted about other PLUSObjects.  They show
@@ -78,7 +78,7 @@ public class Taint extends HeritableMarking {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 		setDescription(""+props.getProperty(PROP_DESCRIPTION));
 				

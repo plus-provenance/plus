@@ -17,7 +17,7 @@ package org.mitre.provenance.plusobject;
 import java.util.Map;
 
 import org.mitre.provenance.PLUSException;
-import org.neo4j.graphdb.PropertyContainer;
+import org.mitre.provenance.PropertySet;
 
 /**
  * The simplest plus data item possible - just a string.
@@ -65,7 +65,7 @@ public class PLUSString extends PLUSDataObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException { 
+	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
 		super.setProperties(props);
 		setContent(""+props.getProperty("content"));
 		return this;

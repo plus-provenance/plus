@@ -12,19 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.mitre.provenance.db.neo4j;
+package org.mitre.provenance;
 
 import java.util.Map;
-
-import org.mitre.provenance.PLUSException;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * Interface that describes an object that can be written to/restored from a Neo4J database. 
  * @author moxious
  * @see org.mitre.provenance.db.neo4j.Neo4JStorage
  */
-public interface Neo4JCapable {
+public interface PropertyCapable {
 	public String getId();
 	
 	/**
@@ -41,5 +38,5 @@ public interface Neo4JCapable {
 	 * @return the returned object.
 	 * @throws PLUSException
 	 */
-	public Object setProperties(PropertyContainer props) throws PLUSException;
+	public Object setProperties(PropertySet props) throws PLUSException;
 } // End Neo4JCapable

@@ -17,9 +17,7 @@ package org.mitre.provenance.plusobject.json;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.PropertyContainer;
-
+import org.mitre.provenance.PropertySet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -30,15 +28,12 @@ import com.google.gson.JsonPrimitive;
  * This makes it a lot easier to get/set properties out of a simple container into provenance objects.
  * @author DMALLEN
  */
-public class JsonObjectPropertyWrapper implements PropertyContainer {
+public class JsonObjectPropertyWrapper implements PropertySet {
 	JsonObject obj = null;
 	
 	/** Create a new wrapper object that is entirely informed by its contained JsonObject */
 	public JsonObjectPropertyWrapper(JsonObject o) { obj = o; } 
 	
-	/** This is an overridden method from PropertyContainer that isn't needed in this class.  It always returns null */
-	public GraphDatabaseService getGraphDatabase() { return null; } 
-
 	public boolean hasProperty(String key) { return obj.has(key); }
 	
 	public Object getProperty(String key) {
@@ -70,9 +65,6 @@ public class JsonObjectPropertyWrapper implements PropertyContainer {
 		return getProperty(key); 
 	}
 
-	public void setProperty(String key, Object value) { throw new UnsupportedOperationException(); } 
-	public Object removeProperty(String key) { throw new UnsupportedOperationException(); }
-
 	public Iterable<String> getPropertyKeys() {
 		HashSet<String> keys = new HashSet<String>();
 		for(Entry<String,JsonElement> e : obj.entrySet()) 
@@ -80,7 +72,4 @@ public class JsonObjectPropertyWrapper implements PropertyContainer {
 		
 		return keys;
 	}
-
-	@Deprecated
-	public Iterable<Object> getPropertyValues() { throw new UnsupportedOperationException(); } 
 }

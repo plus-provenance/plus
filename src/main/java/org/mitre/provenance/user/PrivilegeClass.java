@@ -20,11 +20,11 @@ import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.db.neo4j.Neo4JCapable;
+import org.mitre.provenance.PropertyCapable;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * A privilege class is a kind of identity that a user can have.  PLUSObjects can require that a user have a 
@@ -33,7 +33,7 @@ import org.neo4j.graphdb.PropertyContainer;
  * @see PrivilegeSet#PrivilegeSet()
  * @author DMALLEN
  */
-public class PrivilegeClass implements Neo4JCapable {
+public class PrivilegeClass implements PropertyCapable {
 	protected static Logger log = Logger.getLogger(PrivilegeClass.class.getName());
 		
 	protected static final String GOD_ID = "urn:uuid:plus:111111111111111111111111111111111111";
@@ -167,7 +167,7 @@ public class PrivilegeClass implements Neo4JCapable {
 		return m;
 	}
 
-	public PrivilegeClass setProperties(PropertyContainer props) throws PLUSException {
+	public PrivilegeClass setProperties(PropertySet props) throws PLUSException {
 		setName(""+props.getProperty("name"));
 		setId(""+props.getProperty("pid"));
 		setDescription(""+props.getProperty("description"));

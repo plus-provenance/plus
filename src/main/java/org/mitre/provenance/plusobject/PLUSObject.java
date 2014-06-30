@@ -25,9 +25,10 @@ import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertyCapable;
+import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.dag.DAGPath;
 import org.mitre.provenance.dag.LineageDAG;
-import org.mitre.provenance.db.neo4j.Neo4JCapable;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.mediator.Mediator;
@@ -37,7 +38,6 @@ import org.mitre.provenance.surrogate.Surrogateable;
 import org.mitre.provenance.tools.PLUSUtils;
 import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
-import org.neo4j.graphdb.PropertyContainer;
 
 /**
  * A generic PLUSObject. While this object provides lots of functionality, you
@@ -60,7 +60,7 @@ import org.neo4j.graphdb.PropertyContainer;
  * 
  */
 public class PLUSObject extends Surrogateable implements Comparable<Object>,
-		Neo4JCapable, Cloneable, SourcedObject {
+		PropertyCapable, Cloneable, SourcedObject {
 	protected static Logger log = Logger.getLogger(PLUSObject.class.getName());
 	
 	public static final String PLUS_TYPE_WORKFLOW = "workflow";
@@ -528,7 +528,7 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertyContainer props) throws PLUSException {
+	public PLUSObject setProperties(PropertySet props) throws PLUSException {
 		String [] requiredProps = new String [] { "oid", "name", "type", "subtype" };
 		
 		for(int x=0; x<requiredProps.length; x++) {
