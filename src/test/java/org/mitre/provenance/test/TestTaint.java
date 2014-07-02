@@ -21,6 +21,7 @@ import java.util.Set;
 import org.junit.Test;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -48,16 +49,16 @@ public class TestTaint {
 		
 		// This creates and saves the taint...
 		System.out.println("Tainting first item.");
-		Taint t = Taint.taint(earliest, User.DEFAULT_USER_GOD, "OMG! Totes tainted!");
+		Taint t = Neo4JPLUSObjectFactory.taint(earliest, User.DEFAULT_USER_GOD, "OMG! Totes tainted!");
 		
 		System.out.println("Taint claimant:  " + t.getClaimant() + " and " + t.getStorableProperties().get("claimant"));
 		
-		Set<Taint> taints = Taint.getDirectTaints(earliest, User.DEFAULT_USER_GOD);
+		Set<Taint> taints = Neo4JPLUSObjectFactory.getDirectTaints(earliest, User.DEFAULT_USER_GOD);
 				
 		assertTrue("Direct taint works", taints.size() == 1 && taints.iterator().next().getId().equals(t.getId())); 
 		
 		for(PLUSEdge e : rmc.getOutboundEdgesByNode(earliest.getId())) {
-			ProvenanceCollection indirectTaints = Taint.getIndirectTaintSources(e.getTo(), User.DEFAULT_USER_GOD);
+			ProvenanceCollection indirectTaints = Neo4JPLUSObjectFactory.getIndirectTaintSources(e.getTo(), User.DEFAULT_USER_GOD);
 			
 			// Can't use the contains method on the indirectTaints object because that requires references to be the same.  Instead
 			// do a weak compare.
@@ -71,7 +72,7 @@ public class TestTaint {
 			
 			assertTrue("Indirect taint works", contains);						
 			assertTrue("Indirectly tainted things don't show as directly tainted.",
-					Taint.getDirectTaints(e.getTo(), User.DEFAULT_USER_GOD).isEmpty());
+					Neo4JPLUSObjectFactory.getDirectTaints(e.getTo(), User.DEFAULT_USER_GOD).isEmpty());
 		}		
 	}
 }

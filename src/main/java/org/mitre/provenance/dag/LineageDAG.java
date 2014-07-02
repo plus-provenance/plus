@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import org.mitre.provenance.EdgeMarking;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.FocusedCollection;
 import org.mitre.provenance.plusobject.PLUSActor;
@@ -680,7 +681,7 @@ public class LineageDAG extends ViewedCollection implements FocusedCollection {
 	 * propagation?  (I.e. the tainted input is too remote, or not important).  This method needs to get smarter.
 	 */
 	public static LineageDAG traceTaintSources(LineageDAG dag) {
-		HashMap<String,ArrayList<Taint>> taintSources = Taint.getTaintSources(dag);
+		HashMap<String,ArrayList<Taint>> taintSources = Neo4JPLUSObjectFactory.getTaintSources(dag);
 		
 		Set <String> e = taintSources.keySet();
 		dag.getFingerPrint().startTimer("TraceTaintSources");

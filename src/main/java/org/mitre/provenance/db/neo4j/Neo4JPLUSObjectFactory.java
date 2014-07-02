@@ -1149,6 +1149,150 @@ public class Neo4JPLUSObjectFactory {
 	}	
 	
 	/**
+	 * Mark an object as "tainted". This creates a new Taint object and links
+	 * it one hop upstream of the provided object.
+	 * @param tainted the object to mark as tainted.
+	 * @param user the user who claims this object is tainted.
+	 * @param description the user's description of the taint.
+	 * @throws PLUSException
+	 */
+	public static Taint taint(PLUSObject tainted, User user, String description) throws PLUSException {
+		Taint t = new Taint(user, description);
+		Neo4JStorage.store(t);		
+		PLUSEdge connector = new PLUSEdge(t, tainted, PLUSWorkflow.DEFAULT_WORKFLOW, PLUSEdge.EDGE_TYPE_MARKS);
+		Neo4JStorage.store(connector);
+		
+		return t;
+	} // End taint()	
+	
+	/**
+	 * Deletes all immediate edges to objects of type Taint, and the original taint object.
+	 * @param untainted the object whose taints should be removed.
+	 * @return the number of taint objects removed.
+	 * @throws PLUSException
+	 */
+	public static int removeTaints(PLUSObject untainted) throws PLUSException {
+		ProvenanceCollection col = Neo4JPLUSObjectFactory.getBLING(untainted.getId(), User.DEFAULT_USER_GOD);
+
+		int c = 0;		
+		for(PLUSEdge b : col.getEdges()) {
+			//System.out.println("Looking for taint edge: " + b); 
+			// We're only looking for "marks" edge types... 
+			if(!PLUSEdge.EDGE_TYPE_MARKS.equals(b.getType())) continue;
+			
+			// Load the object...
+			PLUSObject incident = Neo4JPLUSObjectFactory.newObject(Neo4JStorage.oidExists(b.getFrom().getId()));
+			
+			//System.out.println("Loaded " + incident + " from edge " + b); 
+			
+			if (incident != null && incident.isHeritable() && incident.getObjectSubtype().equals(Taint.MARK_TYPE)) {
+				if(Neo4JStorage.delete(incident, true)) c++;	
+			} else {
+				log.warning("Failed to remove taint object " + incident + " identified via " + b.getFrom().getId()); 
+			}
+		} // End for
+		
+		return c;
+	} // End removeTaints
+	
+	public static ProvenanceCollection getAllTaintSources(PLUSObject obj, User user) throws PLUSException { 
+		ViewedCollection col = new ViewedCollection(user);
+		
+		col.addAll(getIndirectTaintSources(obj, user)); 
+		
+		for(PLUSObject taint : getDirectTaints(obj, user)) 
+			col.addNode(taint);
+		
+		return col;
+	} // End getAllTaintSources
+	
+	/**
+	 * Traces remote (even quite distant) sources of taint to a particular object.
+	 * This way, you can find sources of taint even if it is outside of the scope of a single provenance graph.
+	 * This query will NOT return *direct* taints.
+	 * @param obj the object of interest
+	 * @return a collection of taint objects, or an empty collection if there are none.
+	 * @throws PLUSException
+	 */
+	public static ProvenanceCollection getIndirectTaintSources(PLUSObject obj, User user) throws PLUSException { 
+		ViewedCollection pc = new ViewedCollection(user);
+
+		String query = "start n=node:node_auto_index(oid={oid}) " + 
+		               "match taintNode-[r1:marks]->intermediates-[r:contributed|`input to`|unspecified|triggered|generated*]->n " +
+				       "where has(taintNode.subtype) and " +  
+		               "taintNode.subtype = '" + Taint.PLUS_SUBTYPE_TAINT + "' " + 
+				       "return taintNode limit 50";
+
+		Map<String,Object> params = new HashMap<String,Object>();
+		params.put("oid", obj.getId());
+		
+		Neo4JStorage.execute(query, params); 
+		
+		ExecutionResult result = Neo4JStorage.execute(query, params);
+		Iterator<Node> ns = result.columnAs("taintNode");
+
+		while(ns.hasNext()) pc.addNode(Neo4JPLUSObjectFactory.newObject(ns.next()));		
+		
+		return pc;
+	} // End traceRemoteTaintSources
+	
+	/**
+	 * This function provides a way of identifying all *originally* tainted nodes in a provenance collection.
+	 * That is, the set of nodes that are immediately linked with a Taint object.  This function operates on 
+	 * an already-assembled collection of provenance nodes, and does not consult any other database or source 
+	 * of information.  As an important limitation, this means that taint objects not already in the collection
+	 * will not be discovered.  For discovering per-node taint, you may want to use getDirectTaints.
+	 * @param col the provenance collection to search
+	 * @return a map that maps OID of an object to a list of direct taints that it has under col. 
+	 */
+	public static HashMap<String,ArrayList<Taint>> getTaintSources(ProvenanceCollection col) { 
+		HashMap<String, ArrayList<Taint>> taints = new HashMap<String,ArrayList<Taint>>();
+		
+		for(PLUSObject o : col.getNodes()) { 
+			List<PLUSEdge>bling = col.getInboundEdgesByNode(o.getId());
+			for(PLUSEdge e : bling) { 
+				if(col.contains(e.getFrom()) &&  
+				   (e.getFrom() instanceof Taint)) {
+					ArrayList<Taint>list = taints.get(o.getId());
+					if(list == null) { list = new ArrayList<Taint>(); taints.put(o.getId(), list); } 
+					list.add((Taint)e.getFrom());
+				}
+			}
+		} // End for
+				
+		return taints;
+	} // End getTaintSources()
+	
+	/**
+	 * Gets the list of taints directly associated with an object, i.e. taint
+	 * annotations on this object. There is also such a thing as indirect taints
+	 * (inherited). This will not return inherited taints.
+	 * @param obj the object to check.
+	 * @return a List of Taint objects, or an empty list if there are none.
+	 * @throws PLUSException
+	 */
+	public static Set<Taint> getDirectTaints(PLUSObject obj, User user) throws PLUSException {
+		HashSet<String> oids = new HashSet<String>();
+		oids.add(obj.getId()); 
+		
+		// Create a new traversal that goes only one hop away, backwards, and returns only nodes.
+		TraversalSettings trav = new TraversalSettings().onlyBackward().setMaxDepth(1).excludeEdges().excludeNPEs().includeNodes();
+		
+		ProvenanceCollection col = Neo4JPLUSObjectFactory.newDAG(obj.getId(), user, trav);
+		
+		Set<Taint> results = new HashSet<Taint>();
+		
+		// Just go through the nodes that are one hop upstream.  The ones that are taint objects are the direct taints.
+		for(PLUSObject upstreamNode : col.getNodes()) {
+			if(upstreamNode.isHeritable() && upstreamNode.getObjectSubtype().equals(Taint.PLUS_SUBTYPE_TAINT)) {				
+				results.add((Taint)upstreamNode);
+			}
+		}
+		
+		return results;
+	} // End getDirectTaints	
+	
+	/**
 	 * Extract a ProvenanceCollection out of an execution result.
 	 * This method is ideal for creating provenance collections from the results of cypher queries.
 	 * Any column that comes from the query that contains a java primitive will be ignored; only relationships 

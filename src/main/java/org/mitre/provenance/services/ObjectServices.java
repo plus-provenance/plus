@@ -132,7 +132,7 @@ public class ObjectServices {
 			Node n = Neo4JStorage.oidExists(oid);
 			if(n == null) return ServiceUtility.NOT_FOUND("Invalid/non-existant oid");
 			PLUSObject obj = Neo4JPLUSObjectFactory.newObject(n); 			
-			ProvenanceCollection col = Taint.getAllTaintSources(obj, user);
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.getAllTaintSources(obj, user);
 			return ServiceUtility.OK(col, req);			
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
@@ -168,7 +168,7 @@ public class ObjectServices {
 
 		try { 
 			PLUSObject object = Neo4JPLUSObjectFactory.newObject(n);		
-			Taint t = Taint.taint(object, user, reason);
+			Taint t = Neo4JPLUSObjectFactory.taint(object, user, reason);
 			ProvenanceCollection c = new ProvenanceCollection();
 			
 			c.addNode(t);
@@ -207,10 +207,10 @@ public class ObjectServices {
 			
 			n = null;
 			
-			Taint.removeTaints(obj);
+			Neo4JPLUSObjectFactory.removeTaints(obj);
 			
 			// Return the list of taints found.
-			return ServiceUtility.OK(Taint.getAllTaintSources(obj, user), req);
+			return ServiceUtility.OK(Neo4JPLUSObjectFactory.getAllTaintSources(obj, user), req);
 		} catch(PLUSException exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());
