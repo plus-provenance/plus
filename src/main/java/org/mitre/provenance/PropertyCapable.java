@@ -17,11 +17,12 @@ package org.mitre.provenance;
 import java.util.Map;
 
 /**
- * Interface that describes an object that can be written to/restored from a Neo4J database. 
+ * Interface that describes an object that can be written to/restored from a store that can handle key/value pairs.
  * @author moxious
  * @see org.mitre.provenance.db.neo4j.Neo4JStorage
  */
 public interface PropertyCapable {
+	/** All PropertyCapable objects must be identifiable by a particular string */
 	public String getId();
 	
 	/**

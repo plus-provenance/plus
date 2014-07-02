@@ -24,7 +24,7 @@ import org.mitre.provenance.PLUSException;
 /**
  * A conjunction of PrivilegeClass objects.  Users can have privilege sets, or 
  * PLUS objects can require them for access.
- * @author DMALLEN, ACHAPMAN
+ * @author dmallen, achapman
  */
 public class PrivilegeSet {
 	protected Logger log = Logger.getLogger(PrivilegeSet.class.getName());

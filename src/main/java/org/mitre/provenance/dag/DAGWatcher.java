@@ -19,14 +19,21 @@ import org.mitre.provenance.plusobject.PLUSObject;
 
 /**
  * A DAGWatcher is a class that receives signals about items being added to and removed from graphs.
- * @author DMALLEN
+ * @author moxious
  */
 public abstract class DAGWatcher {
+	/** Signal/method called when a node is added to the DAG */
 	public abstract void nodeAdded(PLUSObject node);
+	/** Signal/method called when a node is removed from the DAG */
 	public abstract void nodeRemoved(PLUSObject node); 
+	/** Signal/method called when an edge is removed from the DAG */
 	public abstract void edgeRemoved(PLUSEdge edge); 
+	/** Signal/method called when an edge is added to the DAG */
 	public abstract void edgeAdded(PLUSEdge edge);
+	/** Signal/method called when a timer begins */
 	public abstract void startTimer(String timerName); 
+	/** Signal/method called when a timer stops */
 	public abstract void stopTimer(String timerName); 
+	/** Signal/method called when the DAG is completed */
 	public abstract void finished(LineageDAG dag); 
 }

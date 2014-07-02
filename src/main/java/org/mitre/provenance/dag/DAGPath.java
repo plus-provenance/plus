@@ -25,7 +25,7 @@ import org.mitre.provenance.plusobject.PLUSObject;
 /**
  * A DAGPath is a specific thread running through an existing LineageDAG.  Because LineageDAG encapsulates all
  * of the complexity of edge voting and surrogates, DAGPaths can't exist independent of a particular DAG.
- * @author DMALLEN
+ * @author moxious
  */
 public class DAGPath implements Cloneable {
 	protected List <PathStep> steps;

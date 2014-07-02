@@ -31,7 +31,7 @@ import org.neo4j.graphdb.Node;
  * particular privilege class in order to see an object.  Privilege classes are a partially ordered domain.
  * <p>Worth noting though: users don't have privilege classes, they have privilege sets.
  * @see PrivilegeSet#PrivilegeSet()
- * @author DMALLEN
+ * @author moxious
  */
 public class PrivilegeClass implements PropertyCapable {
 	protected static Logger log = Logger.getLogger(PrivilegeClass.class.getName());
@@ -102,6 +102,7 @@ public class PrivilegeClass implements PropertyCapable {
 	
 	public String getId() { return id; } 
 	
+	/** Timestamp (ms since the epoch) when this was created */
 	public long getCreated() { return created; } 
 	public String getDescription() { return description; } 
 	public void setDescription(String description) { this.description = description; } 
@@ -123,9 +124,7 @@ public class PrivilegeClass implements PropertyCapable {
 		return getId().equals(((PrivilegeClass)p).getId());
 	} // End equals
 	
-	public String toString() { 
-		return new String("(Privilege " + getName() + ")");
-	}
+	public String toString() { return new String("(Privilege " + getName() + ")"); }
 	
 	/**
 	 * One privilege class dominates another when it is at an equal or higher level of security.  All classes
@@ -155,6 +154,9 @@ public class PrivilegeClass implements PropertyCapable {
 		}		
 	} // End dominates
 	
+	/**
+	 * @see PropertyCapable
+	 */
 	public Map<String, Object> getStorableProperties() {
 		Map<String,Object> m = new HashMap<String,Object>();
 		
