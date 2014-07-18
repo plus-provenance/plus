@@ -36,7 +36,6 @@ import javax.ws.rs.core.Response;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
-import org.mitre.provenance.dag.LineageDAG;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
@@ -50,6 +49,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.TransactionFailureException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -57,8 +57,8 @@ import com.google.gson.JsonParseException;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
-import com.wordnik.swagger.annotations.ApiResponses;
 import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * DAGServices encompassess RESTful services that operate over provenance "DAGs" (directed acyclic graphs).
@@ -290,6 +290,10 @@ public class DAGServices {
 			}			
 			
 			tx.success();
+		} catch(TransactionFailureException tfe) { 
+			// Sometimes neo4j does the wrong thing, and throws these exceptions failing to commit
+			// on simple read-only queries.  Which doesn't make sense.  Subject to a bug report.
+			log.warning("Transaction failed when searching graph: " + tfe.getMessage() + " / " + tfe);
 		} catch(Exception exc) { 
 			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());
