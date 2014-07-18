@@ -11,7 +11,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.mitre.provenance</groupId>
 	<artifactId>plus</artifactId>
-	<packaging>jar</packaging>
 	<version>3.0.0</version>
 	<name>PLUS Provenance</name>
 	<url>http://www.mitre.org/</url>
@@ -96,6 +95,7 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<version>2.5</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -104,12 +104,32 @@
 			<version>4.11</version>
 		</dependency>
 
-
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-maven-plugin</artifactId>
 			<version>9.1.2.v20140210</version>
+			<scope>provided</scope>
 			<type>maven-plugin</type>
+			
+		  <!-- We already include this and don't want it packaged into WAR as a compile resource -->
+	      <exclusions>
+	        <exclusion>
+	        	<groupId>javax.servlet</groupId>
+				<artifactId>servlet-api</artifactId>
+	        </exclusion>
+	        <exclusion>
+	        	<groupId>javax.servlet</groupId>
+	        	<artifactId>javax.servlet-api</artifactId>
+	        </exclusion>
+	        <exclusion>
+	        	<groupId>org.glassfish.web</groupId>
+	        	<artifactId>javax.servlet.jsp</artifactId>
+	        </exclusion>
+	        <exclusion>
+		        <groupId>org.glassfish</groupId>
+		        <artifactId>javax.el</artifactId>
+	        </exclusion>
+	      </exclusions> 			
 		</dependency>
 
 		<dependency>
@@ -147,6 +167,7 @@
 		  <artifactId>swagger-jersey-jaxrs_2.10</artifactId>
 		  <version>1.3.0</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
@@ -157,6 +178,22 @@
 	<build>
 		<finalName>plus</finalName>
 		<plugins>
+			<!-- Packaging for the app is set to war.  This also generates a jar. Without this, subsequent 
+			     packaging as one-jar will fail.  -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>make-a-jar</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>		
+		
 			<!-- This section configures how PLUS runs on jetty within maven (mvn 
 				jetty:run) -->
 			<plugin>
@@ -240,6 +277,8 @@
                         </apiSource>
                     </apiSources>
                 </configuration>
+                
+                <!-- 
                 <executions>                
                     <execution>
                         <phase>compile</phase>
@@ -248,6 +287,7 @@
                         </goals>
                     </execution>
                 </executions>
+                -->
             </plugin>
 
 			<!-- Maven's javadoc plugin is extremely strict, and starts with a default parameter -Xdoclint.
@@ -308,4 +348,10 @@
 		<name>MITRE Corporation</name>
 		<url>http://www.mitre.org/</url>
 	</organization>
+	<inceptionYear>2007</inceptionYear>
+	<issueManagement>
+		<url>https://github.com/plus-provenance/plus/issues</url>
+		<system>GitHub</system>
+	</issueManagement>
+	<packaging>war</packaging>
 </project>
