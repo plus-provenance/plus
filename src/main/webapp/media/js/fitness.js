@@ -516,7 +516,7 @@ function updateQueryTab(selector) {
 	var html = ("<p>Query:</p>" + 
 			    "<form onsubmit='submitCustomQuery(); return false' name='customQuery'>" +
 			    "<textarea id='query'  name='query' cols='70' rows='5'>" +
-			    "START n=node:node_auto_index(oid=\"" + oid + "\")\n" + 
+			    "MATCH (n:Provenance {oid: \"" + oid + "\"})\n" + 
 			    "return n;" + 
 			    "</textarea><br/>" + 
 			    "<input type='submit' name='submit' value='Submit'/>" + 
