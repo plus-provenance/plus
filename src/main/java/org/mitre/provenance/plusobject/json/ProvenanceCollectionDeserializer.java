@@ -15,14 +15,11 @@
 package org.mitre.provenance.plusobject.json;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActivity;
 import org.mitre.provenance.plusobject.PLUSActor;
@@ -39,7 +36,6 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.marking.Taint;
 import org.mitre.provenance.tools.PLUSUtils;
-import org.neo4j.graphdb.Node;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
@@ -50,6 +46,21 @@ import com.google.gson.JsonParseException;
 
 /**
  * A utility class that plugs into Google GSON that turns a set of JsonElements into a ProvenanceCollection.
+ * 
+ * <p>TODO many design decisions may need to be revisited here.  While you're deserializing a collection, because it's a graph many
+ * objects make reference to one another.  Edges have workflows, objects have owners, and so on.  When converting an object, we have to do 
+ * it in a special order (e.g. owners first) so that when we go to referring objects (like nodes) we have already converted the requisite owner.
+ * This raises a design decision - should it be OK for a json instance to refer to an owner that isn't already in that same JSON instance?
+ * If yes, then that requires that the deserializer do database lookups, which couples the deserializer to the DB code.  If no, that means that
+ * every instance that wants to talk about a PLUSActor has to drag the actor around with it.  Which isn't ideal.
+ * 
+ * <p>A second design decision here is completeness.  Let's say you specify an owner by reference (ownerid=blahblah) that isn't in the collection. 
+ * OK, well we can't set that object to be owned by that user, because at present the deserializer doesn't look things up in the database to
+ * prevent that coupling.  Now should that failure to set the owner be a fatal parsing error, or should it be recoverable?
+ * 
+ * <p>Right now, such errors are recoverable. If you give the deserializer bad data, it tries hard to get a coherent collection out of it.  This
+ * may be the wrong choice though for developers who are new to logging provenance and don't know what mistakes they're making.
+ * 
  * @author moxious
  */
 public class ProvenanceCollectionDeserializer implements JsonDeserializer<ProvenanceCollection> {
@@ -126,7 +137,7 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		return col;
 	}
 		
-	protected static PLUSActor convertActor(JsonObject act) throws JsonParseException {
+	public static PLUSActor convertActor(JsonObject act) throws JsonParseException {
 		String id = act.get("id").getAsString();
 		String name = act.get("name").getAsString();
 		long created = act.get("created").getAsLong();
@@ -144,7 +155,7 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		return new PLUSActor(id, name, created, type);
 	}
 	
-	protected static PLUSObject convertObject(JsonObject obj, ProvenanceCollection col) throws JsonParseException {
+	protected static PLUSObject convertObject(JsonObject obj, ProvenanceCollection contextCollection) throws JsonParseException {
 		String t = obj.get("type").getAsString();
 		String st = obj.get("subtype").getAsString();
 		String name = obj.get("name").getAsString();
@@ -159,26 +170,26 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			PLUSObject o = null;
 			
 			if(PLUSInvocation.PLUS_SUBTYPE_INVOCATION.equals(st)) { 
-				o = new PLUSInvocation().setProperties(n);
+				o = new PLUSInvocation().setProperties(n, contextCollection);
 			} else if(PLUSWorkflow.PLUS_TYPE_WORKFLOW.equals(t)) { 
-				o = new PLUSWorkflow().setProperties(n);
+				o = new PLUSWorkflow().setProperties(n, contextCollection);
 			} else if(st.equals(PLUSString.PLUS_SUBTYPE_STRING)) {
-				o = new PLUSString().setProperties(n);
+				o = new PLUSString().setProperties(n, contextCollection);
 			} else if(PLUSFile.PLUS_SUBTYPE_FILE.equals(st)) { 
-				o = new PLUSFile().setProperties(n);
+				o = new PLUSFile().setProperties(n, contextCollection);
 			} else if(PLUSFileImage.PLUS_SUBTYPE_FILE_IMAGE.equals(st)) {  
-				o = new PLUSFileImage().setProperties(n);
+				o = new PLUSFileImage().setProperties(n, contextCollection);
 			} else if(PLUSURL.PLUS_SUBTYPE_URL.equals(st)) { 
-				o = new PLUSURL().setProperties(n);
+				o = new PLUSURL().setProperties(n, contextCollection);
 			} else if(PLUSActivity.PLUS_TYPE_ACTIVITY.equals(t)) { 
-				o = new PLUSActivity().setProperties(n);	
+				o = new PLUSActivity().setProperties(n, contextCollection);	
 			} else if(PLUSRelational.PLUS_SUBTYPE_RELATIONAL.equals(st)) {  
-				o = new PLUSRelational().setProperties(n);		
+				o = new PLUSRelational().setProperties(n, contextCollection);		
 			} else if(Taint.PLUS_SUBTYPE_TAINT.equals(st)) {
-				o = new Taint().setProperties(n);
+				o = new Taint().setProperties(n, contextCollection);
 			} else {
 				log.info("Couldn't find more specific type for " + t + "/" + st + " so loading as generic."); 
-				o = new PLUSGeneric().setProperties(n);
+				o = new PLUSGeneric().setProperties(n, contextCollection);
 			}
 			
 			// Check metadata
@@ -210,24 +221,21 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			
 			log.info("Deserializing " + o + " actorID = " + aid + " and owner=" + obj.get("owner"));
 			if(isBlank(aid) && obj.has("owner")) {
-				PLUSActor owner = convertOwner(obj.get("owner"));
+				JsonElement ownerJson = obj.get("owner");
+				if(!ownerJson.isJsonObject()) throw new JsonParseException("Property 'owner' must be an object on " + obj);
+				
+				PLUSActor owner = convertActor((JsonObject)ownerJson);
 				if(owner != null) {
 					log.info("Set using converted owner property " + owner);
 					o.setOwner(owner);
 				}
 			} else if(aid != null) {
-				if(col.containsActorID(aid)) {
-					log.info("Set using provided context collection " + col.getActor(aid));
-					o.setOwner(col.getActor(aid));
-				} else {
-					try {
-						// As a last resort, lookup in local database.
-						o.setOwner(Neo4JPLUSObjectFactory.newActor(Neo4JStorage.actorExists(aid)));
-						log.info("Set using DB lookup = " + o.getOwner());
-					} catch(PLUSException exc) { 
-						log.severe(exc.getMessage());
-						log.warning("Object specifies ownerid " + aid + " which doesn't exist. " + o);
-					}
+				if(contextCollection.containsActorID(aid)) {
+					log.info("Set using provided context collection " + contextCollection.getActor(aid));
+					o.setOwner(contextCollection.getActor(aid));
+				} else { 
+					log.severe("Deserializer cannot find actor by dangling reference " + aid + " - provenance context collection is needed to identify this actor without database access.");
+					o.setOwner(null);
 				}
 			} else {
 				log.info("Can't set owner for " + o + " none of my tricks work.");
@@ -243,35 +251,6 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	protected static boolean isBlank(String val) { 
 		return (val == null) || "".equals(val) || "".equals(val.trim());
 	}
-	
-	public static PLUSActor convertOwner(JsonElement elem) throws JsonParseException {
-		if(elem.isJsonObject()) {
-			JsonObject jsobj = (JsonObject)elem;
-			
-			if(!jsobj.has("name")) throw new JsonParseException("Object 'owner' must have property 'name'");
-
-			String name = null;
-			try { 
-				name = jsobj.get("name").getAsString();
-				Node n = Neo4JStorage.actorExistsByName(name);
-				
-				if(n != null) return Neo4JPLUSObjectFactory.newActor(n);
-				else {
-					PLUSActor actor = new PLUSActor(name);
-					Neo4JStorage.store(actor);
-					return actor;
-				}				
-			} catch(NullPointerException exc) {
-				throw new JsonParseException("Malformed name in object owner");
-			} catch(PLUSException exc) {
-				log.severe("Failed to load actor '" + name + "'");
-				exc.printStackTrace();
-				return null;
-			}
-		} else {
-			throw new JsonParseException("If key 'owner' is provided, it must be an object with a 'name' property.");
-		}
-	} // End convertOwner
 	
 	protected static NonProvenanceEdge convertNPE(JsonObject obj) throws JsonParseException { 
 		String from = obj.get("from").getAsString();
@@ -306,7 +285,12 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	 */
 	protected static PLUSObject resurrect(String nodeOID, ProvenanceCollection col) throws PLUSException {
 		if(col.containsObjectID(nodeOID)) return col.getNode(nodeOID);
-		else return Neo4JPLUSObjectFactory.newObject(nodeOID);
+		// else return Neo4JPLUSObjectFactory.newObject(nodeOID);
+		
+		log.severe("Cannot recall node by ID " + nodeOID + " because it isn't in provenance context collection.   Database lookups during " + 
+		           "deserialization are disabled.  This likely means ");
+		
+		return null;
 	}
 	
 	protected static PLUSEdge convertEdge(JsonObject obj, ProvenanceCollection col) throws JsonParseException {
@@ -345,12 +329,10 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			if(wfid != null && !PLUSWorkflow.DEFAULT_WORKFLOW.getId().equals(wfid)) {
 				if(col.containsObjectID(wfid)) wf = (PLUSWorkflow)col.getNode(wfid);
 				else {
-					try {
-						wf = (PLUSWorkflow)Neo4JPLUSObjectFactory.newObject(Neo4JStorage.oidExists(wfid));
-					} catch (PLUSException e) {
-						log.severe("Cannot re-load workflow " + wfid);
-						e.printStackTrace();
-					}
+					// TODO -- there's a design argument that this should be a fatal error/exception.
+					log.severe("Cannot re-load workflow " + wfid + " because it isn't in context provenance collection.  " + 
+				               "Database lookups are disabled on deserialization.");
+					wf = PLUSWorkflow.DEFAULT_WORKFLOW;
 				}
 			}
 						
