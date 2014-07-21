@@ -161,8 +161,8 @@ public class PLUSRelational extends PLUSDataObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
-		super.setProperties(props);
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
+		super.setProperties(props, contextCollection);
 		setKeyFieldName(""+props.getProperty("keyFieldName", ""));
 		setKeyFieldValue(""+props.getProperty("keyFieldValue", ""));
 		setTableName("" + props.getProperty("tableName", ""));

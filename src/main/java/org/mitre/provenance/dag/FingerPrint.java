@@ -27,6 +27,7 @@ import org.mitre.provenance.StopWatch;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.tools.PLUSUtils;
 
 /**
@@ -282,7 +283,7 @@ public class FingerPrint extends DAGWatcher implements PropertyCapable {
 		return m;
 	}
 
-	public PLUSObject setProperties(PropertySet props) throws PLUSException {
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {
 		// TODO Auto-generated method stub
 		throw new PLUSException("Implement me"); 
 	}

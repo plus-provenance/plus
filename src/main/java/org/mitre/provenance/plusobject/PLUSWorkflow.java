@@ -69,8 +69,8 @@ public class PLUSWorkflow extends PLUSObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
-		super.setProperties(props);
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
+		super.setProperties(props, contextCollection);
 		setWhenStart(""+props.getProperty("when_start"));
 		setWhenEnd("" + props.getProperty("when_end"));
 		return this;

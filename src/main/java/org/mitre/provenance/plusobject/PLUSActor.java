@@ -120,7 +120,7 @@ public class PLUSActor implements PropertyCapable {
 		return m;
 	}
 	
-	public Object setProperties(PropertySet props) throws PLUSException {
+	public Object setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {
 		setId(""+props.getProperty("aid"));
 		setName(""+props.getProperty("name"));
 		setCreated((Long)props.getProperty("created"));

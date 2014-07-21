@@ -22,6 +22,7 @@ import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.User;
 
 /**
@@ -64,8 +65,8 @@ public class Taint extends HeritableMarking {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
-		super.setProperties(props);
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
+		super.setProperties(props, contextCollection);
 		setDescription(""+props.getProperty(PROP_DESCRIPTION));
 				
 		PLUSActor act = Neo4JPLUSObjectFactory.getActor(""+props.getProperty(PROP_CLAIMANT));

@@ -161,8 +161,8 @@ public class PLUSInvocation extends PLUSObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
-		super.setProperties(props);
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
+		super.setProperties(props, contextCollection);
 				
 		String aid = ""+props.getProperty("activity");		
 		setActivity(PLUSActivity.UNKNOWN_ACTIVITY);

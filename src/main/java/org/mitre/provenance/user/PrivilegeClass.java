@@ -24,6 +24,7 @@ import org.mitre.provenance.PropertyCapable;
 import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.neo4j.graphdb.Node;
 
 /**
@@ -169,7 +170,7 @@ public class PrivilegeClass implements PropertyCapable {
 		return m;
 	}
 
-	public PrivilegeClass setProperties(PropertySet props) throws PLUSException {
+	public PrivilegeClass setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {
 		setName(""+props.getProperty("name"));
 		setId(""+props.getProperty("pid"));
 		setDescription(""+props.getProperty("description"));

@@ -21,6 +21,7 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
  * A PLUS User, that is, an individual or organization using the provenance system.
@@ -180,8 +181,8 @@ public class User extends PLUSActor {
 		return map;
 	}	
 	
-	public Object setProperties(PropertySet props) throws PLUSException {		
-		super.setProperties(props);
+	public Object setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {		
+		super.setProperties(props, contextCollection);
 		displayName = ""+props.getProperty("displayName");
 		return this;
 	} 		

@@ -16,6 +16,8 @@ package org.mitre.provenance;
 
 import java.util.Map;
 
+import org.mitre.provenance.plusobject.ProvenanceCollection;
+
 /**
  * Interface that describes an object that can be written to/restored from a store that can handle key/value pairs.
  * @author moxious
@@ -36,8 +38,10 @@ public interface PropertyCapable {
 	/**
 	 * Set the internal properties of this object to reflect the properties provided by Neo4J
 	 * @param props properties read from a Neo4J node
+	 * @param contextCollection optional (can be null) collection which contains the context of other objects being created.
+	 * Because some objects refer to others by reference IDs, this is used to look up those other objects as needed.
 	 * @return the returned object.
 	 * @throws PLUSException
 	 */
-	public Object setProperties(PropertySet props) throws PLUSException;
+	public Object setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException;
 } // End Neo4JCapable

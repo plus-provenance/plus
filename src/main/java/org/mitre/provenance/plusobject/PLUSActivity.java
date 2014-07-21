@@ -97,8 +97,8 @@ public class PLUSActivity extends PLUSObject
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
-		super.setProperties(props);
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
+		super.setProperties(props, contextCollection);
 		setInputs(Integer.parseInt((String)props.getProperty("inputs", "0")));
 		setOutputs(Integer.parseInt((String)props.getProperty("outputs", "0")));
 		setDescription((String)props.getProperty("description"));

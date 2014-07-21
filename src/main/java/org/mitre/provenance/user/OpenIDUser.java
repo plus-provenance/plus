@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.PropertySet;
+import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 public class OpenIDUser extends User {
 	protected static Logger log = Logger.getLogger(OpenIDUser.class.getName());
@@ -54,8 +55,8 @@ public class OpenIDUser extends User {
 		return map;
 	}	
 	
-	public Object setProperties(PropertySet props) throws PLUSException {		
-		super.setProperties(props);
+	public Object setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {		
+		super.setProperties(props, contextCollection);
 		userIdentifier = ""+props.getProperty("userIdentifier");
 		email = ""+props.getProperty("email", "");
 		return this;

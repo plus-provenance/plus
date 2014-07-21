@@ -528,7 +528,7 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException {
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {
 		String [] requiredProps = new String [] { "oid", "name", "type", "subtype" };
 		
 		for(int x=0; x<requiredProps.length; x++) {
@@ -540,17 +540,15 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		setName(""+props.getProperty("name"));
 		setCreated((Long)props.getProperty("created"));
 		
-		try { 
-			String aid = (String)props.getProperty("ownerid", null);
-			if(aid != null && !"".equals(aid) && !"null".equals(aid)) {
-				// TODO refactor to get rid of references to Neo4JStorage.
-				PLUSActor a = Neo4JPLUSObjectFactory.newActor(Neo4JStorage.actorExists(aid));
-				setOwner(a);
-			} else setOwner(null);
-		} catch(PLUSException exc) { 
-			log.warning("Could not set object owner: " + exc);
-			setOwner(null);
-		}
+		String aid = (String)props.getProperty("ownerid", null);
+		if(aid != null && !"".equals(aid) && !"null".equals(aid)) {
+			if(contextCollection != null && contextCollection.containsActorID(aid))
+				setOwner(contextCollection.getActor(aid));
+			else {
+				log.severe("Cannot set owner for object: aid " + aid + " isn't in the context collection.");
+				setOwner(null);
+			}
+		} else setOwner(null);
 				
 		setObjectType((String)props.getProperty("type", null));
 		setObjectSubtype((String)props.getProperty("subtype", null));

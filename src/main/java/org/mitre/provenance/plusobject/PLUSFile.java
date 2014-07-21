@@ -137,8 +137,8 @@ public class PLUSFile extends PLUSDataObject {
 		return m;
 	}
 	
-	public PLUSObject setProperties(PropertySet props) throws PLUSException { 
-		super.setProperties(props);
+	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
+		super.setProperties(props, contextCollection);
 		setOriginalPath(""+props.getProperty("originalPath"));
 		return this;
 	}
