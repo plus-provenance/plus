@@ -46,6 +46,13 @@ public class PLUSActor implements PropertyCapable {
 		type = "actor";
 	} // End PLUSActor()
 	
+	public PLUSActor(String aid, String name, long created, String type) { 
+		this.aid = aid;
+		this.created = created;
+		this.type = type;
+		this.name = name;
+	}
+	
 	/**
 	 * Create a new PLUSActor with a given name.
 	 * @param name the name of the actor. 
