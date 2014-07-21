@@ -16,6 +16,7 @@ package org.mitre.provenance.services;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -143,11 +144,18 @@ public class DAGServices {
 	 * @param col
 	 * @return the same collection, or throws an exception on error.
 	 */
-	public ProvenanceCollection checkGraphFormat(ProvenanceCollection col) throws CollectionFormatException { 
+	public ProvenanceCollection checkGraphFormat(ProvenanceCollection col) throws CollectionFormatException { 		
+		StringBuffer reasons = new StringBuffer("");
+		
 		for(PLUSObject o : col.getNodes()) {
-			if(Neo4JStorage.oidExists(o.getId()) != null)
-				throw new CollectionFormatException("Node named " + o.getName() + " / " + o.getId() + " has a duplicate ID");
+			if(Neo4JStorage.oidExists(o.getId()) != null) {
+				String reason = "Node named " + o.getName() + " / " + o.getId() + " has duplicate ID to something already in DB";
+				log.warning(reason);
+				reasons.append(" (E) " + reason);
+			}
 		}
+		
+		if(reasons.length() > 0) throw new CollectionFormatException(reasons.toString());
 		
 		return col;
 	} // End checkGraphFormat
@@ -195,19 +203,20 @@ public class DAGServices {
 		ProvenanceCollection col = null;
 		try {
 			col = g.fromJson(provenance, ProvenanceCollection.class);
-			System.out.println("Converted from D3 JSON:  " + col);
+			System.err.println("Converted from D3 JSON:  " + col + " ORIGINAL JSON: \n" + provenance);
 
 			// Check format, and throw an exception if it's no good.
 			col = checkGraphFormat(col);
 			
-			System.out.println("Tagging source...");
+			System.err.println("Tagging source...");
 			col = tagSource(col, req);
 			
 			/* for many reasons, this is a bad idea.  leave stubbed out for now.
 			System.out.println("Resetting IDs...");
 			col = resetIDs(col);
 			*/
-			Neo4JStorage.store(col);
+			int r = Neo4JStorage.store(col);
+			System.err.println("Storing " + col + " resulted in " + r);
 		} catch(CollectionFormatException gfe) {
 			log.warning("Failed storing collection: " + gfe.getMessage());
 			return ServiceUtility.BAD_REQUEST("Your collection contained a format problem: " + gfe.getMessage());
@@ -215,9 +224,11 @@ public class DAGServices {
 			j.printStackTrace();
 			return ServiceUtility.BAD_REQUEST(j.getMessage());			
 		} catch(PLUSException exc) { 
+			exc.printStackTrace();
 			return ServiceUtility.ERROR(exc.getMessage());				
 		}
 
+		System.err.println("Successfully stored " + col + " returning OK to client.");
 		return ServiceUtility.OK(col, req);
 	} // End newGraph
 
