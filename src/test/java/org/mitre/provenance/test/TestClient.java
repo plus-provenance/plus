@@ -31,7 +31,7 @@ public class TestClient {
 		ProvenanceCollection col = new ProvenanceCollection();
 		PLUSString s = new PLUSString("Foo", "Bar");
 		PLUSString t = new PLUSString("Baz", "Quux");
-		PLUSEdge e = new PLUSEdge(s, t, null);
+		PLUSEdge e = new PLUSEdge(s, t);
 		NonProvenanceEdge npe = new NonProvenanceEdge(s, t, "blah");
 		
 		col.addNode(s);
@@ -44,13 +44,14 @@ public class TestClient {
 		t.setOwner(someOwner);
 		col.addActor(someOwner);
 		
-		//RESTProvenanceClient pc = new RESTProvenanceClient("localhost", "8080");
-		//System.out.println("Reporting collection...");
-		//assertTrue("Can report successfully to server", pc.report(col));
+		RESTProvenanceClient pc = new RESTProvenanceClient("localhost", "8080");
+		System.out.println("Reporting collection " + col);
+		assertTrue("Can report successfully to server", pc.report(col));
 		
 		System.out.println("Fetching graph...");
-		//ProvenanceCollection fetched = pc.getGraph(s.getId());
-		ProvenanceCollection fetched = col;
+		ProvenanceCollection fetched = pc.getGraph(s.getId());
+		System.out.println("Fetched " + fetched);
+		//ProvenanceCollection fetched = col;
 
 		assertTrue("All items logged", col.countNodes() == fetched.countNodes());
 		assertTrue("All edges logged", col.countEdges() == fetched.countEdges());
