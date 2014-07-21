@@ -263,6 +263,8 @@ public class ProvenanceCollection implements Cloneable {
     	return getEdgesByPattern(pattern);
     }
         
+    public PLUSActor getActor(String actorID) { return actors.get(actorID); } 
+    
     /** Get the actors in this ProvenanceCollection */
     public Collection <PLUSActor> getActors() { return actors.values(); } 
     
