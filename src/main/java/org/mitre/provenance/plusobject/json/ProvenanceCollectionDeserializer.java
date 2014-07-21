@@ -15,6 +15,7 @@
 package org.mitre.provenance.plusobject.json;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -66,12 +67,23 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		
 		JsonElement nodes = obj.get("nodes");
 		JsonElement links = obj.get("links");
+		JsonElement actors = obj.get("actors");
 		
 		if(!nodes.isJsonArray()) throw new JsonParseException("Missing top-level nodes array");
 		if(!links.isJsonArray()) throw new JsonParseException("Missing top-level links array");
+		if(!actors.isJsonArray()) throw new JsonParseException("Missing top-level actors array");
 		
 		JsonArray n = (JsonArray)nodes;
 		JsonArray l = (JsonArray)links;
+		JsonArray a = (JsonArray)actors;
+		
+		for(JsonElement actor : a) { 
+			if(!actor.isJsonObject()) throw new JsonParseException("Actors list contains non-object " + actor.toString());
+			
+			PLUSActor convertedActor = convertActor((JsonObject)actor);
+			log.info("Adding converted actor " +convertedActor);
+			col.addActor(convertedActor);
+		}
 		
 		for(JsonElement e : n) { 
 			if(!e.isJsonObject()) throw new JsonParseException("Node list contains non-object " + e.toString());
@@ -80,7 +92,7 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			// NPID nodes are dummy stand-ins, and not provenance objects to be added.
 			if("npid".equals(o.get("type").getAsString())) continue;
 			
-			PLUSObject pobj = convertObject(o);
+			PLUSObject pobj = convertObject(o, col);
 			col.addNode(pobj);
 		}
 		
@@ -114,7 +126,25 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		return col;
 	}
 		
-	protected static PLUSObject convertObject(JsonObject obj) throws JsonParseException {
+	protected static PLUSActor convertActor(JsonObject act) throws JsonParseException {
+		String id = act.get("id").getAsString();
+		String name = act.get("name").getAsString();
+		long created = act.get("created").getAsLong();
+		String type = act.get("type").getAsString();
+		
+		if(id == null || "".equals(id)) throw new JsonParseException("Invalid empty or missing 'id' on actor " + act);
+		if(name == null || "".equals(name)) throw new JsonParseException("Invalid empty or missing 'name' on actor " + act);
+		if(created <= 0) throw new JsonParseException("Invalid created " + created + " on actor " + act);
+		if(type == null || "".equals(type)) throw new JsonParseException("Invalid empty or missing 'type' on actor " + act);
+		
+		if(!"actor".equals(type)) {
+			log.warning("At this time, only type='actor' PLUSActors can be converted, but provided JSON presents " + type);
+		}
+		
+		return new PLUSActor(id, name, created, type);
+	}
+	
+	protected static PLUSObject convertObject(JsonObject obj, ProvenanceCollection col) throws JsonParseException {
 		String t = obj.get("type").getAsString();
 		String st = obj.get("subtype").getAsString();
 		String name = obj.get("name").getAsString();
@@ -176,13 +206,31 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			}
 			
 			// Check owner status.
-			String aid = (o.getOwner() != null ? o.getOwner().getId() : null);
+			String aid = obj.get("ownerid").getAsString();
+			
+			log.info("Deserializing " + o + " actorID = " + aid + " and owner=" + obj.get("owner"));
 			if(isBlank(aid) && obj.has("owner")) {
 				PLUSActor owner = convertOwner(obj.get("owner"));
-				if(owner != null) 
+				if(owner != null) {
+					log.info("Set using converted owner property " + owner);
 					o.setOwner(owner);
-			} else if(aid != null && Neo4JStorage.actorExists(aid) == null) {
-				log.warning("Object specifies ownerid " + aid + " which doesn't exist:   " + o);				
+				}
+			} else if(aid != null) {
+				if(col.containsActorID(aid)) {
+					log.info("Set using provided context collection " + col.getActor(aid));
+					o.setOwner(col.getActor(aid));
+				} else {
+					try {
+						// As a last resort, lookup in local database.
+						o.setOwner(Neo4JPLUSObjectFactory.newActor(Neo4JStorage.actorExists(aid)));
+						log.info("Set using DB lookup = " + o.getOwner());
+					} catch(PLUSException exc) { 
+						log.severe(exc.getMessage());
+						log.warning("Object specifies ownerid " + aid + " which doesn't exist. " + o);
+					}
+				}
+			} else {
+				log.info("Can't set owner for " + o + " none of my tricks work.");
 			}
 			
 			return o;
