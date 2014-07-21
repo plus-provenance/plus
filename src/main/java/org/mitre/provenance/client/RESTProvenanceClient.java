@@ -37,6 +37,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -311,6 +312,8 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		Gson g = new GsonBuilder().create();
 		JsonElement elem = g.fromJson(response, JsonElement.class);
-		return ProvenanceCollectionDeserializer.convertOwner(elem); 
+		if(!elem.isJsonObject()) throw new ProvenanceClientException("Server response wasn't a JSON object " + elem);
+		
+		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
 	}
 } // End RESTProvenanceClient
