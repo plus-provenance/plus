@@ -723,8 +723,10 @@ public class Neo4JPLUSObjectFactory {
 					dag.getFingerPrint().stopTimer("CreatePLUSObject"); 
 					
 					if(o != null) { 
-						// log.info("Added node " + o.getId());
-						dag.addNode(o);				
+						log.info("Added node " + o.getId() + " with owner " + o.getOwner());
+						dag.addNode(o);
+						
+						if(o.getOwner() != null) dag.addActor(o.getOwner());
 					}
 				} 
 	
