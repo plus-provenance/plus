@@ -548,7 +548,7 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 				setOwner(a);
 			} else setOwner(null);
 		} catch(PLUSException exc) { 
-			log.severe(exc.getMessage());
+			log.warning("Could not set object owner: " + exc);
 			setOwner(null);
 		}
 				
