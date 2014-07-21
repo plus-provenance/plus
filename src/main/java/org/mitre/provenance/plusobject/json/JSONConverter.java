@@ -230,15 +230,19 @@ public class JSONConverter {
 		structure.put("nodes", nodes);
 		structure.put("links", links); 
 		
+		HashMap<String,Object> actorProps = null;
+		
 		for(PLUSActor a : col.getActors()) {
-			HashMap<String,Object> actorProps = new HashMap<String,Object>();
+			actorProps = new HashMap<String,Object>();
 			
 			actorProps.put("id", a.getId());
 			actorProps.put("name", a.getName());
 			actorProps.put("created", a.getCreated());
+			actorProps.put("type", a.getType());
 			
 			actors.add(actorProps);
 		}
+		
 		structure.put("actors", actors);
 		
 		HashMap<String,Object> nodeTags = new HashMap<String,Object>();
