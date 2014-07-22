@@ -36,7 +36,6 @@ import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
-import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.tools.PLUSUtils;
 import org.mitre.provenance.user.User;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -73,7 +72,7 @@ public class FitnessServices {
 	@ApiOperation(value = "Assess the time lag (oldest to newest) in a graph", notes="")
 	@ApiResponses(value = {
 	  @ApiResponse(code = 404, message="No such object"),	  
-	})				
+	})
 	public Response timeLag(@Context HttpServletRequest req, 
 			@ApiParam(value="Object ID as starting point", required=true) @PathParam("oid") String oid) throws PLUSException {
 		Node n = Neo4JStorage.oidExists(oid);
@@ -102,13 +101,16 @@ public class FitnessServices {
 			for(Node visit : desc.traverse(n).nodes()) {
 				if(seen.contains(visit.getId())) continue;
 				try {
-					PLUSObject obj = Neo4JPLUSObjectFactory.newObject(visit);				
-					if(!user.canSee(obj)) return ServiceUtility.FORBIDDEN("You do not have access to information necessary to complete this request.");
+					PLUSObject obj = Neo4JPLUSObjectFactory.newObject(visit);
 					
 					if(obj == null) { 
 						log.warning("Null object on node " + visit);
 						continue;
 					}
+					
+					obj = obj.getVersionSuitableFor(user);
+					
+					if(obj == null) return ServiceUtility.FORBIDDEN("You do not have access to information necessary to complete this request.");
 					
 					if(oldestAndNewest[0]==null || obj.getCreated()<oldestAndNewest[0].getCreated()) 
 						oldestAndNewest[0]=obj;
