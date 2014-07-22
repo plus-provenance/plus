@@ -91,6 +91,11 @@ public class ServiceUtility {
 		return ServiceUtility.OK(col);
 	}
 	
+	public static Response OK(Boolean b) { 
+		return Response.ok(new GsonBuilder().setPrettyPrinting().create().toJson(b), 
+				MediaType.APPLICATION_JSON).build();		
+	}
+	
 	public static Response OK(Map<String,Object> map) {
 		return Response.ok(new GsonBuilder().setPrettyPrinting().create().toJson(map), 
 				MediaType.APPLICATION_JSON).build();
