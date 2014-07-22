@@ -18,9 +18,9 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.PropertyCapable;
 import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.plusobject.PLUSActor;
-import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
@@ -64,11 +64,20 @@ public class User extends PLUSActor {
 		this("Default username", new PrivilegeSet());
 	}
 	
+	/**
+	 * Create a new user with the specified username.
+	 * @param username
+	 */
 	public User(String username) { 
 		this(username, new PrivilegeSet());	
 		this.displayName = username;
 	}
 	
+	/**
+	 * Create a new user with the specified username and associated privileges.
+	 * @param username
+	 * @param privileges
+	 */
 	public User(String username, PrivilegeSet privileges) {
 		super(username);		
 		
@@ -78,109 +87,30 @@ public class User extends PLUSActor {
 		setType("user");
 	}	
 	
+	/** Modify the users privileges */
 	protected void setPrivileges(PrivilegeSet ps) { this.privileges = ps; } 
 	public PrivilegeSet getPrivileges() { return privileges; }	
 	public void addPrivilege(PrivilegeClass p) { privileges.addPrivilege(p); } 
 	
-	/**
-	 * Determine whether a user has an exact privilege.
-	 * @param p the class you want to check.
-	 * @return true if the user has this exact privilege, false otherwise.
-	 * @see User#authorizedFor(PrivilegeClass)
-	 */
-	public boolean hasPrivilege(PrivilegeClass p) {		
-		boolean r = false;
-		if(this == User.DEFAULT_USER_GOD) r = true;
-		
-		r = privileges.contains(p);
-		// log.info(p + " => " + r); 
-		return r;
-	} // End hasPrivilege
-	
-	/**
-	 * Determine whether this user can see information at privilege class p.
-	 * @param p the class you want to check
-	 * @return true if the user has this privilege, or has a privilege which dominates it.
-	 * @see User#hasPrivilege(PrivilegeClass)
-	 */
-	public boolean authorizedFor(PrivilegeClass p) throws PLUSException {
-		if(this == User.DEFAULT_USER_GOD) return true;
-		return privileges.dominates(p);
-	}
-		
-	public boolean canSee(PLUSObject obj, boolean conjunctive) throws PLUSException {
-		try {
-			if (conjunctive) return canSee(obj);
-			return canSeeDisjunctive(obj);
-		} catch(PLUSException e) { 
-			throw new PLUSException("PrivilegeSet#dominatesDisjunctive: " + e, e); 
-		}
-	}
-	
 	public String getDisplayName() { return displayName; }
-	
 	public void setDisplayName(String dname) { displayName = dname; }
-	
-	/**
-	 * @param obj
-	 * @return
-	 */
-	private boolean canSeeDisjunctive(PLUSObject obj) throws PLUSException {		
-		if(this == User.DEFAULT_USER_GOD) return true;
-		if(hasPrivilege(PrivilegeClass.ADMIN)) return true; 
 		
-		PrivilegeSet ps = obj.getPrivileges();
-		
-		// Check each privilege class in the object.
-		// If the user is authorized for one of them, they can see this object.
-		for(int x=0; x<ps.set.size(); x++) { 
-			PrivilegeClass c = ps.set.get(x);
-			if(authorizedFor(c)) {
-				return true;
-			} // else System.out.print(c + " (check), ");
-		} // End for
-
-		return false;
-	}
-
-	/**
-	 * Check and see if a given PLUSObject should be visible to this user.
-	 * @param obj the object you want to check.
-	 * @return true if the user has permissions enough to see this object, false otherwise.
-	 * @throws PLUSException
-	 */
-	public boolean canSee(PLUSObject obj) throws PLUSException {
-		// System.out.print("*** User " + getName() + " can see " + obj + "? ");
-		
-		if(this == User.DEFAULT_USER_GOD) return true;
-		if(hasPrivilege(PrivilegeClass.ADMIN)) return true;
-		
-		PrivilegeSet ps = obj.getPrivileges();
-		
-		// Check each privilege class in the object.
-		// If the user isn't authorized for one of them, they can't see this object.
-		for(int x=0; x<ps.set.size(); x++) { 
-			PrivilegeClass c = ps.set.get(x);
-					
-			if(!authorizedFor(c)) {
-				// PLUSUtils.log.debug("Not authorized for " + c); 
-				return false;
-			} // else System.out.print(c + " (check), ");
-		} // End for
-		
-		return true;
-	}
-	
 	public String toString() { 
 		return "[User:" + getName() + " level " + getPrivileges() + "]";
 	} // End toString()
 		
+	/**
+	 * @see PropertyCapable
+	 */
 	public Map<String,Object> getStorableProperties() {
 		Map<String,Object> map = super.getStorableProperties();
 		map.put("displayName", displayName);		
 		return map;
 	}	
 	
+	/**
+	 * @see PropertyCapable
+	 */
 	public Object setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {		
 		super.setProperties(props, contextCollection);
 		displayName = ""+props.getProperty("displayName");
