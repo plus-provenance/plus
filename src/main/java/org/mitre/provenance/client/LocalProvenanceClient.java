@@ -25,6 +25,7 @@ import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
+import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.User;
 
 /**
@@ -136,5 +137,13 @@ public class LocalProvenanceClient extends AbstractProvenanceClient {
 		} 
 		
 		return null;
+	}
+	
+	public boolean dominates(PrivilegeClass a, PrivilegeClass b) throws ProvenanceClientException {
+		try {
+			return Neo4JStorage.dominates(a, b);
+		} catch (PLUSException e) {
+			throw new ProvenanceClientException(e);
+		}
 	}
 } // End LocalProvenanceClient

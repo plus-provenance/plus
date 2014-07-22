@@ -16,7 +16,6 @@ package org.mitre.provenance.client;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -32,8 +31,8 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
 import org.mitre.provenance.plusobject.json.ProvenanceCollectionDeserializer;
+import org.mitre.provenance.user.PrivilegeClass;
 
-import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -62,6 +61,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	/** Port where the remote server is located. */
 	protected String port = "80";
 	
+	protected static final String PRIVILEGE_PATH = "/plus/api/privilege/dominates/";
 	protected static final String SEARCH_PATH = "/plus/api/object/search?format=json";
 	protected static final String GET_ACTOR_PATH = "/plus/api/actor/";
 	protected static final String GET_ACTORS_PATH = "/plus/api/feeds/objects/owners?format=json";
@@ -316,4 +316,21 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
 	}
+
+	public boolean dominates(PrivilegeClass a, PrivilegeClass b)
+			throws ProvenanceClientException {
+		WebResource r = client.resource(buildURL(PRIVILEGE_PATH + a.getId() + "/" + b.getId()));
+
+		String response = r
+				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .header("User-Agent", UA)				 
+				 .get(String.class);		
+		
+		Gson g = new GsonBuilder().create();
+		JsonElement elem = g.fromJson(response, JsonElement.class);
+		
+		if(elem.isJsonPrimitive()) return elem.getAsBoolean();
+		
+		throw new ProvenanceClientException(response);
+	} // End dominates
 } // End RESTProvenanceClient
