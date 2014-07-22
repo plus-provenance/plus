@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.LocalProvenanceClient;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSInvocation;
@@ -172,6 +172,7 @@ public class STraceLogger extends ProvenanceCollection {
 	} // End getOrCreate
 	
 	public static void main(String [] args) throws Exception {
+		ProvenanceClient.instance = new LocalProvenanceClient();
 		STraceLogger slog = null;
 		
 		if(args.length > 0) { 
@@ -183,6 +184,6 @@ public class STraceLogger extends ProvenanceCollection {
 		slog.parse();
 		
 		log.info("Writing provenance collection: " + slog);
-		new LocalProvenanceClient().report(slog);		
+		ProvenanceClient.instance.report(slog);		
 	} // End main
 } // End STraceLogger

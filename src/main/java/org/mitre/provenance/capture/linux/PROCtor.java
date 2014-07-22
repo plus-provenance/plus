@@ -43,10 +43,10 @@ import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSFile;
@@ -84,7 +84,7 @@ public class PROCtor {
 	public static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(1000); 
 	
 	protected HashSet<String> pollPIDs = new HashSet<String>();
-	protected AbstractProvenanceClient client = new LocalProvenanceClient();
+	protected static AbstractProvenanceClient client = new LocalProvenanceClient();
 	protected SHA256ContentHasher hasher = new SHA256ContentHasher();
 	
 	public static final String UUID_KEY = "file_uuid";
@@ -517,6 +517,8 @@ public class PROCtor {
 	 * If provided with arguments, the program processes only those PIDs. If given no arguments, it starts in polling mode.
 	 */
 	public static void main(String [] args) throws Exception {
+		ProvenanceClient.instance = client;
+		
 		CommandLineParser parser = new GnuParser();
 		
 		if(!PROC.exists()) {
