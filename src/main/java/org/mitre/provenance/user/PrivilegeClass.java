@@ -16,16 +16,12 @@ package 	org.mitre.provenance.user;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.PropertyCapable;
 import org.mitre.provenance.PropertySet;
-import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
-import org.neo4j.graphdb.Node;
 
 /**
  * A privilege class is a kind of identity that a user can have.  PLUSObjects can require that a user have a 
@@ -126,35 +122,7 @@ public class PrivilegeClass implements PropertyCapable {
 	} // End equals
 	
 	public String toString() { return new String("(Privilege " + getName() + ")"); }
-	
-	/**
-	 * One privilege class dominates another when it is at an equal or higher level of security.  All classes
-	 * trivially dominate themselves.
-	 * @param other the class to compare against.
-	 * @return true if this object dominates other, false otherwise.
-	 * @throws PLUSException
-	 */
-	public boolean dominates(PrivilegeClass other) throws PLUSException {
-		if(equals(other)) return true;   // Every class trivially dominates itself.
-
-		String query = "start n=node:node_auto_index(pid=\"" + getId() + "\") " + 
-                "match n-[r:" + Neo4JStorage.DOMINATES.name() + "*..100]->m " +   
-		        "where has(m.pid) and m.pid = \"" + other.getId() + "\" " + 
-                "return m ";
 		
-		try { 
-			PrivilegeClass pc = Neo4JPLUSObjectFactory.newPrivilegeClass((Node)Neo4JStorage.execute(query).columnAs("m").next());			
-			if(pc.getName().equals(other.getName())) return true;
-			throw new PLUSException("Inconsistency:  " + pc.getName() + " vs " + other.getName());
-		} catch(NoSuchElementException nse) {
-			// This happens when no element was returned by the query, i.e. this privilege class doesn't dominate the other.
-			return false;
-		} catch(Exception exc) { 
-			exc.printStackTrace();
-			return false;
-		}		
-	} // End dominates
-	
 	/**
 	 * @see PropertyCapable
 	 */
@@ -170,6 +138,9 @@ public class PrivilegeClass implements PropertyCapable {
 		return m;
 	}
 
+	/**
+	 * @see PropertyCapable
+	 */
 	public PrivilegeClass setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException {
 		setName(""+props.getProperty("name"));
 		setId(""+props.getProperty("pid"));

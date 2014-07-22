@@ -20,6 +20,7 @@ import java.util.ListIterator;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.db.neo4j.Neo4JStorage;
 
 /**
  * A conjunction of PrivilegeClass objects.  Users can have privilege sets, or 
@@ -74,8 +75,8 @@ public class PrivilegeSet {
 	}
 	
 	/**
-	 * Indicate whether this set of privileges dominates a particular class.  If a member of the set dominates a particular
-	 * class, then the user posessing that set is authorized to see data at that privilege class.
+	 * Indicate whether this set of privileges dominates a particular class.  If a member of this set dominates a particular
+	 * class, then the user possessing that set is authorized to see data at that privilege class.   
 	 * @param c the class to check
 	 * @return true if any privilege class in the set dominates c
 	 * @throws PLUSException
@@ -83,7 +84,7 @@ public class PrivilegeSet {
 	public boolean dominates(PrivilegeClass c) throws PLUSException {
 		for(int x=0; x<set.size(); x++) { 
 			PrivilegeClass p = set.get(x);
-			if(p.dominates(c)) return true;
+			if(Neo4JStorage.dominates(p, c)) return true;
 		}
 		
 		return false;
