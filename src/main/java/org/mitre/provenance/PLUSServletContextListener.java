@@ -19,6 +19,8 @@ import java.util.logging.Logger;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
 
 /**
@@ -43,5 +45,8 @@ public class PLUSServletContextListener implements ServletContextListener {
 		catch(Exception exc) { 
 			System.err.println("Initialization failed; but continuing"); 
 		}
+		
+		// For all calls to internal client, use the local one.
+		ProvenanceClient.instance = new LocalProvenanceClient();
 	}
 } // End PLUSServletContextListener
