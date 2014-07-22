@@ -17,6 +17,7 @@ package org.mitre.provenance.dag;
 import java.util.ArrayList;
 
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
@@ -79,7 +80,7 @@ public class ViewedCollection extends ProvenanceCollection {
 	 * @return true if the object can be contained as is, false otherwise.
 	 */
 	public boolean canContain(PLUSObject obj) { 
-		try { if(getViewer() != null && !getViewer().canSee(obj)) return false; }
+		try { if(getViewer() != null && !ProvenanceClient.instance.canSee(getViewer(), obj)) return false; }
 		catch(PLUSException exc) { 
 			log.severe("Cannot determine user's rights on " + obj + ": " + exc.getMessage());
 			return false;
