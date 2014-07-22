@@ -27,10 +27,9 @@ import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.PropertyCapable;
 import org.mitre.provenance.PropertySet;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.dag.DAGPath;
 import org.mitre.provenance.dag.LineageDAG;
-import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.mediator.Mediator;
 import org.mitre.provenance.surrogate.SignPost;
 import org.mitre.provenance.surrogate.SurrogateGeneratingFunction;
@@ -337,7 +336,7 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 	public PLUSObject getVersionSuitableFor(User user) throws PLUSException { 
 		if(user == null) throw new PLUSException("Must specify user!");
 		
-		if(user.canSee(this)) return this;
+		if(ProvenanceClient.instance.canSee(user, this)) return this;
 		List<PLUSObject> surrogates = computeSurrogates(user);
 		
 		if(surrogates == null || surrogates.size() == 0) {
@@ -552,8 +551,12 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 				
 		setObjectType((String)props.getProperty("type", null));
 		setObjectSubtype((String)props.getProperty("subtype", null));
-		setUncertainty(Neo4JStorage.parseFloat(props.getProperty("uncertainty",null)));
 		
+		Object unc = props.getProperty("uncertainty", null);
+		String sunc = ""+unc;
+		if(unc == null || "null".equals(sunc) || "".equals(sunc)) setUncertainty(null);
+		else setUncertainty(Float.parseFloat(sunc));
+				
 		String[] sgfs = (String[])props.getProperty("SGFs", null);
 		if(sgfs != null) { 
 			for(String className : sgfs) { 
