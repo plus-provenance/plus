@@ -16,8 +16,12 @@ package org.mitre.provenance.test;
 
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClientException;
 import org.mitre.provenance.client.RESTProvenanceClient;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
@@ -26,6 +30,11 @@ import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 public class TestClient {
+    @Before
+    public void setUp() throws ProvenanceClientException {
+        ProvenanceClient.instance = new RESTProvenanceClient("localhost", "8080");
+    }
+	
 	@Test
 	public void testClient() throws PLUSException {
 		ProvenanceCollection col = new ProvenanceCollection();
@@ -44,7 +53,7 @@ public class TestClient {
 		t.setOwner(someOwner);
 		col.addActor(someOwner);
 		
-		RESTProvenanceClient pc = new RESTProvenanceClient("localhost", "8080");
+		AbstractProvenanceClient pc = ProvenanceClient.instance;
 		System.out.println("Reporting collection " + col);
 		assertTrue("Can report successfully to server", pc.report(col));
 		

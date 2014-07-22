@@ -18,9 +18,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
@@ -35,6 +37,11 @@ import org.mitre.provenance.user.User;
 public class TestTaint {
 	AbstractProvenanceClient client = new LocalProvenanceClient();
 	
+    @Before
+    public void setUp() {
+        ProvenanceClient.instance = new LocalProvenanceClient();
+    }
+    
 	@Test
 	public void testTaint() throws Exception {		
 		// Generate a bunch of random stuff.

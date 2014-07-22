@@ -16,6 +16,9 @@ package org.mitre.provenance.test;
 
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Before;
+import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
@@ -27,6 +30,11 @@ import org.mitre.provenance.surrogate.sgf.GenericSGF;
 import org.mitre.provenance.user.PrivilegeClass;
 
 public class TestUtils {	
+    @Before
+    public void setUp() {
+        ProvenanceClient.instance = new LocalProvenanceClient();
+    }
+    
 	public static void equivalent(ProvenanceCollection a, ProvenanceCollection b) {
 		assertTrue("Collections have same number of nodes", a.countNodes() == b.countNodes());
 		assertTrue("Collections have same number of edges", a.countEdges() == b.countEdges());

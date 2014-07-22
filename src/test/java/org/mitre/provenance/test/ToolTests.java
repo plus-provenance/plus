@@ -20,12 +20,20 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.MD5ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
 
 public class ToolTests {
+    @Before
+    public void setUp() {
+        ProvenanceClient.instance = new LocalProvenanceClient();
+    }
+	
 	@Test
 	public void testHashers() throws NoSuchAlgorithmException, IOException {
 		String a = "Hello, World!";

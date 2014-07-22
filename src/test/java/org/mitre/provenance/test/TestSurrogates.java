@@ -16,10 +16,14 @@ package org.mitre.provenance.test;
 
 import static org.junit.Assert.*;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.dag.LineageDAG;
 import org.mitre.provenance.dag.ViewedCollection;
+import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSString;
@@ -27,6 +31,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.surrogate.sgf.GenericSGF;
 import org.mitre.provenance.surrogate.sgf.NodePlaceholderInferAll;
 import org.mitre.provenance.user.PrivilegeClass;
+import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
 
 public class TestSurrogates {
@@ -35,6 +40,40 @@ public class TestSurrogates {
 		s.useSurrogateComputation(new GenericSGF());
 		s.getPrivileges().addPrivilege(PrivilegeClass.ADMIN);
 		return s;
+	}
+	
+    @Before
+    public void setUp() {
+        ProvenanceClient.instance = new LocalProvenanceClient();
+    }
+	
+	@Test
+	public void testPrivilegeClasses() throws PLUSException {
+		for(int x=1; x<10; x++) { 
+			PrivilegeClass l1 = new PrivilegeClass(x);
+			PrivilegeClass l2 = new PrivilegeClass(x+1);
+			
+			assertTrue("Dominates self", ProvenanceClient.instance.dominates(l1, l1));
+			assertTrue("Higher dominates lower (" + x + ")", ProvenanceClient.instance.dominates(l2, l1));
+			assertTrue("Lower does not dominate higher",  !ProvenanceClient.instance.dominates(l1, l2));
+
+			assertTrue("ADMIN dominates all integers (" + x + ")", ProvenanceClient.instance.dominates(PrivilegeClass.ADMIN, l1));
+		}
+	}
+	
+	@Test
+	public void testPrivilegeSets() throws PLUSException { 
+		PrivilegeSet ultimate = new PrivilegeSet();
+		PrivilegeSet minimal = new PrivilegeSet();
+		
+		ultimate.addPrivilege(PrivilegeClass.ADMIN);
+		ultimate.addPrivilege(PrivilegeClass.NATIONAL_SECURITY);
+		
+		minimal.addPrivilege(new PrivilegeClass(1));
+		minimal.addPrivilege(new PrivilegeClass(2));
+		
+		assertTrue("Ultimate dominates public", ProvenanceClient.instance.dominates(ultimate, PrivilegeClass.PUBLIC));
+		assertTrue("Minimal doesn't dominate admin", !ProvenanceClient.instance.dominates(minimal, PrivilegeClass.ADMIN));
 	}
 	
 	@Test

@@ -18,9 +18,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
-import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.db.neo4j.Neo4JStorage;
@@ -36,11 +37,11 @@ import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
 
 public class TestBasicProvenance {
-	AbstractProvenanceClient client = new LocalProvenanceClient(User.DEFAULT_USER_GOD);
-	
-	public TestBasicProvenance() {
-		Neo4JStorage.initialize();
-	}
+    @Before
+    public void setUp() {
+    	Neo4JStorage.initialize();
+        ProvenanceClient.instance = new LocalProvenanceClient();
+    }
 	
 	@Test
 	public void testSearch() throws Exception { 
@@ -91,9 +92,9 @@ public class TestBasicProvenance {
 	
 	@Test
 	public void testRetrieval() throws Exception { 
-		client.listWorkflows(5);
+		ProvenanceClient.instance.listWorkflows(5);
 		
-		List<PLUSWorkflow> wfs = client.listWorkflows(5);		
+		List<PLUSWorkflow> wfs = ProvenanceClient.instance.listWorkflows(5);		
 		ProvenanceCollection objs = Neo4JPLUSObjectFactory.getRecentlyCreated(User.DEFAULT_USER_GOD, 5);
 		ProvenanceCollection actors = Neo4JStorage.getActors(5);
 
@@ -103,12 +104,12 @@ public class TestBasicProvenance {
 		
 		System.out.println("Fetching members of workflow " + wfs.get(0)); 
 		for(PLUSWorkflow wf : wfs) {
-			ProvenanceCollection col = client.getWorkflowMembers(wf.getId(), 5);
+			ProvenanceCollection col = ProvenanceClient.instance.getWorkflowMembers(wf.getId(), 5);
 			assertTrue("Can fetch workflow members", (col != null));
 		}
 			
 		PLUSObject firstObj = objs.getNodesInOrderedList().get(0);		
-		ProvenanceCollection col = client.getGraph(firstObj.getId(), new TraversalSettings());
+		ProvenanceCollection col = ProvenanceClient.instance.getGraph(firstObj.getId(), new TraversalSettings());
 		
 		assertTrue("Can fetch a DAG", (col != null && col.countNodes() > 0));
 	}

@@ -14,10 +14,12 @@
  */
 package org.mitre.provenance.test;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
 import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
@@ -29,6 +31,11 @@ import org.mitre.provenance.user.User;
 
 public class TestSerializeDeserialize {
 	AbstractProvenanceClient client = new LocalProvenanceClient();
+	
+    @Before
+    public void setUp() {
+        ProvenanceClient.instance = new LocalProvenanceClient();
+    }
 	
 	@Test
 	public void testPrivilegeSetsAndSGFs() throws PLUSException {
