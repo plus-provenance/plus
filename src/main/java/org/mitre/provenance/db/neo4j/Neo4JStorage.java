@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
@@ -642,6 +643,38 @@ public class Neo4JStorage {
 	} // End getMembers	
 	
 	/**
+	 * One privilege class dominates another when it is at an equal or higher level of security.  All classes
+	 * trivially dominate themselves.
+	 * @param one the class to use as a basis.
+	 * @param other the class to compare against.
+	 * @return true if one object dominates other, false otherwise.
+	 * @throws PLUSException
+	 */
+	public static boolean dominates(PrivilegeClass one, PrivilegeClass other) throws PLUSException {
+		if(one.equals(other)) return true;   // Every class trivially dominates itself.
+		if(PrivilegeClass.ADMIN.equals(one)) return true; // ADMIN dominates everything.
+
+		String query = "start n=node:node_auto_index(pid=\"" + one.getId() + "\") " + 
+                "match n-[r:" + Neo4JStorage.DOMINATES.name() + "*..100]->m " +   
+		        "where has(m.pid) and m.pid = \"" + other.getId() + "\" " + 
+                "return m ";
+		
+		try(Transaction tx = Neo4JStorage.beginTx()) { 
+			PrivilegeClass pc = Neo4JPLUSObjectFactory.newPrivilegeClass((Node)Neo4JStorage.execute(query).columnAs("m").next());
+			tx.success();
+			if(pc.getName().equals(other.getName())) return true;
+			throw new PLUSException("Inconsistency:  " + pc.getName() + " vs " + other.getName());
+		} catch(NoSuchElementException nse) {
+			// This happens when no element was returned by the query, i.e. this privilege class doesn't dominate the other.
+			return false;
+		} catch(Exception exc) { 
+			log.severe(exc.getMessage());
+			exc.printStackTrace();
+			return false;
+		}		
+	} // End dominates
+	
+	/**
 	 * Write a domination relationship between a and b, meaning that any privilege which b has, a also has.
 	 * @param a a PrivilegeClass
 	 * @param b a PrivilegeClass
@@ -1217,13 +1250,6 @@ public class Neo4JStorage {
 		}
 		*/
 	} // End delete
-	
-	public static Float parseFloat(Object o) {
-		if(o == null) return null;
-		String s = ""+o;
-		if("".equals(s) || "null".equals(s)) return null;
-		return Float.parseFloat(s);				
-	}
 	
 	public static List<PLUSWorkflow> listWorkflows(User user, int maxReturn) throws PLUSException {
 		if(db == null) initialize(); 
