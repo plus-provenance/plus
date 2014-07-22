@@ -39,7 +39,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * Actor services exposes RESTful services that allow users to interact with actors in the PLUS system.
- * @author dmallen
+ * @author moxious
  */
 @Path("/actor")
 @Api(value = "/actor", description = "Actors who are involved in provenance")
