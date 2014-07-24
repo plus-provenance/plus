@@ -16,6 +16,7 @@ package org.mitre.provenance.simulate.motif;
 
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.LocalProvenanceClient;
+import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
@@ -63,6 +64,12 @@ public class RandomMotifCollection extends SyntheticGraph {
 				list[x] = chooseRandomMotif();
 				if(props.getSGF() != null) list[x].setSGF(props.getSGF());
 				list[x].setPrivilegeSet(props.getPrivilegeSet());
+				
+				PLUSActor owner = new PLUSActor("Owner of Motif " + x + " (" + list[x].getClass().getSimpleName() + ")");
+				addActor(owner);
+				for(PLUSObject o : list[x].getNodes()) {
+					o.setOwner(owner);
+				}				
 			} catch(Exception e) { 
 				e.printStackTrace(); 
 			}
