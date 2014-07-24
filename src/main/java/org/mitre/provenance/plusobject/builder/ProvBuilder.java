@@ -119,22 +119,21 @@ public class ProvBuilder extends ViewedCollection {
 	}
 		
 	/**
-	 * Return the user that is the "viewer" of this builder
-	 * @return
+	 * @return the user that is the "viewer" of this builder
 	 */
 	public User getUser() { return viewer; } 
 	
 	/**
 	 * Modify the user that is the viewer of this builder.
 	 * @param viewer
-	 * @return
+	 * @return the same builder
 	 */
 	public ProvBuilder setUser(User viewer) { this.viewer = viewer; return this; } 
 	
 	/**
 	 * Combine all the provided builders into the current one, modifying the current one.
 	 * @param builders
-	 * @return
+	 * @return the same builder
 	 */
 	public ProvBuilder merge(ProvBuilder ... builders) {
 		for(ProvBuilder db : builders) addAll(db);
@@ -211,7 +210,7 @@ public class ProvBuilder extends ViewedCollection {
 	 * Returns a new builder containing only those edges that go between nodes named headName, and nodes named tailName.
 	 * @param headName
 	 * @param tailName
-	 * @return
+	 * @return a new builder containing the results
 	 * @throws PLUSException
 	 */
 	public ProvBuilder findLinks(String headName, String tailName) throws PLUSException { 
@@ -278,7 +277,7 @@ public class ProvBuilder extends ViewedCollection {
 	} // End nodesMatching
 	
 	/**
-	 * Return a new provenance builder with the same settings as this one, but empty.  This does not modify the object it operates on.
+	 * @return a new provenance builder with the same settings as this one, but empty.  This does not modify the object it operates on.
 	 */
 	public ProvBuilder newEmpty() { 
 		return new ProvBuilder(getWorkflow(), getViewer());
@@ -299,7 +298,7 @@ public class ProvBuilder extends ViewedCollection {
 	 * Find a node with the given name in the current ProvBuilder, and return a new builder containing only that node.
 	 * If the node cannot be found, the result will be empty.   This will return the first result only.  So if there is more than
 	 * one node with the same name, only the first will be returned.
-	 * @param name
+	 * @param name the name of the node you're looking for.
 	 * @return a ProvBuilder containing one or zero nodes.
 	 * @see ProvBuilder#nodesMatching(String)
 	 */
@@ -316,7 +315,7 @@ public class ProvBuilder extends ViewedCollection {
 	/**
 	 * Create a new actor in the local database, and return a builder containing that actor.
 	 * @param name name of the actor.
-	 * @return
+	 * @return a new builder containing the actor
 	 * @throws PLUSException
 	 */
 	public ProvBuilder newActorNamed(String name) throws PLUSException {
@@ -348,7 +347,7 @@ public class ProvBuilder extends ViewedCollection {
 	/**
 	 * Create a new data item with the given name.
 	 * @param name
-	 * @return 
+	 * @return a new builder containing the data.
 	 */
 	public ProvBuilder newDataNamed(String name, String ...metadataKeyValuePairs) { 
 		return newDataNamed(name, null, metadataKeyValuePairs); 
@@ -358,7 +357,7 @@ public class ProvBuilder extends ViewedCollection {
 	 * Create a new data item with the given name and owner.
 	 * @param name
 	 * @param owner
-	 * @return 
+	 * @return a new builder containing the data specified.
 	 */
 	public ProvBuilder newDataNamed(String name, PLUSActor owner, String ... metadataKeyValuePairs) { 
 		PLUSString s = new PLUSString(name);
@@ -379,7 +378,7 @@ public class ProvBuilder extends ViewedCollection {
 	
 	/**
 	 * Create a new invocation with the specified name and metadata.
-	 * @param name
+	 * @param name the name of the invocation
 	 * @param metadataKeyValuePairs
 	 * @return a ProvBuilder containing a single PLUSInvocation.
 	 * @throws PLUSException
@@ -390,8 +389,8 @@ public class ProvBuilder extends ViewedCollection {
 	
 	/**
 	 * Create a new invocation with the specified name, owner, and metadata.
-	 * @param name
-	 * @param owner
+	 * @param name the name of the invocation
+	 * @param owner the owner of the invocation
 	 * @param metadataKeyValuePairs
 	 * @return a ProvBuilder with a single PLUSInvocation.
 	 */
@@ -409,9 +408,9 @@ public class ProvBuilder extends ViewedCollection {
 	
 	/**
 	 * Convenience method to associate a set of metadata key/value pairs with a specified PLUSObject.
-	 * @param obj
+	 * @param obj the object to tag
 	 * @param metadataKeyValuePairs
-	 * @return
+	 * @return the object being tagged.
 	 */
 	private PLUSObject tagMetadata(PLUSObject obj, String ... metadataKeyValuePairs) {
 		for(int x=0; x<metadataKeyValuePairs.length; x+=2) {

@@ -342,7 +342,6 @@ public class Neo4JPLUSObjectFactory {
 	
 	/**
 	 * Same as getIncidentEdges(oids, user, "both", true, true)
-	 * @see Neo4JPLUSObjectFactory#getIncidentEdges(Iterable, User, String, boolean)
 	 */
 	public static ProvenanceCollection getIncidentEdges(Iterable<String>oids, User user) throws PLUSException { 
 		return getIncidentEdges(oids, user, "both", true, true); 
@@ -436,7 +435,7 @@ public class Neo4JPLUSObjectFactory {
 	/**
 	 * Create a new NonProvenanceEdge from an underlying Relationship.
 	 * @param r
-	 * @return
+	 * @return a NonProvenanceEdge
 	 * @throws PLUSException
 	 */
 	public static NonProvenanceEdge newNonProvenanceEdge(Relationship r) throws PLUSException { 		
@@ -462,7 +461,7 @@ public class Neo4JPLUSObjectFactory {
 	/**
 	 * Create a new PLUSEdge object from a given underlying Relationship.
 	 * @param r
-	 * @return
+	 * @return a PLUSEdge
 	 * @throws PLUSException
 	 */
 	public static PLUSEdge newPLUSEdge(Relationship r) throws PLUSException { 
@@ -529,7 +528,7 @@ public class Neo4JPLUSObjectFactory {
 	 * @param maxNodes maximum nodes the query should return
 	 * @param maxDistance maximum path distance to traverse
 	 * @param followNPIDs whether or not non-provenance edges and IDs should be followed.
-	 * @return
+	 * @return a cypher query
 	 */
 	protected static String buildQuery(Iterable<String>ids, int maxNodes, int maxDistance, boolean followNPIDs) {
 		StringBuffer b = new StringBuffer("start ");

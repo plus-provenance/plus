@@ -31,7 +31,7 @@ import org.mitre.provenance.user.User;
 /**
  * This class defines the methods that all provenance clients must implement.
  * @author moxious
- * @TODO this class should have functionality that unifies the RESTful API with Neo4JStorage.  Many more methods to add.
+ * TODO this class should have functionality that unifies the RESTful API with Neo4JStorage.  Many more methods to add.
  */
 public abstract class AbstractProvenanceClient {
 	protected User viewer = User.PUBLIC;
@@ -92,8 +92,8 @@ public abstract class AbstractProvenanceClient {
 	
 	/**
 	 * Determine whether or not an object exists.
-	 * @param oid
-	 * @return
+	 * @param oid the object ID of the object to check for existance
+	 * @return true if the object exists, false otherwise.
 	 * @throws ProvenanceClientException 
 	 */
 	public PLUSObject exists(String oid) throws ProvenanceClientException { 
@@ -168,7 +168,8 @@ public abstract class AbstractProvenanceClient {
 	/**
 	 * Indicate whether this set of privileges dominates a particular class.  If a member of this set dominates a particular
 	 * class, then the user possessing that set is authorized to see data at that privilege class.   
-	 * @param c the class to check
+	 * @param ps the set to check
+	 * @param other the class to check
 	 * @return true if any privilege class in the set dominates c
 	 * @throws PLUSException
 	 */
@@ -219,9 +220,11 @@ public abstract class AbstractProvenanceClient {
 	}
 		
 	/**
-	 * @param obj
-	 * @param conjunctive
-	 * @return
+	 * Determine whether or not a given user is permitted to see a given object.
+	 * @param user the user whose permissions should be checked.
+	 * @param obj the object, which may or may not be visible to the user.
+	 * @param conjunctive if true, use a conjunctive check.  If false, use a disjunctive check.
+	 * @return true if the user is permitted to see the object, false otherwise.
 	 * @throws PLUSException
 	 */
 	public boolean canSee(User user, PLUSObject obj, boolean conjunctive) throws PLUSException {

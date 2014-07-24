@@ -612,8 +612,8 @@ public class ProvenanceCollection implements Cloneable {
 	
 	/**
 	 * Create a new collection from a list of objects.
-	 * @param objs
-	 * @return
+	 * @param objs objects to collect
+	 * @return a new collection containing the specified objects.
 	 */
 	public static ProvenanceCollection collect(PLUSObject ... objs) { 
 		ProvenanceCollection c = new ProvenanceCollection();
@@ -623,8 +623,8 @@ public class ProvenanceCollection implements Cloneable {
 	
 	/**
 	 * Create a new collection from a list of edges. 
-	 * @param edges
-	 * @return
+	 * @param edges edges to collect
+	 * @return a new collection containing the specified edges
 	 */
 	public static ProvenanceCollection collect(PLUSEdge ... edges) { 
 		ProvenanceCollection c = new ProvenanceCollection();
@@ -634,8 +634,8 @@ public class ProvenanceCollection implements Cloneable {
 	
 	/**
 	 * Create a new collection from a list of actors.
-	 * @param actors
-	 * @return
+	 * @param actors the actors to collect
+	 * @return a new collection containing the specified actors
 	 */
 	public static ProvenanceCollection collect(PLUSActor ... actors) { 
 		ProvenanceCollection c = new ProvenanceCollection();
@@ -645,8 +645,8 @@ public class ProvenanceCollection implements Cloneable {
 	
 	/**
 	 * Create a new collection from a list of NPEs.
-	 * @param npes
-	 * @return
+	 * @param npes the NPEs to collect
+	 * @return a new collection containing the specified NPEs
 	 */
 	public static ProvenanceCollection collect(NonProvenanceEdge ... npes) { 
 		ProvenanceCollection c = new ProvenanceCollection();

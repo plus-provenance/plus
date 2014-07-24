@@ -40,7 +40,6 @@ import org.openprovenance.prov.model.Document;
 import org.openprovenance.prov.model.Entity;
 import org.openprovenance.prov.model.HasOther;
 import org.openprovenance.prov.model.Name;
-import org.openprovenance.prov.model.NamedBundle;
 import org.openprovenance.prov.model.Namespace;
 import org.openprovenance.prov.model.Other;
 import org.openprovenance.prov.model.ProvFactory;
@@ -233,8 +232,8 @@ public class PROVConverter {
 	/**
 	 * Locate the PROV "HasOther" object associated with a given PLUSObject in the collection being converted.
 	 * 
-	 * @param obj
-	 * @return
+	 * @param obj input object
+	 * @return the HasOther instance associated with this in conversion.
 	 */
 	public HasOther getHasOther(PLUSObject obj) { 
 		if(provEntities.containsKey(obj.getId())) return provEntities.get(obj.getId());
@@ -252,7 +251,7 @@ public class PROVConverter {
 	 * Convert a general PLUSEdge object into a PROV Statement.
 	 * See the mappings file for description of which kinds of edges are translated into which kinds of statements.
 	 * @param e the edge to convert
-	 * @return
+	 * @return a statement representing that edge
 	 * @throws PROVConversionException
 	 */
 	protected Statement edgeToStatement(PLUSEdge e) throws PROVConversionException { 
@@ -313,7 +312,7 @@ public class PROVConverter {
 	/**
 	 * If applicable, convert the ownership relationship between an object and its actor into a "wasAssociatedWith" statement,
 	 * or a "wasAttributedTo" statement, depending on the type of object.
-	 * @param o
+	 * @param o a PLUSObject.
 	 */
 	protected void convertOwnership(PLUSObject o) { 
 		// Ownership gets mapped onto a "wasAssociatedWith" or "wasAttributedTo" relationship
@@ -363,7 +362,7 @@ public class PROVConverter {
 	 * Make a general object property under the prefix prop.
 	 * @param name
 	 * @param value
-	 * @return
+	 * @return an Other object representing the object property
 	 */
 	protected Other makeObjectProperty(String name, Object value) { 
 		return makeObjectProperty(name, value, "prop");
@@ -374,7 +373,7 @@ public class PROVConverter {
 	 * @param name property name
 	 * @param value property value
 	 * @param prefix ns prefix
-	 * @return
+	 * @return an Other object associated with the object property.
 	 */
 	protected Other makeObjectProperty(String name, Object value, String prefix) {
 		QualifiedName nameType = this.name.XSD_STRING;		
@@ -401,8 +400,8 @@ public class PROVConverter {
 	 * TODO PLUSWorkflow objects should likely get converted into PROV Bundles.
 	 * Right now, workflows are just turned into generic entities, which often lack connection to other
 	 * Entities and so on.
-	 * @param obj
-	 * @return
+	 * @param obj the object to convert
+	 * @return a bundle entity
 	 * @throws PROVConversionException
 	 */
 	public Entity workflowToBundle(PLUSObject obj) throws PROVConversionException { 		
@@ -419,8 +418,8 @@ public class PROVConverter {
 	
 	/**
 	 * Convert a PLUSActivity into a PROV Activity.
-	 * @param obj
-	 * @return
+	 * @param obj the object to convert
+	 * @return a PROV-DM Activity
 	 * @throws PROVConversionException if the input isn't a PLUSActivity.
 	 */
 	public Activity activityToActivity(PLUSObject obj) throws PROVConversionException { 
@@ -436,8 +435,8 @@ public class PROVConverter {
 	
 	/**
 	 * Convert a PLUSInvocation to a PROV Activity.
-	 * @param obj
-	 * @return
+	 * @param obj the object to convert
+	 * @return an activity representing the invocation
 	 * @throws PROVConversionException if the input isn't an invocation.
 	 */
 	public Activity invocationToActivity(PLUSObject obj) throws PROVConversionException { 
@@ -450,8 +449,8 @@ public class PROVConverter {
 	
 	/**
 	 * Convert a PLUSDataObject into a PROV Entity.
-	 * @param obj
-	 * @return
+	 * @param obj the object to convert
+	 * @return a PROV Entity
 	 * @throws PROVConversionException if input isn't a data item.
 	 */
 	public Entity dataObjectToEntity(PLUSObject obj) throws PROVConversionException { 

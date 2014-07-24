@@ -439,7 +439,7 @@ public class Neo4JStorage {
 	/**
 	 * Determines whether or not a particular node is a PLUSObject.
 	 * @param n
-	 * @return
+	 * @return true if this node is a PLUS object, false otherwise
 	 */
 	public static boolean isPLUSObjectNode(Node n) { 
 		if(db == null) initialize();
@@ -868,7 +868,7 @@ public class Neo4JStorage {
 	 * Checks to see if a particular non-provenance ID exists.  If yes, the first node found is returned.
 	 * If no, null is returned.
 	 * @param npid
-	 * @return
+	 * @return a Node that represents the NPID, or null if none exists.
 	 */
 	public static Node npidExists(String npid) {
 		if(db == null) initialize();
@@ -884,7 +884,7 @@ public class Neo4JStorage {
 	 * Checks to see if a particular provenance ID exists.  If yes, the first node found is returned.
 	 * If no, null is returned.
 	 * @param oid
-	 * @return
+	 * @return the Node representing the object, or null if it doesn't exist.
 	 */
 	public static Node oidExists(String oid) {
 		if(db == null) initialize(); 		
@@ -1127,7 +1127,7 @@ public class Neo4JStorage {
 	 * @param deleteIncidentDanglingEdges if true, any remaining incident edges will also be deleted.  If false, 
 	 * incident edges will not be deleted.  NOTE:  if the parameter is false, and incident edges still exist, 
 	 * this delete will fail and likely will throw an exception.
-	 * @return
+	 * @return true if the delete was successful, false otherwise.
 	 */
 	public static boolean delete(PLUSObject o, boolean deleteIncidentDanglingEdges) {		
 		Node n = Neo4JStorage.oidExists(o.getId());
@@ -1156,30 +1156,6 @@ public class Neo4JStorage {
 			exc.printStackTrace();
 			return false;
 		} 
-		
-		/*
-		 * CYPHER EQUIVALENT CODE FOR DELETING NODES AND EDGES
-		String q = "start n=node:node_auto_index(oid=\"" + o.getId() + "\") ";
-		
-		if(deleteIncidentDanglingEdges) {
-			q = q + "MATCH n-[r]-() DELETE n, r";
-		} else {
-			q = q + "DELETE n";
-		}
-
-		log.info("DELETING " + o + " query " + q);
-		
-		//Transaction tx = db.beginTx();
-		
-		try { 
-			boolean r = Neo4JStorage.execute(q) != null;
-			//tx.success();
-			if(!r) log.severe("Delete query " + q + " failed");
-			return r;
-		} finally { 
-			//tx.finish();
-		} // End finally
-		*/
 	} // End delete
 	
 	public static boolean delete(PLUSEdge e) throws PLUSException {

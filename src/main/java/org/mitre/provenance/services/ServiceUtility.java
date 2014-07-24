@@ -114,8 +114,8 @@ public class ServiceUtility {
 	 * application/provenance+xml or format=xml: PROV-XML<br/>
 	 * json or format=json: D3 JSON<br/>
 	 * Default: D3 JSON
-	 * @param req
-	 * @return
+	 * @param req an original request
+	 * @return suggested format for the response to a given request
 	 */
 	public static PLUSSerializer.Format suggestFormat(HttpServletRequest req) { 
 		String acceptedTypes = req.getHeader("Accept");
@@ -155,7 +155,7 @@ public class ServiceUtility {
 	 * Convenience function for returning HTTP OK response, with variable representation format depending on user request.
 	 * @param col the collection
 	 * @param req the request
-	 * @return
+	 * @return an OK response containing a serialized collection
 	 */
 	public static Response OK(ProvenanceCollection col, HttpServletRequest req) {		
 		PLUSSerializer.Format fmt = suggestFormat(req);
@@ -186,7 +186,7 @@ public class ServiceUtility {
 	/**
 	 * Convenience function for serializing a feed as rss/xml and returning an OK response.
 	 * @param feed
-	 * @return
+	 * @return an OK response containing an RSS/XML feed.
 	 * @throws FeedException
 	 */
 	public static Response OK(SyndFeed feed) throws FeedException {
@@ -196,7 +196,7 @@ public class ServiceUtility {
 	/**
 	 * Convenience function for returning an internal server error response, with a message.
 	 * @param msg
-	 * @return
+	 * @return an INTERNAL_SERVER_ERROR response containing a message
 	 */
 	public static Response ERROR(String msg) { 
 		return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(msg).build();
@@ -205,7 +205,7 @@ public class ServiceUtility {
 	/**
 	 * Indicate that access to an item is forbidden.
 	 * @param msg
-	 * @return
+	 * @return a FORBIDDEN response with a given message
 	 */
 	public static Response FORBIDDEN(String msg) {
 		return Response.status(Response.Status.FORBIDDEN).entity(msg).build();
@@ -214,7 +214,7 @@ public class ServiceUtility {
 	/**
 	 * Convenience function for returning an HTTP not found response, with a message.
 	 * @param msg
-	 * @return
+	 * @return a NOT_FOUND response containing a given message
 	 */
 	public static Response NOT_FOUND(String msg) { 
 		return Response.status(Response.Status.NOT_FOUND).entity(msg).build();
@@ -223,7 +223,7 @@ public class ServiceUtility {
 	/**
 	 * Convenience function for returning an HTTP bad request response, with a message.
 	 * @param msg
-	 * @return
+	 * @return a BAD_REQUEST response containing a given message
 	 */
 	public static Response BAD_REQUEST(String msg) { 
 		return Response.status(Response.Status.BAD_REQUEST).entity(msg).build();
