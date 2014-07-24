@@ -23,11 +23,19 @@ import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
+import org.mitre.provenance.plusobject.json.JSONConverter;
+import org.mitre.provenance.plusobject.json.ProvenanceCollectionDeserializer;
+import org.mitre.provenance.simulate.SyntheticGraphProperties;
+import org.mitre.provenance.simulate.motif.RandomMotifCollection;
 import org.mitre.provenance.surrogate.SurrogateGeneratingFunction;
 import org.mitre.provenance.surrogate.sgf.GenericSGF;
 import org.mitre.provenance.surrogate.sgf.RandomInferMarker;
 import org.mitre.provenance.user.PrivilegeClass;
+import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class TestSerializeDeserialize {
 	AbstractProvenanceClient client = new LocalProvenanceClient();
@@ -37,6 +45,27 @@ public class TestSerializeDeserialize {
         ProvenanceClient.instance = new LocalProvenanceClient();
     }
 	
+    @Test
+    public void testJSON() throws PLUSException { 
+    	PrivilegeSet ps = new PrivilegeSet();
+    	ps.addPrivilege(PrivilegeClass.PRIVATE_MEDICAL);
+    	
+    	SyntheticGraphProperties p = new SyntheticGraphProperties()
+    	 		.setComponents(250)
+    	 		.setConnectivity(0.5)
+    	 		.setName("Test set for JSON Serialization")
+    	 		.setPrivilegeSet(ps);
+    	RandomMotifCollection r = new RandomMotifCollection(p);
+    	
+    	String json = JSONConverter.provenanceCollectionToD3Json(r);
+		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
+		ProvenanceCollection col = g.fromJson(json, ProvenanceCollection.class);
+		
+		System.out.println("Took collection " + r + " round-tripped through JSON to " + col);
+		
+		TestUtils.equivalent(r, col);    	
+    }
+    
 	@Test
 	public void testPrivilegeSetsAndSGFs() throws PLUSException {
 		PLUSString s = new PLUSString("Foo", "Bar");
