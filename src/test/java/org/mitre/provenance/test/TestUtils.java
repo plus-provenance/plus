@@ -42,20 +42,37 @@ public class TestUtils {
 		assertTrue("Collections have same number of actors", a.countActors() == b.countActors());
 		
 		for(PLUSObject ai : a.getNodes()) {
-			assertTrue("b has a's object", b.contains(ai));
+			assertTrue("b has a's object (" + ai + ")", b.containsObjectID(ai.getId()));
 		}
 		
 		for(PLUSEdge e : a.getEdges()) {
-			assertTrue("b has a's edge", b.contains(e));
+			assertTrue("b has a's edge (" + e + ")", b.contains(e));
 		}
 		
 		for(NonProvenanceEdge npe : a.getNonProvenanceEdges()) {
-			assertTrue("b has a's NPE", b.contains(npe));
+			assertTrue("b has a's NPE", b.contains(npe));			
 		}
 		
 		for(PLUSActor ai : a.getActors()) {
-			assertTrue("b has a's actor", b.contains(ai));
+			assertTrue("b has a's actor (" + ai + ")", b.containsActorID(ai.getId()));
+			assertTrue("a and b actors are equivalent", equivalent(ai, b.getActor(ai.getId()))); 
 		}
+	}
+	
+	public static boolean equivalent(NonProvenanceEdge a, NonProvenanceEdge b) {
+		assertTrue("NPIDs are equal", a.getId().equals(b.getId()));
+		assertTrue("Types are equal", a.getType().equals(b.getType()));
+		assertTrue("FROM is equal", a.getFrom().equals(b.getFrom()));
+		assertTrue("TO is equal", a.getTo().equals(b.getTo()));
+		return true;
+	}
+	
+	public static boolean equivalent(PLUSActor a, PLUSActor b) { 
+		assertTrue("names are equal", a.getName().equals(b.getName()));
+		assertTrue("types are equal", a.getType().equals(b.getType()));
+		assertTrue("Created is equal", a.getCreated() == b.getCreated());
+		assertTrue("ids are equal", a.getId().equals(b.getId()));
+		return true;
 	}
 	
 	public static void equivalent(PLUSEdge a, PLUSEdge b) {
