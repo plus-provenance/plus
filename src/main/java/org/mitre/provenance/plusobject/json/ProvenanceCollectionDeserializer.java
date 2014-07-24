@@ -92,7 +92,7 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			if(!actor.isJsonObject()) throw new JsonParseException("Actors list contains non-object " + actor.toString());
 			
 			PLUSActor convertedActor = convertActor((JsonObject)actor);
-			log.info("Adding converted actor " +convertedActor);
+			// log.info("Adding converted actor " +convertedActor);
 			col.addActor(convertedActor);
 		}
 		
@@ -153,6 +153,10 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		}
 		
 		return new PLUSActor(id, name, created, type);
+	}
+	
+	protected static boolean isBlankOrNull(String s) { 
+		return (s == null || "".equals(s) || "null".equals(s));
 	}
 	
 	protected static PLUSObject convertObject(JsonObject obj, ProvenanceCollection contextCollection) throws JsonParseException {
@@ -217,9 +221,10 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			}
 			
 			// Check owner status.
-			String aid = obj.get("ownerid").getAsString();
+			// Property is not guaranteed to be present; if it's present, get it as a string, otherwise use null.
+			String aid = (obj.get("ownerid") != null ? obj.get("ownerid").getAsString() : null);
 			
-			log.info("Deserializing " + o + " actorID = " + aid + " and owner=" + obj.get("owner"));
+			// log.info("Deserializing " + o + " actorID = " + aid + " and owner=" + obj.get("owner"));
 			if(isBlank(aid) && obj.has("owner")) {
 				JsonElement ownerJson = obj.get("owner");
 				if(!ownerJson.isJsonObject()) throw new JsonParseException("Property 'owner' must be an object on " + obj);
@@ -229,17 +234,15 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 					log.info("Set using converted owner property " + owner);
 					o.setOwner(owner);
 				}
-			} else if(aid != null) {
+			} else if(!isBlankOrNull(aid)) {
 				if(contextCollection.containsActorID(aid)) {
-					log.info("Set using provided context collection " + contextCollection.getActor(aid));
+					// log.info("Set using provided context collection " + contextCollection.getActor(aid));
 					o.setOwner(contextCollection.getActor(aid));
 				} else { 
 					log.severe("Deserializer cannot find actor by dangling reference " + aid + " - provenance context collection is needed to identify this actor without database access.");
 					o.setOwner(null);
 				}
-			} else {
-				log.info("Can't set owner for " + o + " none of my tricks work.");
-			}
+			} 
 			
 			return o;
 		} catch(PLUSException exc) { 
