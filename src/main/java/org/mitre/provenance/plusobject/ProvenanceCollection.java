@@ -181,7 +181,7 @@ public class ProvenanceCollection implements Cloneable {
 	 * @return true if the collection contains that edge, false otherwise.
 	 */
 	public boolean contains(PLUSEdge edge) {
-		return nodes.containsKey(getHashKey(edge)); 
+		return edges.containsKey(getHashKey(edge)); 
 	}
 	
 	/**
