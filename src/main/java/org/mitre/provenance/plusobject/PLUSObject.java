@@ -508,7 +508,7 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		
 		if(getOwner() != null) {
 			m.put("ownerid", getOwner().getId());
-		}
+		} 
 				
 		m.put("type", getObjectType());
 		m.put("subtype", getObjectSubtype());
