@@ -504,11 +504,14 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		m.put("name", getName());
 		m.put("created", getCreated());
 		
+		/*
+		 * TODO verify removal of these properties.
 		m.put("ownerid", null);
 		
 		if(getOwner() != null) {
 			m.put("ownerid", getOwner().getId());
 		} 
+		*/
 				
 		m.put("type", getObjectType());
 		m.put("subtype", getObjectSubtype());
@@ -539,12 +542,16 @@ public class PLUSObject extends Surrogateable implements Comparable<Object>,
 		setName(""+props.getProperty("name"));
 		setCreated((Long)props.getProperty("created"));
 		
+		// TODO
+		// The "ownerid" field is a holdover from when the data was relational.  It probably shouldn't be stored at all,
+		// in favor of a relationship to an actor node, which is definitely already there in the storage model.   Still,
+		// this needs careful consideration and checking before it's removed as a property.
 		String aid = (String)props.getProperty("ownerid", null);
 		if(aid != null && !"".equals(aid) && !"null".equals(aid)) {
 			if(contextCollection != null && contextCollection.containsActorID(aid))
 				setOwner(contextCollection.getActor(aid));
 			else {
-				log.severe("Cannot set owner for object: aid " + aid + " isn't in the context collection.");
+				// log.severe("Cannot set owner for object: aid " + aid + " isn't in the context collection " + contextCollection);
 				setOwner(null);
 			}
 		} else setOwner(null);
