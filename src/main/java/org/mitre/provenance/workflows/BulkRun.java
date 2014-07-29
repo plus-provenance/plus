@@ -79,7 +79,9 @@ public class BulkRun {
 				
 		SimpleWorkflow sf = new SimpleWorkflow();
 		cols.add(sf);
-				
+						
+		cols.add(TemperatureConversion.create());
+		
 		for(ProvenanceCollection col : cols) { 
 			Neo4JStorage.store(col);			
 		}		
