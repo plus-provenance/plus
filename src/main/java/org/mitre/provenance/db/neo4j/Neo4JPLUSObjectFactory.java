@@ -319,7 +319,7 @@ public class Neo4JPLUSObjectFactory {
 			for(Relationship r : n.getRelationships(Direction.INCOMING, Neo4JStorage.OWNS)) {
 				PLUSActor a = newActor(r.getStartNode());
 				o.setOwner(a);
-				
+
 				if(x > 0) log.warning("Duplicate owner " + a + " on node " + o);
 				
 				x++;
@@ -722,7 +722,7 @@ public class Neo4JPLUSObjectFactory {
 					dag.getFingerPrint().stopTimer("CreatePLUSObject"); 
 					
 					if(o != null) { 
-						log.info("Added node " + o.getId() + " with owner " + o.getOwner());
+						// log.info("Added node " + o.getId() + " with owner " + o.getOwner());
 						dag.addNode(o);
 						
 						if(o.getOwner() != null) dag.addActor(o.getOwner());
