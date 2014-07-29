@@ -99,6 +99,8 @@ public class JSONConverter {
 		n.put("id", obj.getId());
 		n.put("label", obj.getName()); 
 		
+		if(obj.getOwner() != null) n.put("ownerid", obj.getOwner().getId());
+		
 		PrivilegeSet ps = obj.getPrivileges();
 		
 		if(ps != null) { 
