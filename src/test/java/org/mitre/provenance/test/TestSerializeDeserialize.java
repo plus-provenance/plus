@@ -30,6 +30,7 @@ import org.mitre.provenance.simulate.motif.RandomMotifCollection;
 import org.mitre.provenance.surrogate.SurrogateGeneratingFunction;
 import org.mitre.provenance.surrogate.sgf.GenericSGF;
 import org.mitre.provenance.surrogate.sgf.RandomInferMarker;
+import org.mitre.provenance.test.util.TestUtils;
 import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
