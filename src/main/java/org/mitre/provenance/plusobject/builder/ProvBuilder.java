@@ -136,6 +136,8 @@ public class ProvBuilder extends ViewedCollection {
 	 * @return the same builder
 	 */
 	public ProvBuilder merge(ProvBuilder ... builders) {
+		if(builders.length == 0) return this;
+		
 		for(ProvBuilder db : builders) addAll(db);
 		return this;
 	}
