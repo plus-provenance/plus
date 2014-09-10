@@ -15,7 +15,7 @@
 	<name>PLUS Provenance</name>
 	<url>http://www.mitre.org/</url>
 	
-	<dependencies>
+	<dependencies>	
 		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -172,6 +172,11 @@
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
 			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>3.2.1</version>
 		</dependency>
 	</dependencies>
 
@@ -330,7 +335,7 @@
 		<java-version>1.7</java-version>
 		<org.springframework-version>3.2.3.RELEASE</org.springframework-version>
 		<jersey-version>1.18</jersey-version>
-		<openprov-version>0.5.0</openprov-version>
+		<openprov-version>0.6.1</openprov-version>
 		<org.neo4j-version>2.1.1</org.neo4j-version>
 		<copyright>MITRE 2014</copyright>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
