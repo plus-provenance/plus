@@ -929,7 +929,12 @@ public class Neo4JStorage {
 		try (Transaction tx = db.beginTx()) {
 			log.warning("STORE NPE " + npe);
 			Node a = oidExists(npe.getIncidentOID());
-			if(a == null) throw new PLUSException("Cannot store NPE where OID is not in the store!");
+			
+			if(a == null) 
+				throw new PLUSException("Cannot store NPE " + npe.getFrom() + 
+									    " -(" + npe.getType() + ")-> " +
+									    npe.getTo() + " where incident OID " + 
+									    npe.getIncidentOID() + " is not in the store!");					
 			
 			String npid = npe.getIncidentForeignID();
 			Node np = getNPID(npid, true);
