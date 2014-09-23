@@ -126,11 +126,11 @@ public class NonProvenanceEdge extends AbstractDirectedEdge {
 	 * @param to
 	 * @param type
 	 * @param created
-	 * @throws PLUSException
+	 * @throws PLUSException if the 'from' side of the link is not a PLUS ID.
 	 */
 	public NonProvenanceEdge(String oid, String from, String to, String type, long created) throws PLUSException {
-		// this is for any NPE, including those populated from the database.
-		if(!PLUSUtils.isPLUSOID(from) && !PLUSUtils.isPLUSOID(to)) throw new PLUSException("Either from or to must be a PLUS OID.");
+		if(!PLUSUtils.isPLUSOID(from)) throw new PLUSException("The from portion of all NonProvenanceEdge objects must be a valid PLUS ID");
+				
 		setCreated(created);
 		setId(oid);
 		setFrom(from);
@@ -139,13 +139,7 @@ public class NonProvenanceEdge extends AbstractDirectedEdge {
 		setFromMarking(EdgeMarking.SHOW);
 		setToMarking(EdgeMarking.SHOW);
 	}
-	
-	/** Return the incident foreign ID (that is, the ID on the edge that isn't a PLUSObject ID */
-	public String getIncidentForeignID() { if(PLUSUtils.isPLUSOID(from)) return to; else return from; }
-	
-	/** Return the incident object ID (that is, the ID on the edge that is a PLUSObject ID */
-	public String getIncidentOID() { if(PLUSUtils.isPLUSOID(from)) return from; else return to; } 
-	
+		
 	/** Return the head identifier of the edge */
 	public String getFrom() { return from; } 
 	
