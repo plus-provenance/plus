@@ -45,6 +45,14 @@ import com.google.gson.JsonObject;
 public class JSONConverter {
 	private static Logger log = Logger.getLogger(JSONConverter.class.getName());
 	
+	public static final String KEY_FROM = "from";
+	public static final String KEY_TO = "to";
+	public static final String KEY_TYPE = "type";
+	public static final String KEY_NAME = "name";
+	public static final String KEY_ID = "id";
+	public static final String KEY_LABEL = "label";
+	public static final String KEY_WORKFLOW = "workflow";
+	
 	/** This inner class wraps a JsonObject in an implementation of PropertyContainer, which makes it easier to get and set object properties 
 	 * from the main API 
 	 */
@@ -82,9 +90,9 @@ public class JSONConverter {
 	protected static HashMap<String,Object> npidNodeToD3(String nodeLabel, NonProvenanceEdge npe) { 
 		HashMap<String,Object> n = new HashMap<String,Object>();
 		
-		n.put("id", nodeLabel);
-		n.put("label", nodeLabel);
-		n.put("type", "npid");
+		n.put(KEY_ID, nodeLabel);
+		n.put(KEY_LABEL, nodeLabel);
+		n.put(KEY_TYPE, "npid");
 		n.put("subtype", "npid");
 		n.put("created", npe.getCreated());
 				
@@ -96,8 +104,8 @@ public class JSONConverter {
 		Map<String,Object> n = obj.getStorableProperties();
 		
 		// Put some D3-specific stuff in there.
-		n.put("id", obj.getId());
-		n.put("label", obj.getName()); 
+		n.put(KEY_ID, obj.getId());
+		n.put(KEY_LABEL, obj.getName()); 
 		
 		if(obj.getOwner() != null) n.put("ownerid", obj.getOwner().getId());
 		
@@ -187,10 +195,10 @@ public class JSONConverter {
 			jsonEdge.put(Neo4JStorage.PROP_NPEID, oid);
 			jsonEdge.put("source", fromIdx);
 			jsonEdge.put("target", toIdx);
-			jsonEdge.put("from", id1);
-			jsonEdge.put("to", id2);
-			jsonEdge.put("label", type);
-			jsonEdge.put("type", "npe");			
+			jsonEdge.put(KEY_FROM, id1);
+			jsonEdge.put(KEY_TO, id2);
+			jsonEdge.put(KEY_LABEL, type);
+			jsonEdge.put(KEY_TYPE, "npe");			
 			jsonEdge.put("left", new Boolean(false));
 			jsonEdge.put("right", new Boolean(true));
 			jsonEdge.put("created", npe.getCreated());
@@ -217,14 +225,14 @@ public class JSONConverter {
 			HashMap<String,Object> jsonEdge = new HashMap<String,Object>();
 			jsonEdge.put("source", fromIdx);
 			jsonEdge.put("target", toIdx); 
-			jsonEdge.put("from", e.getFrom().getId());
-			jsonEdge.put("to", e.getTo().getId());
+			jsonEdge.put(KEY_FROM, e.getFrom().getId());
+			jsonEdge.put(KEY_TO, e.getTo().getId());
 			jsonEdge.put("left", new Boolean(false)); 
 			jsonEdge.put("right", new Boolean(true)); 
-			jsonEdge.put("label", e.getType());
-			jsonEdge.put("type", e.getType());
+			jsonEdge.put(KEY_LABEL, e.getType());
+			jsonEdge.put(KEY_TYPE, e.getType());
 			if(e.getSourceHints() != null) jsonEdge.put("sourceHints", e.getSourceHints().toString()); 
-			jsonEdge.put("workflow", e.getWorkflow().getId());
+			jsonEdge.put(KEY_WORKFLOW, e.getWorkflow().getId());
 			
 			links.add(jsonEdge);
 		} // End foreach PLUSEdge
@@ -237,10 +245,10 @@ public class JSONConverter {
 		for(PLUSActor a : col.getActors()) {
 			actorProps = new HashMap<String,Object>();
 			
-			actorProps.put("id", a.getId());
-			actorProps.put("name", a.getName());
+			actorProps.put(KEY_ID, a.getId());
+			actorProps.put(KEY_NAME, a.getName());
 			actorProps.put("created", a.getCreated());
-			actorProps.put("type", a.getType());
+			actorProps.put(KEY_TYPE, a.getType());
 			
 			actors.add(actorProps);
 		}
@@ -269,8 +277,8 @@ public class JSONConverter {
 
 		for(PLUSObject obj : col.getNodes()) { 
 			HashMap<String,Object> h = new HashMap<String,Object>();
-			h.put("id", obj.getId());
-			h.put("name", obj.getName());
+			h.put(KEY_ID, obj.getId());
+			h.put(KEY_NAME, obj.getName());
 
 			HashMap<Object,Object> data = new HashMap<Object,Object>();
 			data.put("$type", "triangle");
@@ -298,8 +306,8 @@ public class JSONConverter {
 				adj.put("nodeFrom", e.getFrom());
 
 				HashMap<String,String> edgeData = new HashMap<String,String>();
-				edgeData.put("label", e.getType());
-				edgeData.put("workflow", e.getWorkflow().getId());
+				edgeData.put(KEY_LABEL, e.getType());
+				edgeData.put(KEY_WORKFLOW, e.getWorkflow().getId());
 				adj.put("data", edgeData);
 
 				adjs.add(adj);
