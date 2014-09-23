@@ -37,6 +37,7 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.surrogate.SurrogateGeneratingFunction;
 import org.mitre.provenance.tools.LRUCache;
+import org.mitre.provenance.tools.PLUSUtils;
 import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.PrivilegeSet;
 import org.mitre.provenance.user.User;
@@ -928,18 +929,29 @@ public class Neo4JStorage {
 		
 		try (Transaction tx = db.beginTx()) {
 			log.warning("STORE NPE " + npe);
-			Node a = oidExists(npe.getIncidentOID());
+			Node a = oidExists(npe.getFrom());
 			
 			if(a == null) 
 				throw new PLUSException("Cannot store NPE " + npe.getFrom() + 
 									    " -(" + npe.getType() + ")-> " +
-									    npe.getTo() + " where incident OID " + 
-									    npe.getIncidentOID() + " is not in the store!");					
+									    npe.getTo() + " where 'from' OID is not in the store!");					
 			
-			String npid = npe.getIncidentForeignID();
-			Node np = getNPID(npid, true);
+			String toId = npe.getTo();
 			
-			Relationship rel = a.createRelationshipTo(np, NPE);
+			Node otherSide = null;
+			
+			if(PLUSUtils.isPLUSOID(toId)) {
+				otherSide = oidExists(toId);
+				
+				if(otherSide == null) 
+					throw new PLUSException("Cannot store NPE " + npe.getFrom() + 
+							" -(" + npe.getType() + ")-> " + 
+							npe.getTo() + " where 'to' OID is not in the store!");				
+			} else { 				
+				otherSide = getNPID(toId, true);
+			}
+			
+			Relationship rel = a.createRelationshipTo(otherSide, NPE);
 			
 			rel.setProperty(PROP_TYPE, npe.getType());
 			rel.setProperty(PROP_NPEID, npe.getId());
