@@ -166,8 +166,8 @@ public class PROVConverter {
 				
 		for(NonProvenanceEdge npe : col.getNonProvenanceEdges()) {
 			// System.out.println(npe);
-			String oid = npe.getIncidentOID();
-			String npid = npe.getIncidentForeignID();
+			String oid = npe.getFrom();
+			String npid = npe.getTo();
 			String type = npe.getType();
 			
 			if(PLUSUtils.isPLUSOID(npid)) {
