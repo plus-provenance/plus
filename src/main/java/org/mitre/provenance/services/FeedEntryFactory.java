@@ -99,7 +99,7 @@ public class FeedEntryFactory
 		
 		String newLink = linkURL;
 		newLink = newLink.replace(contextPath + "/.*", contextPath + "/widgets/trust/trustpanel.jsp");
-		entry.setLink(newLink + "?oid=" + npe.getIncidentOID() + "&id=" + npe.getIncidentOID());		
+		entry.setLink(newLink + "?oid=" + npe.getFrom() + "&id=" + npe.getFrom());		
 		entry.setPublishedDate(new Date(System.currentTimeMillis())); 	
 		entry.setAuthor(AUTHOR);		
 		entry.setDescription(content);
