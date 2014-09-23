@@ -765,7 +765,7 @@ public class Neo4JPLUSObjectFactory {
 						// log.info("Added NPE " + np);
 						dag.addNonProvenanceEdge(np);
 						
-						String oid = np.getIncidentOID();
+						String oid = np.getFrom();
 						if(!dag.containsObjectID(oid)) { 
 							// This should never occur.  Since we're going through all
 							// provenance nodes, 
@@ -948,7 +948,7 @@ public class Neo4JPLUSObjectFactory {
 					//log.info("Added NPE " + np);
 					col.addNonProvenanceEdge(np);
 					
-					String oid = np.getIncidentOID();
+					String oid = np.getFrom();
 					if(!col.containsObjectID(oid)) { 
 						// TODO
 						// Add this back to the collection, because we came from the NPID
