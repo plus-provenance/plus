@@ -138,10 +138,10 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	}
 		
 	public static PLUSActor convertActor(JsonObject act) throws JsonParseException {
-		String id = act.get("id").getAsString();
-		String name = act.get("name").getAsString();
-		long created = act.get("created").getAsLong();
-		String type = act.get("type").getAsString();
+		String id = act.get(JSONConverter.KEY_ID).getAsString();
+		String name = act.get(JSONConverter.KEY_NAME).getAsString();
+		long created = act.get(JSONConverter.KEY_CREATED).getAsLong();
+		String type = act.get(JSONConverter.KEY_TYPE).getAsString();
 		
 		if(id == null || "".equals(id)) throw new JsonParseException("Invalid empty or missing 'id' on actor " + act);
 		if(name == null || "".equals(name)) throw new JsonParseException("Invalid empty or missing 'name' on actor " + act);
@@ -160,13 +160,13 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	}
 	
 	protected static PLUSObject convertObject(JsonObject obj, ProvenanceCollection contextCollection) throws JsonParseException {
-		String t = obj.get("type").getAsString();
-		String st = obj.get("subtype").getAsString();
-		String name = obj.get("name").getAsString();
+		String t = obj.get(JSONConverter.KEY_TYPE).getAsString();
+		String st = obj.get(JSONConverter.KEY_SUBTYPE).getAsString();
+		String name = obj.get(JSONConverter.KEY_NAME).getAsString();
 		
 		if(name == null || "null".equals(name)) throw new JsonParseException("Missing name on object " + obj);
-		if(t == null || "null".equals(t)) throw new JsonParseException("Missing type on object " + obj);
-		if(st == null || "null".equals(st)) throw new JsonParseException("Missing subtype on object " + obj);
+		if(t == null    || "null".equals(t))    throw new JsonParseException("Missing type on object " + obj);
+		if(st == null   || "null".equals(st))   throw new JsonParseException("Missing subtype on object " + obj);
 		
 		JsonObjectPropertyWrapper n = new JsonObjectPropertyWrapper(obj);
 		
@@ -197,8 +197,8 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			}
 			
 			// Check metadata
-			if(obj.has("metadata") && obj.get("metadata").isJsonObject()) {
-				JsonObject md = obj.get("metadata").getAsJsonObject();
+			if(obj.has(JSONConverter.KEY_METADATA) && obj.get(JSONConverter.KEY_METADATA).isJsonObject()) {
+				JsonObject md = obj.get(JSONConverter.KEY_METADATA).getAsJsonObject();
 				
 				Metadata m = new Metadata();
 				
@@ -224,9 +224,9 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 			// Property is not guaranteed to be present; if it's present, get it as a string, otherwise use null.
 			String aid = (obj.get("ownerid") != null ? obj.get("ownerid").getAsString() : null);
 			
-			// log.info("Deserializing " + o + " actorID = " + aid + " and owner=" + obj.get("owner"));
-			if(isBlank(aid) && obj.has("owner")) {
-				JsonElement ownerJson = obj.get("owner");
+			// log.info("Deserializing " + o + " actorID = " + aid + " and owner=" + obj.get(JSONConverter.KEY_OWNER));
+			if(isBlank(aid) && obj.has(JSONConverter.KEY_OWNER)) {
+				JsonElement ownerJson = obj.get(JSONConverter.KEY_OWNER);
 				if(!ownerJson.isJsonObject()) throw new JsonParseException("Property 'owner' must be an object on " + obj);
 				
 				PLUSActor owner = convertActor((JsonObject)ownerJson);
@@ -256,14 +256,14 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	}
 	
 	protected static NonProvenanceEdge convertNPE(JsonObject obj) throws JsonParseException { 
-		String from = obj.get("from").getAsString();
-		String to = obj.get("to").getAsString();
-		String oid = obj.get("npeid").getAsString();
+		String from = obj.get(JSONConverter.KEY_FROM).getAsString();
+		String to = obj.get(JSONConverter.KEY_TO).getAsString();
+		String oid = obj.get(JSONConverter.KEY_NPEID).getAsString();
 		
 		// NPEs have a type field=npe to indicate that they're non-provenance edges.
 		// The actual type of edge ("md5sum") is stored in the label.
-		String type = obj.get("label").getAsString();
-		long created = obj.get("created").getAsLong();
+		String type = obj.get(JSONConverter.KEY_LABEL).getAsString();
+		long created = obj.get(JSONConverter.KEY_CREATED).getAsLong();
 		
 		if(from == null || "null".equals(from)) throw new JsonParseException("Missing from on NPE " + obj);
 		if(to == null || "null".equals(to)) throw new JsonParseException("Missing to on NPE " + obj);
@@ -282,7 +282,8 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	} // End convertNPE
 	
 	/**
-	 * Thi
+	 * This method relates to a current design decision; "resurrect" is intended to take a nodeOID and a collection, and return the
+	 * underlying node.  Right now, this is trivial; if the collection contains that node, it is returned, otherwise null is returned.
 	 * @param nodeOID
 	 * @return
 	 */

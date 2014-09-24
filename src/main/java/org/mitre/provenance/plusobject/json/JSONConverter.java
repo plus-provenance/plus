@@ -16,7 +16,6 @@ package org.mitre.provenance.plusobject.json;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -45,29 +44,23 @@ import com.google.gson.JsonObject;
 public class JSONConverter {
 	private static Logger log = Logger.getLogger(JSONConverter.class.getName());
 	
-	public static final String KEY_FROM = "from";
-	public static final String KEY_TO = "to";
-	public static final String KEY_TYPE = "type";
-	public static final String KEY_NAME = "name";
-	public static final String KEY_ID = "id";
-	public static final String KEY_LABEL = "label";
+	public static final String KEY_FROM     = "from";
+	public static final String KEY_TO       = "to";
+	public static final String KEY_TYPE     = "type";
+	public static final String KEY_SUBTYPE  = "subtype";
+	public static final String KEY_NAME     = "name";
+	public static final String KEY_ID       = "id";
+	public static final String KEY_LABEL    = "label";
 	public static final String KEY_WORKFLOW = "workflow";
+	public static final String KEY_CREATED  = "created";
+	public static final String KEY_SOURCE   = "source";
+	public static final String KEY_TARGET   = "target";
+	public static final String KEY_LEFT     = "left";
+	public static final String KEY_RIGHT    = "right";
+	public static final String KEY_OWNER    = "owner";
+	public static final String KEY_METADATA = "metadata";
+	public static final String KEY_NPEID    = "npeid";
 	
-	/** This inner class wraps a JsonObject in an implementation of PropertyContainer, which makes it easier to get and set object properties 
-	 * from the main API 
-	 */
-	
-	/** The set of reserved keys in a JSON dict, that should not be added to a PLUSObject's metadata table. */
-	public static HashSet<String>reservedKeys = new HashSet<String>();
-	
-	static { 
-		reservedKeys.add("plus:owner");
-		reservedKeys.add("plus:type");
-		reservedKeys.add("data");
-		reservedKeys.add("inputs");
-		reservedKeys.add("outputs");
-	} // End static initialzier.
-		
 	/**
 	 * Check for owner information in a JSONObject, and return the corresponding PLUSActor.  Wherever 
 	 * possible, pre-existing actors will be loaded and reused.
@@ -93,8 +86,8 @@ public class JSONConverter {
 		n.put(KEY_ID, nodeLabel);
 		n.put(KEY_LABEL, nodeLabel);
 		n.put(KEY_TYPE, "npid");
-		n.put("subtype", "npid");
-		n.put("created", npe.getCreated());
+		n.put(KEY_SUBTYPE, "npid");
+		n.put(KEY_CREATED, npe.getCreated());
 				
 		return n;
 	} // End npidNodeToD3
@@ -124,7 +117,7 @@ public class JSONConverter {
 		Metadata m = obj.getMetadata();
 		for(Object k : m.keySet()) mData.put("" + k, m.get(k)); 
 		
-		n.put("metadata", mData);
+		n.put(KEY_METADATA, mData);
 		
 		return n;
 	} // End provenanceObjectToD3
@@ -192,16 +185,16 @@ public class JSONConverter {
 			
 			HashMap<String,Object> jsonEdge = new HashMap<String,Object>();
 
-			jsonEdge.put(Neo4JStorage.PROP_NPEID, oid);
-			jsonEdge.put("source", fromIdx);
-			jsonEdge.put("target", toIdx);
+			jsonEdge.put(KEY_NPEID, oid);
+			jsonEdge.put(KEY_SOURCE, fromIdx);
+			jsonEdge.put(KEY_TARGET, toIdx);
 			jsonEdge.put(KEY_FROM, id1);
 			jsonEdge.put(KEY_TO, id2);
 			jsonEdge.put(KEY_LABEL, type);
 			jsonEdge.put(KEY_TYPE, "npe");			
-			jsonEdge.put("left", new Boolean(false));
-			jsonEdge.put("right", new Boolean(true));
-			jsonEdge.put("created", npe.getCreated());
+			jsonEdge.put(KEY_LEFT, new Boolean(false));
+			jsonEdge.put(KEY_RIGHT, new Boolean(true));
+			jsonEdge.put(KEY_CREATED, npe.getCreated());
 			if(npe.getSourceHints() != null) jsonEdge.put("sourceHints", npe.getSourceHints().toString());
 				
 			links.add(jsonEdge);
@@ -223,12 +216,12 @@ public class JSONConverter {
 			} // End if
 			
 			HashMap<String,Object> jsonEdge = new HashMap<String,Object>();
-			jsonEdge.put("source", fromIdx);
-			jsonEdge.put("target", toIdx); 
+			jsonEdge.put(KEY_SOURCE, fromIdx);
+			jsonEdge.put(KEY_TARGET, toIdx); 
 			jsonEdge.put(KEY_FROM, e.getFrom().getId());
 			jsonEdge.put(KEY_TO, e.getTo().getId());
-			jsonEdge.put("left", new Boolean(false)); 
-			jsonEdge.put("right", new Boolean(true)); 
+			jsonEdge.put(KEY_LEFT, new Boolean(false)); 
+			jsonEdge.put(KEY_RIGHT, new Boolean(true)); 
 			jsonEdge.put(KEY_LABEL, e.getType());
 			jsonEdge.put(KEY_TYPE, e.getType());
 			if(e.getSourceHints() != null) jsonEdge.put("sourceHints", e.getSourceHints().toString()); 
