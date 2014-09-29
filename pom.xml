@@ -336,7 +336,7 @@
 		<org.springframework-version>3.2.3.RELEASE</org.springframework-version>
 		<jersey-version>1.18</jersey-version>
 		<openprov-version>0.6.1</openprov-version>
-		<org.neo4j-version>2.1.1</org.neo4j-version>
+		<org.neo4j-version>2.1.4</org.neo4j-version>
 		<copyright>MITRE 2014</copyright>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.7</maven.compiler.source>
