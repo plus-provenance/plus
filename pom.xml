@@ -58,7 +58,7 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.2.2</version>
+			<version>2.2.4</version>
 		</dependency>
 
 		<dependency>
@@ -165,7 +165,7 @@
 		<dependency>
 		  <groupId>com.wordnik</groupId>
 		  <artifactId>swagger-jersey-jaxrs_2.10</artifactId>
-		  <version>1.3.0</version>
+		  <version>1.3.2</version>
 		</dependency>
 		
 		<dependency>
@@ -188,6 +188,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.5</version>
 				<executions>
 					<execution>
 						<id>make-a-jar</id>
@@ -333,7 +334,7 @@
 	<properties>
 	    <skipTests>true</skipTests>
 		<java-version>1.7</java-version>
-		<org.springframework-version>3.2.3.RELEASE</org.springframework-version>
+		<org.springframework-version>3.2.6.RELEASE</org.springframework-version>
 		<jersey-version>1.18</jersey-version>
 		<openprov-version>0.6.1</openprov-version>
 		<org.neo4j-version>2.1.4</org.neo4j-version>
