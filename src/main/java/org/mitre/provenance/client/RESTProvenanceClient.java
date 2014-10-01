@@ -133,7 +133,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	    		 .header("User-Agent", UA)
 	    		 .post(Entity.form(formData));	    				 
 	    
-		String output = response.getEntity().toString();
+		String output = response.readEntity(String.class);
 	    
 	    System.out.println(response); 
 	    System.out.println(response.getLength());
@@ -153,98 +153,51 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		for(String key : params.keySet()) 
 			r = r.queryParam(key, params.get(key));
+		System.out.println(r);
 		
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)
 				 .accept(MediaType.APPLICATION_JSON_TYPE)
 				 .header("User-Agent", UA)				 
-				 .get(String.class);
+				 .get();
 
-		return provenanceCollectionFromResponse(response);
+		String resultingJSON = response.readEntity(String.class);
+		System.out.println(resultingJSON);
+		
+		return provenanceCollectionFromResponse(resultingJSON);
 	} // End getGraph
 	
 	public ProvenanceCollection latest() throws ProvenanceClientException {
 		WebTarget r = client.target(buildURL(GET_LATEST_PATH));
 		
-		String response = r
+		Response response = r				
 				 .request(MediaType.APPLICATION_JSON_TYPE)				
 				 .header("User-Agent", UA)				 
-				 .get(String.class);
+				 .get();
 		
-		return provenanceCollectionFromResponse(response);
-	}
-	
-	public static void main(String [] args) throws Exception { 
-		RESTProvenanceClient rpc = new RESTProvenanceClient("denim.mitre.org", "80");
-		//for(PLUSActor a : rpc.getActors().getActors()) { 
-		//	System.out.println(a);
-		//}
-		
-		for(PLUSObject o : rpc.latest().getNodes()) { 
-			System.out.println(o);
-		}		
-	}
-	
-	public static void __main(String [] args) throws Exception { 
-		ProvenanceCollection col = new ProvenanceCollection();
-		PLUSString s = new PLUSString("Foo", "Bar");
-		PLUSString t = new PLUSString("Baz", "Quux");
-		PLUSEdge e = new PLUSEdge(s, t, null);
-		NonProvenanceEdge npe = new NonProvenanceEdge(s, t, "blah");
-		
-		col.addNode(s);
-		col.addNode(t);
-		col.addEdge(e);
-		col.addNonProvenanceEdge(npe);		
-		
-		//RESTProvenanceClient pc = new RESTProvenanceClient("localhost", "8080");
-		RESTProvenanceClient pc = new RESTProvenanceClient("denim.mitre.org");
-		System.out.println("Reporting collection...");
-		System.out.println("REPORT RESULT:  " + pc.report(col));
-		
-		System.out.println("Fetching graph...");
-		ProvenanceCollection c = pc.getGraph(s.getId());
-		System.out.println("After getting graph, contents:");
-		for(PLUSObject o : c.getNodes()) {
-			System.out.println(o);
-		}
-		
-		for(PLUSEdge ed : c.getEdges()) {
-			System.out.println(ed); 
-		}
-		
-		for(NonProvenanceEdge n : c.getNonProvenanceEdges()) {
-			System.out.println(n);
-		}
-		
-		col = pc.latest();
-		for(PLUSObject o : col.getNodes()) {
-			System.out.println("LATEST:  " + o);
-		}
-		
-		System.out.println("Reporter finished and exiting.");
+		return provenanceCollectionFromResponse(response.readEntity(String.class));
 	}
 	
 	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
 		WebTarget r = client.target(buildURL(GET_ACTORS_PATH) + "&n=" + max);				
 		
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
-				 .get(String.class);
+				 .get();
 
-		return provenanceCollectionFromResponse(response);
+		return provenanceCollectionFromResponse(response.readEntity(String.class));
 	} // End getActors
 	
 	public ProvenanceCollection search(String searchTerm, int max)
 			throws ProvenanceClientException {		
 		WebTarget r = client.target(buildURL(SEARCH_PATH) + "&n=" + max);
 		
-		String response = r.request(MediaType.APPLICATION_JSON_TYPE)				 
+		Response response = r.request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
-				 .get(String.class);		
+				 .get();		
 		
-		return provenanceCollectionFromResponse(response);
+		return provenanceCollectionFromResponse(response.readEntity(String.class));
 	}
 	
 	public ProvenanceCollection search(Metadata parameters, int max)
@@ -265,12 +218,15 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
 		WebTarget r = client.target(buildURL(LIST_WORKFLOWS_PATH) + "&n=" + max);
 		
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
-				 .get(String.class);		
+				 .get();		
 		
-		ProvenanceCollection col = provenanceCollectionFromResponse(response);
+		String txt = response.readEntity(String.class);
+		
+		System.out.println(txt);
+		ProvenanceCollection col = provenanceCollectionFromResponse(txt);
 		ArrayList<PLUSWorkflow> results = new ArrayList<PLUSWorkflow>();
 		
 		for(PLUSObject o : col.getNodesInOrderedList()) {
@@ -289,23 +245,23 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		WebTarget r = client.target(buildURL(GET_WORKFLOW_MEMBERS_PATH) + n.getId() + "?format=json&n=" + max);
 		
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
-				 .get(String.class);		
+				 .get();		
 		
-		return provenanceCollectionFromResponse(response);
+		return provenanceCollectionFromResponse(response.readEntity(String.class));
 	} // End getWorkflowMembers
 
 	public PLUSObject getSingleNode(String oid) throws ProvenanceClientException {
 		WebTarget r = client.target(buildURL(GET_SINGLE_NODE_PATH) + oid + "?format=json");
 		
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
-				 .get(String.class);		
+				 .get();		
 		
-		ProvenanceCollection col = provenanceCollectionFromResponse(response);
+		ProvenanceCollection col = provenanceCollectionFromResponse(response.readEntity(String.class));
 		
 		if(col.containsObjectID(oid)) return col.getNode(oid);		
 		return null;
@@ -314,13 +270,13 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	public PLUSActor actorExists(String aid) throws ProvenanceClientException {
 		WebTarget r = client.target(buildURL(GET_ACTOR_PATH) + aid + "?format=json");
 		
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
-				 .get(String.class);		
+				 .get();		
 		
 		Gson g = new GsonBuilder().create();
-		JsonElement elem = g.fromJson(response, JsonElement.class);
+		JsonElement elem = g.fromJson(response.readEntity(String.class), JsonElement.class);
 		if(!elem.isJsonObject()) throw new ProvenanceClientException("Server response wasn't a JSON object " + elem);
 		
 		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
@@ -330,16 +286,19 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 			throws ProvenanceClientException {
 		WebTarget r = client.target(buildURL(PRIVILEGE_PATH + a.getId() + "/" + b.getId()));
 
-		String response = r
+		Response response = r
 				 .request(MediaType.APPLICATION_JSON_TYPE)			
 				 .header("User-Agent", UA)				 
-				 .get(String.class);		
+				 .get();		
 		
 		Gson g = new GsonBuilder().create();
-		JsonElement elem = g.fromJson(response, JsonElement.class);
+		
+		String txt = response.readEntity(String.class);
+		
+		JsonElement elem = g.fromJson(txt, JsonElement.class);
 		
 		if(elem.isJsonPrimitive()) return elem.getAsBoolean();
 		
-		throw new ProvenanceClientException(response);
+		throw new ProvenanceClientException(txt);
 	} // End dominates
 } // End RESTProvenanceClient
