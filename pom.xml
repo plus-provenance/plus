@@ -43,11 +43,6 @@
 			<version>3.1.4.RELEASE</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-bundle</artifactId>
-			<version>${jersey-version}</version>
-		</dependency>
 
 		<dependency>
 			<groupId>rome</groupId>
@@ -85,11 +80,6 @@
 			<version>${org.neo4j-version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-json</artifactId>
-			<version>${jersey-version}</version>
-		</dependency>
 
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -162,11 +152,6 @@
 			<version>${openprov-version}</version>
 		</dependency>
 
-		<dependency>
-		  <groupId>com.wordnik</groupId>
-		  <artifactId>swagger-jersey-jaxrs_2.10</artifactId>
-		  <version>1.3.2</version>
-		</dependency>
 		
 		<dependency>
 			<groupId>commons-cli</groupId>
@@ -177,6 +162,31 @@
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-client</artifactId>
+			<version>2.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-common</artifactId>
+			<version>2.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.wordnik</groupId>
+			<artifactId>swagger-jersey2-jaxrs_2.10</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-server</artifactId>
+			<version>2.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet-core</artifactId>
+			<version>2.5.1</version>
 		</dependency>
 	</dependencies>
 
@@ -335,7 +345,6 @@
 	    <skipTests>true</skipTests>
 		<java-version>1.7</java-version>
 		<org.springframework-version>3.2.6.RELEASE</org.springframework-version>
-		<jersey-version>1.18</jersey-version>
 		<openprov-version>0.6.1</openprov-version>
 		<org.neo4j-version>2.1.4</org.neo4j-version>
 		<copyright>MITRE 2014</copyright>

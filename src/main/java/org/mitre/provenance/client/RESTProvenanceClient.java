@@ -17,9 +17,17 @@ package org.mitre.provenance.client;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.dag.TraversalSettings;
 import org.mitre.provenance.npe.NonProvenanceEdge;
@@ -37,11 +45,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * This class acts as a client for a remote provenance server which can serve up provenance or permit reporting
@@ -98,8 +101,9 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		if(i < 1 || i > 65535) throw new ProvenanceClientException("Invalid port number: " + i); 
 		
-		client = Client.create(); 
-		client.getProperties().put(ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
+		ClientConfig cc = new ClientConfig().property(ClientProperties.FOLLOW_REDIRECTS, true);		
+		client = ClientBuilder.newClient(cc);
+		// client.getProperties().put(ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
 	} // End RESTProvenanceClient
 		
 	protected String buildURL(String endpointPath) {
@@ -116,19 +120,20 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 * @throws ProvenanceClientException
 	 */
 	public boolean report(ProvenanceCollection col) throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(NEW_GRAPH_PATH));
+		WebTarget r = client.target(buildURL(NEW_GRAPH_PATH));
 
-		MultivaluedMap<String,String> formData = new MultivaluedMapImpl();
+		MultivaluedMap<String,String> formData = new MultivaluedHashMap<String,String>();
 		String json = JSONConverter.provenanceCollectionToD3Json(col);
 		// System.out.println("POSTING:\n" + json + "\n\n");
 	    formData.add("provenance", json);
 	    
-	    ClientResponse response = r.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+	    Response response = r
+	    		 .request(MediaType.APPLICATION_JSON_TYPE)
 	    		 .accept(MediaType.APPLICATION_JSON_TYPE)
 	    		 .header("User-Agent", UA)
-	    		 .post(ClientResponse.class, formData);
+	    		 .post(Entity.form(formData));	    				 
 	    
-		String output = response.getEntity(String.class);
+		String output = response.getEntity().toString();
 	    
 	    System.out.println(response); 
 	    System.out.println(response.getLength());
@@ -142,11 +147,15 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	}
 	
 	public ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(GET_GRAPH_PATH + oid));
+		WebTarget r = client.target(buildURL(GET_GRAPH_PATH + oid));
 		
 		MultivaluedMap<String,String> params = desc.asMultivaluedMap();
 		
-		String response = r.queryParams(params)
+		for(String key : params.keySet()) 
+			r = r.queryParam(key, params.get(key));
+		
+		String response = r
+				 .request(MediaType.APPLICATION_JSON_TYPE)
 				 .accept(MediaType.APPLICATION_JSON_TYPE)
 				 .header("User-Agent", UA)				 
 				 .get(String.class);
@@ -155,9 +164,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	} // End getGraph
 	
 	public ProvenanceCollection latest() throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(GET_LATEST_PATH));
+		WebTarget r = client.target(buildURL(GET_LATEST_PATH));
 		
-		String response = r.accept(MediaType.APPLICATION_JSON_TYPE)
+		String response = r
+				 .request(MediaType.APPLICATION_JSON_TYPE)				
 				 .header("User-Agent", UA)				 
 				 .get(String.class);
 		
@@ -216,10 +226,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	}
 	
 	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(GET_ACTORS_PATH) + "&n=" + max);				
+		WebTarget r = client.target(buildURL(GET_ACTORS_PATH) + "&n=" + max);				
 		
 		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
 				 .get(String.class);
 
@@ -228,10 +238,9 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	
 	public ProvenanceCollection search(String searchTerm, int max)
 			throws ProvenanceClientException {		
-		WebResource r = client.resource(buildURL(SEARCH_PATH) + "&n=" + max);
+		WebTarget r = client.target(buildURL(SEARCH_PATH) + "&n=" + max);
 		
-		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+		String response = r.request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
 				 .get(String.class);		
 		
@@ -254,10 +263,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	}
 	
 	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(LIST_WORKFLOWS_PATH) + "&n=" + max);
+		WebTarget r = client.target(buildURL(LIST_WORKFLOWS_PATH) + "&n=" + max);
 		
 		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
 				 .get(String.class);		
 		
@@ -278,10 +287,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		if(n == null) throw new ProvenanceClientException("No such workflow node " + oid);
 		if(!n.isWorkflow()) throw new ProvenanceClientException("Can't list members of non-workflow node " + n);
 		
-		WebResource r = client.resource(buildURL(GET_WORKFLOW_MEMBERS_PATH) + n.getId() + "?format=json&n=" + max);
+		WebTarget r = client.target(buildURL(GET_WORKFLOW_MEMBERS_PATH) + n.getId() + "?format=json&n=" + max);
 		
 		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
 				 .get(String.class);		
 		
@@ -289,10 +298,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	} // End getWorkflowMembers
 
 	public PLUSObject getSingleNode(String oid) throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(GET_SINGLE_NODE_PATH) + oid + "?format=json");
+		WebTarget r = client.target(buildURL(GET_SINGLE_NODE_PATH) + oid + "?format=json");
 		
 		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
 				 .get(String.class);		
 		
@@ -303,10 +312,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	} // End getSingleNode
 
 	public PLUSActor actorExists(String aid) throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(GET_ACTOR_PATH) + aid + "?format=json");
+		WebTarget r = client.target(buildURL(GET_ACTOR_PATH) + aid + "?format=json");
 		
 		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .request(MediaType.APPLICATION_JSON_TYPE)				 
 				 .header("User-Agent", UA)				 
 				 .get(String.class);		
 		
@@ -319,10 +328,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 
 	public boolean dominates(PrivilegeClass a, PrivilegeClass b)
 			throws ProvenanceClientException {
-		WebResource r = client.resource(buildURL(PRIVILEGE_PATH + a.getId() + "/" + b.getId()));
+		WebTarget r = client.target(buildURL(PRIVILEGE_PATH + a.getId() + "/" + b.getId()));
 
 		String response = r
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
+				 .request(MediaType.APPLICATION_JSON_TYPE)			
 				 .header("User-Agent", UA)				 
 				 .get(String.class);		
 		
