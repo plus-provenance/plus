@@ -16,25 +16,25 @@ package org.mitre.provenance.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.StatusType;
 
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.dag.TraversalSettings;
-import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
-import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSObject;
-import org.mitre.provenance.plusobject.PLUSString;
 import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.plusobject.json.JSONConverter;
@@ -56,7 +56,7 @@ import com.google.gson.JsonObject;
  */
 public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String VERSION = "0.5";
-	
+	protected static final Logger log = Logger.getLogger(RESTProvenanceClient.class.getName());
 	protected static final String UA = "RESTProvenanceClient " + VERSION;
 	
 	/** The host of the remote server */
@@ -64,16 +64,17 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	/** Port where the remote server is located. */
 	protected String port = "80";
 	
-	protected static final String PRIVILEGE_PATH = "/plus/api/privilege/dominates/";
-	protected static final String SEARCH_PATH = "/plus/api/object/search?format=json";
-	protected static final String GET_ACTOR_PATH = "/plus/api/actor/";
-	protected static final String GET_ACTORS_PATH = "/plus/api/feeds/objects/owners?format=json";
-	protected static final String NEW_GRAPH_PATH = "/plus/api/graph/new";	
-	protected static final String GET_GRAPH_PATH = "/plus/api/graph/";
-	protected static final String GET_LATEST_PATH = "/plus/api/feeds/objects/latest?format=json";
-	protected static final String LIST_WORKFLOWS_PATH = "/plus/api/workflows/latest?format=json";
-	protected static final String GET_WORKFLOW_MEMBERS_PATH = "/plus/api/workflow/";
-	protected static final String GET_SINGLE_NODE_PATH = "/plus/api/object/";
+	protected static final String API_DEPLOY_PATH = "/plus/api";
+	protected static final String PRIVILEGE_PATH = "/privilege/dominates/";
+	protected static final String SEARCH_PATH = "/object/search?format=json";
+	protected static final String GET_ACTOR_PATH = "/actor/";
+	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners?format=json";
+	protected static final String NEW_GRAPH_PATH = "/graph/new";	
+	protected static final String GET_GRAPH_PATH = "/graph/";
+	protected static final String GET_LATEST_PATH = "/feeds/objects/latest?format=json";
+	protected static final String LIST_WORKFLOWS_PATH = "/workflows/latest?format=json";
+	protected static final String GET_WORKFLOW_MEMBERS_PATH = "/workflow/";
+	protected static final String GET_SINGLE_NODE_PATH = "/object/";
 	
 	protected Client client = null;
 	
@@ -106,11 +107,52 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		// client.getProperties().put(ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
 	} // End RESTProvenanceClient
 		
-	protected String buildURL(String endpointPath) {
-		String u = "http://" + this.host + ":" + this.port + endpointPath;
-		System.out.println("URL: " + u); 
-		return u;
+	protected Builder getRequestBuilderForPath(String endpointPath) {
+		return getRequestBuilderForPath(endpointPath, null);
 	}
+	
+	/**
+	 * Takes an endpoint path (one of the finals declared in the top of the class) and returns a Builder for it, setting
+	 * standard options on the request such as a user agent header, requesting a JSON response, and configured to the 
+	 * location of the client host/port.
+	 * @param endpointPath
+	 * @param queryParams
+	 * @return
+	 */
+	protected Builder getRequestBuilderForPath(String endpointPath, MultivaluedMap<String,String> queryParams) {					
+		WebTarget t = client.target("http://" + this.host + ":" + this.port + API_DEPLOY_PATH)
+				     .path(endpointPath)
+				     .queryParam("format", "json");
+				
+		// Add in custom-defined query params.
+		if(queryParams != null) 
+			for(String key : queryParams.keySet()) 
+				t = t.queryParam(key, queryParams.get(key));
+		
+		Builder b = t.request(MediaType.APPLICATION_JSON_TYPE)
+				     .accept(MediaType.APPLICATION_JSON_TYPE)
+				     .header("User-Agent", UA);
+		
+		return b;
+	}
+	
+	/**
+	 * Performs various checks on a response from the server; ideally this does nothing at all, but may 
+	 * throw an exception in various common error conditions (response is a 404, etc)
+	 * @param r the response
+	 * @throws ProvenanceClientException
+	 */
+	protected void validateResponse(Response r) throws ProvenanceClientException {
+		StatusType status = r.getStatusInfo();
+		
+		if(status.getFamily() == Response.Status.Family.SERVER_ERROR) {
+			MultivaluedMap<String,Object> headers = r.getHeaders();
+			log.warning("Server error encountered on response => " + headers);			
+		}
+		
+		if(r.getStatus() == 404) throw new ProvenanceClientException(r.getStatusInfo().getFamily() + " " +
+				r.getStatusInfo().getReasonPhrase());
+	} // End validateResponse
 	
 	/**
 	 * Report a provenance collection to a remote service.  This has the effect of writing the given
@@ -120,18 +162,16 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 * @throws ProvenanceClientException
 	 */
 	public boolean report(ProvenanceCollection col) throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(NEW_GRAPH_PATH));
+		Builder r = getRequestBuilderForPath(NEW_GRAPH_PATH);
 
 		MultivaluedMap<String,String> formData = new MultivaluedHashMap<String,String>();
 		String json = JSONConverter.provenanceCollectionToD3Json(col);
 		// System.out.println("POSTING:\n" + json + "\n\n");
 	    formData.add("provenance", json);
 	    
-	    Response response = r
-	    		 .request(MediaType.APPLICATION_JSON_TYPE)
-	    		 .accept(MediaType.APPLICATION_JSON_TYPE)
-	    		 .header("User-Agent", UA)
-	    		 .post(Entity.form(formData));	    				 
+	    Response response = r.post(Entity.form(formData));	    				 
+	    
+	    validateResponse(response);
 	    
 		String output = response.readEntity(String.class);
 	    
@@ -146,20 +186,13 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		return getGraph(oid, new TraversalSettings());
 	}
 	
-	public ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(GET_GRAPH_PATH + oid));
-		
-		MultivaluedMap<String,String> params = desc.asMultivaluedMap();
-		
-		for(String key : params.keySet()) 
-			r = r.queryParam(key, params.get(key));
+	public ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException {		
+		MultivaluedMap<String,String> params = desc.asMultivaluedMap();		
+		Builder r = getRequestBuilderForPath(GET_GRAPH_PATH + oid, params);
+
 		System.out.println(r);
 		
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)
-				 .accept(MediaType.APPLICATION_JSON_TYPE)
-				 .header("User-Agent", UA)				 
-				 .get();
+		Response response = r.get();
 
 		String resultingJSON = response.readEntity(String.class);
 		System.out.println(resultingJSON);
@@ -168,41 +201,38 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	} // End getGraph
 	
 	public ProvenanceCollection latest() throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(GET_LATEST_PATH));
-		
-		Response response = r				
-				 .request(MediaType.APPLICATION_JSON_TYPE)				
-				 .header("User-Agent", UA)				 
-				 .get();
-		
+		Builder r = getRequestBuilderForPath(GET_LATEST_PATH);		
+		Response response = r.get();		
 		return provenanceCollectionFromResponse(response.readEntity(String.class));
 	}
 	
 	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(GET_ACTORS_PATH) + "&n=" + max);				
+		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
+		params.add("n", ""+max);
 		
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)				 
-				 .header("User-Agent", UA)				 
-				 .get();
-
+		Builder r = getRequestBuilderForPath(GET_ACTORS_PATH, params);						
+		Response response = r.get();
 		return provenanceCollectionFromResponse(response.readEntity(String.class));
 	} // End getActors
 	
 	public ProvenanceCollection search(String searchTerm, int max)
-			throws ProvenanceClientException {		
-		WebTarget r = client.target(buildURL(SEARCH_PATH) + "&n=" + max);
+			throws ProvenanceClientException {
+		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
+		params.add("n", ""+max);
 		
-		Response response = r.request(MediaType.APPLICATION_JSON_TYPE)				 
-				 .header("User-Agent", UA)				 
-				 .get();		
-		
-		return provenanceCollectionFromResponse(response.readEntity(String.class));
+		Builder r = getRequestBuilderForPath(SEARCH_PATH, params);
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);
 	}
 	
 	public ProvenanceCollection search(Metadata parameters, int max)
 			throws ProvenanceClientException {
 		throw new ProvenanceClientException("Not yet implemented.");
+	}
+	
+	protected ProvenanceCollection provenanceCollectionFromResponse(Response r) throws ProvenanceClientException { 
+		validateResponse(r);
+		return provenanceCollectionFromResponse(r.readEntity(String.class)); 
 	}
 	
 	/**
@@ -216,17 +246,14 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	}
 	
 	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(LIST_WORKFLOWS_PATH) + "&n=" + max);
+		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
+		params.add("n", ""+max);
 		
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)				 
-				 .header("User-Agent", UA)				 
-				 .get();		
+		Builder r = getRequestBuilderForPath(LIST_WORKFLOWS_PATH, params);
 		
-		String txt = response.readEntity(String.class);
-		
-		System.out.println(txt);
-		ProvenanceCollection col = provenanceCollectionFromResponse(txt);
+		Response response = r.get();				
+
+		ProvenanceCollection col = provenanceCollectionFromResponse(response);
 		ArrayList<PLUSWorkflow> results = new ArrayList<PLUSWorkflow>();
 		
 		for(PLUSObject o : col.getNodesInOrderedList()) {
@@ -238,43 +265,29 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	
 	public ProvenanceCollection getWorkflowMembers(String oid, int max)
 			throws ProvenanceClientException {
-	
 		PLUSObject n = getSingleNode(oid);
 		if(n == null) throw new ProvenanceClientException("No such workflow node " + oid);
 		if(!n.isWorkflow()) throw new ProvenanceClientException("Can't list members of non-workflow node " + n);
+
+		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
+		params.add("n", ""+max);
 		
-		WebTarget r = client.target(buildURL(GET_WORKFLOW_MEMBERS_PATH) + n.getId() + "?format=json&n=" + max);
-		
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)				 
-				 .header("User-Agent", UA)				 
-				 .get();		
-		
-		return provenanceCollectionFromResponse(response.readEntity(String.class));
+		Builder r = getRequestBuilderForPath(GET_WORKFLOW_MEMBERS_PATH + n.getId(), params);		
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);
 	} // End getWorkflowMembers
 
 	public PLUSObject getSingleNode(String oid) throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(GET_SINGLE_NODE_PATH) + oid + "?format=json");
-		
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)				 
-				 .header("User-Agent", UA)				 
-				 .get();		
-		
-		ProvenanceCollection col = provenanceCollectionFromResponse(response.readEntity(String.class));
-		
+		Builder r = getRequestBuilderForPath(GET_SINGLE_NODE_PATH + oid);		
+		Response response = r.get();				
+		ProvenanceCollection col = provenanceCollectionFromResponse(response);		
 		if(col.containsObjectID(oid)) return col.getNode(oid);		
 		return null;
 	} // End getSingleNode
 
 	public PLUSActor actorExists(String aid) throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(GET_ACTOR_PATH) + aid + "?format=json");
-		
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)				 
-				 .header("User-Agent", UA)				 
-				 .get();		
-		
+		Builder r = getRequestBuilderForPath(GET_ACTOR_PATH + aid);		
+		Response response = r.get();				
 		Gson g = new GsonBuilder().create();
 		JsonElement elem = g.fromJson(response.readEntity(String.class), JsonElement.class);
 		if(!elem.isJsonObject()) throw new ProvenanceClientException("Server response wasn't a JSON object " + elem);
@@ -284,21 +297,12 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 
 	public boolean dominates(PrivilegeClass a, PrivilegeClass b)
 			throws ProvenanceClientException {
-		WebTarget r = client.target(buildURL(PRIVILEGE_PATH + a.getId() + "/" + b.getId()));
-
-		Response response = r
-				 .request(MediaType.APPLICATION_JSON_TYPE)			
-				 .header("User-Agent", UA)				 
-				 .get();		
-		
-		Gson g = new GsonBuilder().create();
-		
+		Builder r = getRequestBuilderForPath(PRIVILEGE_PATH + a.getId() + "/" + b.getId());
+		Response response = r.get();				
+		Gson g = new GsonBuilder().create();		
 		String txt = response.readEntity(String.class);
-		
 		JsonElement elem = g.fromJson(txt, JsonElement.class);
-		
 		if(elem.isJsonPrimitive()) return elem.getAsBoolean();
-		
 		throw new ProvenanceClientException(txt);
 	} // End dominates
 } // End RESTProvenanceClient
