@@ -58,6 +58,7 @@ import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Uniqueness;
@@ -1061,9 +1062,9 @@ public class Neo4JPLUSObjectFactory {
 			}
 			
 			tx.success();
-		} //catch(TransactionFailureException exc) { 
-		//	log.fine("Ignoring transaction failed exception.");
-		//}
+		} catch(TransactionFailureException exc) { 
+			log.fine("Ignoring transaction failed exception.");
+		}
 			
 		return col;
 	} // End searchFor
