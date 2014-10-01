@@ -25,7 +25,6 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.FingerPrint;
 import org.mitre.provenance.dag.LineageDAG;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
 import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
@@ -49,7 +48,7 @@ public class JSONConverter {
 	public static final String KEY_TYPE     = "type";
 	public static final String KEY_SUBTYPE  = "subtype";
 	public static final String KEY_NAME     = "name";
-	public static final String KEY_ID       = "id";
+	public static final String KEY_ID       = "id";	
 	public static final String KEY_LABEL    = "label";
 	public static final String KEY_WORKFLOW = "workflow";
 	public static final String KEY_CREATED  = "created";
@@ -138,7 +137,7 @@ public class JSONConverter {
 		HashMap<String,Integer> indexMapping = new HashMap<String,Integer>();
 		
 		int idx=0;
-		
+				
 		if(col == null) {
 			log.severe("Cannot convert NULL collection to JSON");
 			return null;
@@ -146,7 +145,13 @@ public class JSONConverter {
 		
 		// Always sort by creation date; sometimes collections will be serialized for
 		// feeds.
-		for(PLUSObject obj : col.getNodesInOrderedList(ProvenanceCollection.SORT_BY_CREATION)) { 			
+		for(PLUSObject obj : col.getNodesInOrderedList(ProvenanceCollection.SORT_BY_CREATION)) { 	
+			// Not all collections add actors separately; but for the JSON serialization this must be done.
+			// If a given object has an owner, that owner should appear in the actor section, otherwise
+			// when it comes time to deserialize the document, the owner can't be recreated from just the ID
+			// that appears as a node property.
+			if(obj.getOwner() != null) col.addActor(obj.getOwner(), false); 
+			
 			nodes.add(provenanceObjectToD3(obj));			
 			indexMapping.put(obj.getId(), idx);
 			idx++;
