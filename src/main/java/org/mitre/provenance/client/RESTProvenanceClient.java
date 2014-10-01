@@ -66,13 +66,13 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	
 	protected static final String API_DEPLOY_PATH = "/plus/api";
 	protected static final String PRIVILEGE_PATH = "/privilege/dominates/";
-	protected static final String SEARCH_PATH = "/object/search?format=json";
+	protected static final String SEARCH_PATH = "/object/search/";
 	protected static final String GET_ACTOR_PATH = "/actor/";
-	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners?format=json";
+	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners";
 	protected static final String NEW_GRAPH_PATH = "/graph/new";	
 	protected static final String GET_GRAPH_PATH = "/graph/";
-	protected static final String GET_LATEST_PATH = "/feeds/objects/latest?format=json";
-	protected static final String LIST_WORKFLOWS_PATH = "/workflows/latest?format=json";
+	protected static final String GET_LATEST_PATH = "/feeds/objects/latest";
+	protected static final String LIST_WORKFLOWS_PATH = "/workflow/latest";
 	protected static final String GET_WORKFLOW_MEMBERS_PATH = "/workflow/";
 	protected static final String GET_SINGLE_NODE_PATH = "/object/";
 	
@@ -119,22 +119,26 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 * @param queryParams
 	 * @return
 	 */
-	protected Builder getRequestBuilderForPath(String endpointPath, MultivaluedMap<String,String> queryParams) {					
+	protected Builder getRequestBuilderForPath(String endpointPath, MultivaluedMap<String,?> queryParams) {					
 		WebTarget t = client.target("http://" + this.host + ":" + this.port + API_DEPLOY_PATH)
 				     .path(endpointPath)
 				     .queryParam("format", "json");
 				
 		// Add in custom-defined query params.
-		if(queryParams != null) 
-			for(String key : queryParams.keySet()) 
-				t = t.queryParam(key, queryParams.get(key));
+		if(queryParams != null) {
+			for(String key : queryParams.keySet()) {				
+				t = t.queryParam(key, queryParams.getFirst(key));
+			}				
+		}
+			
+		System.out.println(t.getUri());
 		
 		Builder b = t.request(MediaType.APPLICATION_JSON_TYPE)
 				     .accept(MediaType.APPLICATION_JSON_TYPE)
 				     .header("User-Agent", UA);
 		
 		return b;
-	}
+	} // End getRequestBuilderForPath
 	
 	/**
 	 * Performs various checks on a response from the server; ideally this does nothing at all, but may 
@@ -150,8 +154,11 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 			log.warning("Server error encountered on response => " + headers);			
 		}
 		
-		if(r.getStatus() == 404) throw new ProvenanceClientException(r.getStatusInfo().getFamily() + " " +
+		if(r.getStatus() == 404) {
+			log.warning(r.readEntity(String.class));
+			throw new ProvenanceClientException(r.getStatusInfo().getFamily() + " " +
 				r.getStatusInfo().getReasonPhrase());
+		}
 	} // End validateResponse
 	
 	/**
@@ -193,22 +200,18 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		System.out.println(r);
 		
 		Response response = r.get();
-
-		String resultingJSON = response.readEntity(String.class);
-		System.out.println(resultingJSON);
-		
-		return provenanceCollectionFromResponse(resultingJSON);
+		return provenanceCollectionFromResponse(response);
 	} // End getGraph
 	
 	public ProvenanceCollection latest() throws ProvenanceClientException {
 		Builder r = getRequestBuilderForPath(GET_LATEST_PATH);		
 		Response response = r.get();		
-		return provenanceCollectionFromResponse(response.readEntity(String.class));
+		return provenanceCollectionFromResponse(response);
 	}
 	
 	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
-		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
-		params.add("n", ""+max);
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
 		
 		Builder r = getRequestBuilderForPath(GET_ACTORS_PATH, params);						
 		Response response = r.get();
@@ -217,10 +220,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	
 	public ProvenanceCollection search(String searchTerm, int max)
 			throws ProvenanceClientException {
-		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
-		params.add("n", ""+max);
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);		
 		
-		Builder r = getRequestBuilderForPath(SEARCH_PATH, params);
+		Builder r = getRequestBuilderForPath(SEARCH_PATH + searchTerm, params);
 		Response response = r.get();				
 		return provenanceCollectionFromResponse(response);
 	}
@@ -232,7 +235,11 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	
 	protected ProvenanceCollection provenanceCollectionFromResponse(Response r) throws ProvenanceClientException { 
 		validateResponse(r);
-		return provenanceCollectionFromResponse(r.readEntity(String.class)); 
+		
+		String responseTxt = r.readEntity(String.class);
+		
+		System.out.println(responseTxt);
+		return provenanceCollectionFromResponse(responseTxt); 
 	}
 	
 	/**
@@ -246,8 +253,8 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	}
 	
 	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
-		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
-		params.add("n", ""+max);
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
 		
 		Builder r = getRequestBuilderForPath(LIST_WORKFLOWS_PATH, params);
 		
@@ -269,8 +276,8 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		if(n == null) throw new ProvenanceClientException("No such workflow node " + oid);
 		if(!n.isWorkflow()) throw new ProvenanceClientException("Can't list members of non-workflow node " + n);
 
-		MultivaluedMap<String,String> params = new MultivaluedHashMap<String,String>();
-		params.add("n", ""+max);
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
 		
 		Builder r = getRequestBuilderForPath(GET_WORKFLOW_MEMBERS_PATH + n.getId(), params);		
 		Response response = r.get();				
