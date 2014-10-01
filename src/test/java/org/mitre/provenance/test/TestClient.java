@@ -39,6 +39,12 @@ public class TestClient {
     }
 	
     @Test
+    public void testActors() throws PLUSException { 
+    	ProvenanceCollection col = ProvenanceClient.instance.getActors();
+    	assertTrue("Actors are not empty", col.countActors() > 0);
+    }
+    
+    @Test
     public void testLatest() throws PLUSException { 
     	ProvenanceCollection col = ProvenanceClient.instance.latest();
     	assertTrue("Latest objects reported aren't empty", col.countNodes() > 0);
@@ -54,10 +60,17 @@ public class TestClient {
     }
     
 	@Test
+	/**
+	 * This test does quite a lot...we can't necessarily make assumptions about what will be in a store during
+	 * the testing phase.  So here we're reporting stuff; and all of the services that require knowing something
+	 * ahead of time are tested here.
+	 * @throws PLUSException
+	 */
 	public void testReporting() throws PLUSException {
 		ProvenanceCollection col = new ProvenanceCollection();
 		PLUSString s = new PLUSString("Foo", "Bar");
 		PLUSString t = new PLUSString("Baz", "Quux");
+		
 		PLUSEdge e = new PLUSEdge(s, t);
 		NonProvenanceEdge npe = new NonProvenanceEdge(s, t, "blah");
 		
@@ -84,5 +97,15 @@ public class TestClient {
 		assertTrue("All edges logged", col.countEdges() == fetched.countEdges());
 		assertTrue("All NPEs logged", col.countNPEs() == fetched.countNPEs());
 		assertTrue("All actors logged", col.countActors() == fetched.countActors());
+		
+		PLUSActor locatedActor = ProvenanceClient.instance.actorExists(someOwner.getId());
+		
+		assertTrue("Logged actor " + someOwner.getId() + " can be found.", locatedActor != null);
+		assertTrue("Logged actor " + someOwner.getId() + " name matches", locatedActor.getName().equals(someOwner.getName()));
+		
+		ProvenanceCollection searchResults = ProvenanceClient.instance.search("Foo", 10);
+		assertTrue("Received search results", searchResults != null);
+		assertTrue("Found something for 'Foo'", searchResults.countNodes() > 0);
+		assertTrue("Total search results (" + searchResults.countNodes() + ") should be <= 10", searchResults.countNodes() <= 10); 
 	}
 }
