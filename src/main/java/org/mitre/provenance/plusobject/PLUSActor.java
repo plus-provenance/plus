@@ -113,6 +113,7 @@ public class PLUSActor implements PropertyCapable {
 	
 	public Map<String, Object> getStorableProperties() {
 		HashMap<String,Object> m = new HashMap<String,Object>();
+		m.put("id", getId()); 
 		m.put("aid", getId());
 		m.put("name", getName());
 		m.put("created", getCreated());
