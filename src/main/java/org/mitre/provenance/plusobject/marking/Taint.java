@@ -68,18 +68,24 @@ public class Taint extends HeritableMarking {
 	public PLUSObject setProperties(PropertySet props, ProvenanceCollection contextCollection) throws PLUSException { 
 		super.setProperties(props, contextCollection);
 		setDescription(""+props.getProperty(PROP_DESCRIPTION));
-				
-		PLUSActor act = Neo4JPLUSObjectFactory.getActor(""+props.getProperty(PROP_CLAIMANT));
+							
+		PLUSActor actorClaimant = null;
+		String aid = ""+props.getProperty(PROP_CLAIMANT);
+		if(aid != null && !"".equals(aid) && !"null".equals(aid)) {
+			if(contextCollection != null && contextCollection.containsActorID(aid))
+				actorClaimant = contextCollection.getActor(aid);
+		} 		
+		
 		User u = null;
 				
-		if(act == null) {
+		if(actorClaimant == null) {
 			log.severe("No such actor by claimant name " + claimant + " ...faking it.");
 			u = new User(""+props.getProperty(PROP_CLAIMANT));
-		} else if(!(act instanceof User)) {
-			log.severe("Actor " + act + " isn't a user!");
+		} else if(!(actorClaimant instanceof User)) {
+			log.severe("Actor " + actorClaimant + " isn't a user!");
 			u = new User(""+props.getProperty(PROP_CLAIMANT));
 		} else { 
-			u = (User)act;
+			u = (User)actorClaimant;
 		}
 		
 		setClaimant(u);
