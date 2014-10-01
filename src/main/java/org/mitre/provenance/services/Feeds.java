@@ -347,6 +347,12 @@ public class Feeds {
 		// Fetch the objects
 		ProvenanceCollection objects = Neo4JPLUSObjectFactory.getRecentlyCreated(ServiceUtility.getUser(req), maxResults);	  
 
+		// As a special case, since we're reporting this back to the client we have to add in the various actors, otherwise it
+		// won't deserialize properly.
+		for(PLUSObject o : objects.getNodes()) {
+			if(o.getOwner() != null) objects.addActor(o.getOwner());
+		}
+		
 		log.info("latest objects: " + objects.countNodes());
 		
 		if("json".equals(format)) { 

@@ -14,9 +14,8 @@
  */
 package org.mitre.provenance.dag;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
-
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /**
  * Controls the settings that the graph traverser uses to determine
@@ -146,7 +145,7 @@ public class TraversalSettings {
 	 * @return
 	 */
 	public MultivaluedMap<String,String> asMultivaluedMap() {
-		MultivaluedMap<String,String> m = new MultivaluedMapImpl();
+		MultivaluedMap<String,String> m = new MultivaluedHashMap<String,String>();
 		
 		m.add("n", ""+n);
 		m.add("maxDepth", ""+maxDepth);
