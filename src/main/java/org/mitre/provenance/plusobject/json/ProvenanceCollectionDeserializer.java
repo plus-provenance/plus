@@ -138,10 +138,10 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 	}
 		
 	public static PLUSActor convertActor(JsonObject act) throws JsonParseException {
-		String id = act.get(JSONConverter.KEY_ID).getAsString();
-		String name = act.get(JSONConverter.KEY_NAME).getAsString();
+		String id    = act.get(JSONConverter.KEY_ID).getAsString();
+		String name  = act.get(JSONConverter.KEY_NAME).getAsString();
 		long created = act.get(JSONConverter.KEY_CREATED).getAsLong();
-		String type = act.get(JSONConverter.KEY_TYPE).getAsString();
+		String type  = act.get(JSONConverter.KEY_TYPE).getAsString();
 		
 		if(id == null || "".equals(id)) throw new JsonParseException("Invalid empty or missing 'id' on actor " + act);
 		if(name == null || "".equals(name)) throw new JsonParseException("Invalid empty or missing 'name' on actor " + act);
@@ -149,7 +149,8 @@ public class ProvenanceCollectionDeserializer implements JsonDeserializer<Proven
 		if(type == null || "".equals(type)) throw new JsonParseException("Invalid empty or missing 'type' on actor " + act);
 		
 		if(!"actor".equals(type)) {
-			log.warning("At this time, only type='actor' PLUSActors can be converted, but provided JSON presents " + type);
+			log.warning("At this time, only type='actor' PLUSActors can be converted, but provided JSON presents " + type + "; "+
+		                "this may mean that some information about the object was omitted during conversion.");
 		}
 		
 		return new PLUSActor(id, name, created, type);
