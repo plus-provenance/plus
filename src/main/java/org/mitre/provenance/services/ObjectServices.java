@@ -20,12 +20,14 @@ import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -72,11 +74,12 @@ public class ObjectServices {
 	})			
 	public Response search(@Context HttpServletRequest req,
 			@ApiParam(value="the search term to use", required=true) 
-	        @FormParam("searchTerm") String searchTerm) {
+	        @FormParam("searchTerm") String searchTerm,
+	        @ApiParam(value="maximum items to return", required=true) @DefaultValue("50") @QueryParam("n") int n) {
 		log.info("SEARCH POST '" + searchTerm + "'");
 		try { 			
 			//TODO : user
-			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(searchTerm, User.DEFAULT_USER_GOD);			
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(searchTerm, User.DEFAULT_USER_GOD, n);			
 			return ServiceUtility.OK(col, req);			
 		} catch(Exception exc) { 
 			exc.printStackTrace();
@@ -93,11 +96,12 @@ public class ObjectServices {
 	})			
 	public Response searchTerm(@Context HttpServletRequest req,
 			@ApiParam(value = "The ID of the actor", required=true) 
-	        @PathParam("term") String term) { 
+	        @PathParam("term") String term,
+	        @ApiParam(value="maximum items to return", required=true) @DefaultValue("50") @QueryParam("n") int n) { 
 		log.info("SEARCH GET '" + term + "'");
 		try { 
 			//TODO
-			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(term, ServiceUtility.getUser(req));
+			ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor(term, ServiceUtility.getUser(req), n);
 			return ServiceUtility.OK(col, req);			
 		} catch(Exception exc) { 
 			exc.printStackTrace();
