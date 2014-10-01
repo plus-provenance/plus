@@ -16,6 +16,8 @@ package org.mitre.provenance.test;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mitre.provenance.PLUSException;
@@ -27,6 +29,7 @@ import org.mitre.provenance.npe.NonProvenanceEdge;
 import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSEdge;
 import org.mitre.provenance.plusobject.PLUSString;
+import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 public class TestClient {
@@ -35,8 +38,23 @@ public class TestClient {
         ProvenanceClient.instance = new RESTProvenanceClient("localhost", "8080");
     }
 	
+    @Test
+    public void testLatest() throws PLUSException { 
+    	ProvenanceCollection col = ProvenanceClient.instance.latest();
+    	assertTrue("Latest objects reported aren't empty", col.countNodes() > 0);
+    }
+    
+    @Test
+    public void testWorkflows() throws PLUSException { 
+    	List<PLUSWorkflow> workflows = ProvenanceClient.instance.listWorkflows(10);
+    	
+    	assertTrue("Workflows came back", workflows != null);
+    	assertTrue("More than zero workflows came back", workflows.size() > 0);
+    	assertTrue("Server didn't respond with too many", workflows.size() <= 10); 
+    }
+    
 	@Test
-	public void testClient() throws PLUSException {
+	public void testReporting() throws PLUSException {
 		ProvenanceCollection col = new ProvenanceCollection();
 		PLUSString s = new PLUSString("Foo", "Bar");
 		PLUSString t = new PLUSString("Baz", "Quux");
