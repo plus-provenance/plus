@@ -17,10 +17,6 @@ package org.mitre.provenance.plusobject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.UserPrincipal;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
@@ -29,7 +25,6 @@ import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.PropertySet;
 import org.mitre.provenance.contenthash.ContentHasher;
 import org.mitre.provenance.contenthash.SHA256ContentHasher;
-import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
 
 /**
  * A generic file existing in some abstract path.
@@ -54,7 +49,6 @@ public class PLUSFile extends PLUSDataObject {
 		
 		this.file = file;
 		setObjectSubtype(PLUS_SUBTYPE_FILE);
-		extractMetadata();
 	}
 	
 	public PLUSFile(String filename) { 
@@ -62,7 +56,6 @@ public class PLUSFile extends PLUSDataObject {
 		origPath = filename; 
 		file = new File(filename); 
 		setObjectSubtype(PLUS_SUBTYPE_FILE);
-		extractMetadata();
 	}
 	
 	/**
@@ -82,36 +75,7 @@ public class PLUSFile extends PLUSDataObject {
 			throw new PLUSException("Error hashing: " + e, e);
 		} finally { fis.close(); } 
 	} // End hash
-	
-	protected void extractMetadata() { 
-		if(!file.exists() || !file.canRead()) return;
 		
-		// Try to figure out who owns this file, if it exists.
-		if(getOwner() == null) {
-			// This is a java-7 ism that permits us to access the file owner.
-			try { 
-				Path path = Paths.get(file.getAbsolutePath());
-				UserPrincipal owner = Files.getOwner(path);
-				String username = owner.getName();
-				try {
-					setOwner(Neo4JPLUSObjectFactory.getActor(username, true));
-				} catch (PLUSException e) {
-					log.warning(e.getMessage());
-				}
-			} catch(IOException exc) { 
-				log.warning(exc.getMessage());
-			}
-		}
-		
-		try { getMetadata().put("isLink", ""+file.getCanonicalFile().equals(file.getAbsoluteFile())); } catch(Exception exc) { ; } 
-		try { getMetadata().put("exists", ""+file.exists()); } catch(Exception exc) { ; }
-		try { getMetadata().put("path", file.getAbsolutePath()); } catch(Exception exc){ ; }
-		try { getMetadata().put("canonical", file.getCanonicalPath()); } catch(Exception exc) { ; } 
-		try { getMetadata().put("directory", ""+file.isDirectory()); } catch(Exception exc) { ; } 
-		try { getMetadata().put("lastmodified", ""+file.lastModified()); } catch(Exception exc) { ; }		
-		try { getMetadata().put("size", ""+file.length()); } catch(Exception exc) { ; } 
-	} // End extractMetadata
-	
 	public PLUSObject clone() { 
 		PLUSFile f = new PLUSFile();
 		f.copy(this);
