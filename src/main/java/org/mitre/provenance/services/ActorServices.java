@@ -64,4 +64,25 @@ public class ActorServices {
 			return ServiceUtility.ERROR("Unable to fetch actor " + actorID + " please consult the systems administrator");
 		} // End catch
 	} // End getActor
+	
+	@Path("/name/{name:.*}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Get information about an actor by name", notes="", response=HashMap.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 404, message = "Actor doesn't exist or can't be found")	  
+	})			
+	public Response getActorByName(@Context HttpServletRequest req,
+			@ApiParam(value = "The name of the actor", required=true) @PathParam("name") String actorName) { 				
+		try { 
+			AbstractProvenanceClient client = new LocalProvenanceClient(ServiceUtility.getUser(req));
+			PLUSActor a = client.actorExistsByName(actorName);		
+			if(a == null) return ServiceUtility.NOT_FOUND("No such actor named " + actorName);		
+			Map<String,Object> map = a.getStorableProperties();			
+			return ServiceUtility.OK(map);
+		} catch(PLUSException exc) { 
+			exc.printStackTrace();
+			return ServiceUtility.ERROR("Unable to fetch actor by name " + actorName + " please consult the systems administrator");
+		} // End catch
+	} // End getActorByName	
 } // End ActorServices
