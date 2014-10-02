@@ -317,7 +317,7 @@ public class Neo4JStorage {
 	 * @see #Neo4JStorage{@link #LABEL_NODE}
 	 */
 	private static void initLabels() {
-		log.info("Initializing labels.");
+		// log.info("Initializing labels.");
 		try (Transaction tx = db.beginTx()) {
 			LABEL_NODE = DynamicLabel.label("Provenance");
 			LABEL_ACTOR = DynamicLabel.label("Actor");
@@ -325,7 +325,7 @@ public class Neo4JStorage {
 			LABEL_NONPROV = DynamicLabel.label("NonProvenance");
 			tx.success();
 			
-			log.info("LABEL_NODE=" + LABEL_NODE);
+			// log.info("LABEL_NODE=" + LABEL_NODE);
 		}		
 	}
 	
@@ -606,6 +606,12 @@ public class Neo4JStorage {
 
 		Map<String,Object>params = new HashMap<String,Object>();
 		params.put("wf", wf.getId());
+
+		/*
+		 * TODO
+		 * This might not be a performant way to do this; examine exploitation of labels on rels to 
+		 * further narrow search to only provenance edges.
+		 */
 		String query = "start r=relationship:relationship_auto_index(workflow={wf}) " +                 
 			    "return r " +
 				"limit " + maximum;
@@ -753,15 +759,12 @@ public class Neo4JStorage {
 		params.put("one", one.getId());
 		params.put("two", two.getId());
 		
-		String query = "start n=node:node_auto_index(oid={one}), " +
-		               "      m=node:node_auto_index(oid={two}) " + 
-				       "match n" +
-		               ("fling".equals(operation) ?     // Match a path either to or from, depending on "direction"
+		String query = "MATCH (n:Provenance {oid: {one}})" + 
+		               ("fling".equals(operation) ? 
 		            		"-" + relTypes + "->" : 
-		            	    "<-" + relTypes + "-") + 
-		               "m " +
-		               "return r";
-		
+		            		"<-" + relTypes + "-") + 
+		               "(m:Provenance {oid: {two}}) return r";
+						
 		Iterator<Object> result = execute(query, params).columnAs("r");
 		if(result.hasNext()) return true;               
 		return false;
@@ -805,18 +808,17 @@ public class Neo4JStorage {
 		return result;
 	} // End privilegeExistsByName
 	
-	public static Node actorExistsByName(String name) throws PLUSException {
+	public static Node actorExistsByName(String name) {
 		if(db == null) initialize();
 		
-		if(name == null || "".equals(name)) throw new PLUSException("Name cannot be null or empty!"); 
+		if(name == null || "".equals(name)) return null;
 		
 		if(cache.containsKey("ACTOR::" + name)) return cache.get("ACTOR::" + name);
 		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put( "name", name );
-		String query = "start n=node:node_auto_index(name={name}) " + 
-                "where has(n.aid) " + 
-			    "return n ";
+
+		String query = "match (a:Actor {name={name}}) return a";
 		
 		ExecutionResult result = execute(query, params );
 				
@@ -841,9 +843,8 @@ public class Neo4JStorage {
 		
 		Map<String,Object> params = new HashMap<String,Object>();
 		params.put(PROP_ACTOR_ID, aid);
-		String query = "start n=node:node_auto_index(aid={aid}) " + 
-                "where has(n.aid) " + 
-			    "return n ";
+		
+		String query = "match (n:Actor {aid: {aid}}) return n";
 		
 		Iterator<Node> ns = Neo4JStorage.execute(query, params).columnAs("n");
 		if(!ns.hasNext()) {
@@ -1225,34 +1226,16 @@ public class Neo4JStorage {
 		System.out.println("Fail");
 		log.severe("Cannot delete edge " + e + " because no matching edge was found."); 
 		return false;
-		
-		/*
-		String q = "start h=node:node_auto_index(oid=\"" + e.getFrom() + "\"), t=node:node_auto_index(oid=\"" + e.getTo() + "\") " + 
-	               "match h-[r:" + e.getType() + "]->t " + 
-				   "where r.workflow=\"" + e.getWorkflowId() + "\" " + 
-	               "delete r";
-		
-		//Transaction tx = db.beginTx();
-		try { 
-			boolean r = Neo4JStorage.execute(q) != null;
-			//tx.success();
-			if(!r) log.severe("Delete query " + q + " failed");
-			return r;
-		} finally { 
-			//tx.finish();
-		}
-		*/
 	} // End delete
 	
 	public static List<PLUSWorkflow> listWorkflows(User user, int maxReturn) throws PLUSException {
 		if(db == null) initialize(); 
 		if(maxReturn <= 0 || maxReturn > 1000) maxReturn = 100;
 		
-		String query = "start n=node:node_auto_index(type=\"" + PLUSWorkflow.PLUS_TYPE_WORKFLOW + "\") " + 
-	                   "where has(n.oid) " + 
-				       "return n " + 
-	                   "order by n.created desc, n.name " + 
-	                   "limit " + maxReturn;
+		String query = "match (n:Provenance {type:\"" + PLUSWorkflow.PLUS_TYPE_WORKFLOW + "\"}) " + 
+			           "return n " + 
+				       "order by n.created desc, n.name " + 
+			           "limit " + maxReturn;
 				
 		ArrayList<PLUSWorkflow> wfs = new ArrayList<PLUSWorkflow>();
 		
@@ -1288,8 +1271,8 @@ public class Neo4JStorage {
 		String query = "start n=node:node_auto_index(\"" + luceneQuery.toString() + "\") " + 				
                 "where has(n.oid) " +				
 			    "return n " + 
-			    "limit " + maxReturn;		
-				
+			    "limit " + maxReturn;					
+		
 		Iterator<Node> ns = Neo4JStorage.execute(query).columnAs("n");
 		
 		try (Transaction tx = db.beginTx()) {
