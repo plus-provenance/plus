@@ -100,8 +100,12 @@ public class TestClient {
 		
 		PLUSActor locatedActor = ProvenanceClient.instance.actorExists(someOwner.getId());
 		
-		assertTrue("Logged actor " + someOwner.getId() + " can be found.", locatedActor != null);
-		assertTrue("Logged actor " + someOwner.getId() + " name matches", locatedActor.getName().equals(someOwner.getName()));
+		assertTrue("Logged actor (by ID) " + someOwner.getId() + " can be found.", locatedActor != null);
+		assertTrue("Logged actor (by ID) " + someOwner.getId() + " name matches", locatedActor.getName().equals(someOwner.getName()));
+		
+		locatedActor = ProvenanceClient.instance.actorExistsByName(someOwner.getName());
+		assertTrue("Logged actor (by name) " + someOwner.getId() + " can be found.", locatedActor != null);
+		assertTrue("Logged actor (by name) " + someOwner.getId() + " name matches", locatedActor.getName().equals(someOwner.getName()));		
 		
 		ProvenanceCollection searchResults = ProvenanceClient.instance.search("Foo", 10);
 		assertTrue("Received search results", searchResults != null);
