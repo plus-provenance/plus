@@ -91,6 +91,14 @@ public abstract class AbstractProvenanceClient {
 	public abstract PLUSActor actorExists(String aid) throws ProvenanceClientException;
 	
 	/**
+	 * Checks to see if an actor exists by a name.
+	 * @param name the name
+	 * @return the PLUSActor, or null if it doesn't exist.
+	 * @throws ProvenanceClientException
+	 */
+	public abstract PLUSActor actorExistsByName(String name) throws ProvenanceClientException;
+	
+	/**
 	 * Determine whether or not an object exists.
 	 * @param oid the object ID of the object to check for existance
 	 * @return true if the object exists, false otherwise.

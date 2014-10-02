@@ -68,6 +68,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String PRIVILEGE_PATH = "/privilege/dominates/";
 	protected static final String SEARCH_PATH = "/object/search/";
 	protected static final String GET_ACTOR_PATH = "/actor/";
+	protected static final String GET_ACTOR_BY_NAME_PATH = "/actor/name/";
 	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners";
 	protected static final String NEW_GRAPH_PATH = "/graph/new";	
 	protected static final String GET_GRAPH_PATH = "/graph/";
@@ -301,7 +302,17 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
 	}
-
+	
+	public PLUSActor actorExistsByName(String name) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(GET_ACTOR_BY_NAME_PATH + name);		
+		Response response = r.get();				
+		Gson g = new GsonBuilder().create();
+		JsonElement elem = g.fromJson(response.readEntity(String.class), JsonElement.class);
+		if(!elem.isJsonObject()) throw new ProvenanceClientException("Server response wasn't a JSON object " + elem);
+		
+		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
+	}
+	
 	public boolean dominates(PrivilegeClass a, PrivilegeClass b)
 			throws ProvenanceClientException {
 		Builder r = getRequestBuilderForPath(PRIVILEGE_PATH + a.getId() + "/" + b.getId());

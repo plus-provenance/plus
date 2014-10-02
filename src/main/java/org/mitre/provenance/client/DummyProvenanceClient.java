@@ -71,4 +71,9 @@ public class DummyProvenanceClient extends AbstractProvenanceClient {
 			throws ProvenanceClientException {
 		throw new RuntimeException(msg);
 	}
+
+	public PLUSActor actorExistsByName(String name)
+			throws ProvenanceClientException {
+		throw new RuntimeException(msg);
+	}
 }

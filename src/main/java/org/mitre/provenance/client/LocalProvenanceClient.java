@@ -138,7 +138,21 @@ public class LocalProvenanceClient extends AbstractProvenanceClient {
 		
 		return null;
 	}
-	
+
+	public PLUSActor actorExistsByName(String name) throws ProvenanceClientException {
+		org.neo4j.graphdb.Node n = Neo4JStorage.actorExistsByName(name);
+		
+		if(n != null) {
+			try {
+				return Neo4JPLUSObjectFactory.newActor(n);
+			} catch (PLUSException e) {
+				throw new ProvenanceClientException("Cannot convert actor", e);
+			}
+		} 
+		
+		return null;
+	}
+		
 	public boolean dominates(PrivilegeClass a, PrivilegeClass b) throws ProvenanceClientException {
 		try {
 			return Neo4JStorage.dominates(a, b);
