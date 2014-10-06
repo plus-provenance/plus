@@ -285,9 +285,9 @@ public class Neo4JStorage {
 		}
 		
 		if(storageLoc.exists())
-			log.info("Opening existing Neo4J Embedded Database at " + storageLoc.getAbsolutePath());
+			log.fine("Opening existing Neo4J Embedded Database at " + storageLoc.getAbsolutePath());
 		else
-			log.info("Creating new Neo4J Embedded Database at " + storageLoc.getAbsolutePath());
+			log.fine("Creating new Neo4J Embedded Database at " + storageLoc.getAbsolutePath());
 		
 		db = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(storageLoc.getAbsolutePath()).	
 			    setConfig(GraphDatabaseSettings.node_keys_indexable, "oid,npid,type,subtype,name,aid,pid" ).
@@ -907,7 +907,7 @@ public class Neo4JStorage {
 		
 		try (Transaction tx = db.beginTx()) {
 			for(PLUSEdge e : edges) {
-				log.warning("STORE edge of type " + e.getType() + " (" + e.getFrom() + " => " + e.getTo() + ")");
+				log.fine("STORE edge of type " + e.getType() + " (" + e.getFrom() + " => " + e.getTo() + ")");
 				
 				Node from = oidExists(e.getFrom().getId());
 				Node to = oidExists(e.getTo().getId());
@@ -929,7 +929,7 @@ public class Neo4JStorage {
 		if(db == null) initialize(); 
 		
 		try (Transaction tx = db.beginTx()) {
-			log.warning("STORE NPE " + npe);
+			log.fine("STORE NPE " + npe);
 			Node a = oidExists(npe.getFrom());
 			
 			if(a == null) 
@@ -1018,7 +1018,7 @@ public class Neo4JStorage {
 	public static Node store(PLUSObject o) throws PLUSException {
 		if(db == null) initialize(); 
 				
-		log.warning("STORE: " + o); 
+		log.fine("STORE: " + o); 
 		Node n = oidExists(o.getId());
 		if(n != null) {
 			log.warning("Skipping storage of " + o + " under OID " + o.getId() + " because that OID already exists.");
@@ -1042,7 +1042,7 @@ public class Neo4JStorage {
 			
 			String aid = (o.getOwner() != null ? o.getOwner().getId() : null);			
 			if(aid != null && !"".equals(aid.trim())) {
-				log.warning("Creating OWNS relationship to " + o + " from " + aid);
+				log.fine("Creating OWNS relationship to " + o + " from " + aid);
 				Node actor = actorExists(aid);					
 				if(actor == null) {
 					log.warning("Cannot store owner of " + o + " because AID " + aid + " doesn't exist!  Actors must be pre-saved.");
@@ -1050,7 +1050,9 @@ public class Neo4JStorage {
 					actor.createRelationshipTo(provObj, OWNS);
 					//	provObj.createRelationshipTo(actor, OWNS);
 				} // End else
-			} else { log.warning("Object " + o + " not owned."); }
+			} else { 
+				log.finest("Object " + o + " not owned."); 
+			}
 
 			PrivilegeSet ps = o.getPrivileges();
 			for(PrivilegeClass pc : ps.getPrivilegeSet()) {
@@ -1071,7 +1073,7 @@ public class Neo4JStorage {
 		if(db == null) initialize(); 
 		int x = 0;
 				
-		log.info("Storing provenance collection " + col);
+		log.fine("Storing provenance collection " + col);
 		try (Transaction tx = db.beginTx()) {
 			// Actors need to be stored first because some other things may depend on their
 			// existence.   For example, if a node is owned by an actor that isn't in the database, then trying to store
@@ -1102,7 +1104,7 @@ public class Neo4JStorage {
 		if(db == null) initialize(); 
 		if(n4jc == null) throw new PLUSException("Cannot store null object."); 
 		
-		log.warning("STORE: " + n4jc.getClass().getSimpleName() + " => " + n4jc);
+		log.fine("STORE: " + n4jc.getClass().getSimpleName() + " => " + n4jc);
 		Node n = null;
 				
 		try (Transaction tx = db.beginTx()) {			

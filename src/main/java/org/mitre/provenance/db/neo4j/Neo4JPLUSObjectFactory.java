@@ -680,7 +680,7 @@ public class Neo4JPLUSObjectFactory {
 		// Also, possibly a bigger problem:  if each time you add a node, you spider out and add the edges, then for very dense
 		// graphs this defeats the "depth-first" option.  At each node, you spider out on the edges (breadth first), add those
 		// incident nodes, and exhaust your total node limit before you've gone very deep into the graph.		
-		log.info(user.getName() + " traversing " + id + " with " + settings);
+		log.fine(user.getName() + " traversing " + id + " with " + settings);
 
 		Node startingPoint = null;
 
@@ -1018,27 +1018,10 @@ public class Neo4JPLUSObjectFactory {
 	public static ProvenanceCollection searchFor(String term, User user) { return searchFor(term, user, DEFAULT_SEARCH_RESULTS); }
 	
 	public static ProvenanceCollection searchFor(String term, User user, int max) {
-		/*
-		String query = "start n=node:node_auto_index({searchCriteria}) "+
-	            "match (n:Provenance) " + 
-			    "return n " + 
-                "order by n.created desc " +           
-                "limit " + max;
-       
-		String expr = term;
-		
-		// If the search term includes a non-word character, put it in quotes.
-		//if(term.matches("\\W"))
-		//	expr = "\"" + term + "\"";
-		
-		expr = "name:" + expr + "~";
-       
-       */
-
 		String query = "match (n:Provenance) where n.name =~ {searchCriteria} return n order by n.created desc limit " + max;
 		
 		String expr = formatRegex(term);
-		log.info("search expression=" + expr);
+		log.fine("search expression=" + expr);
 		
 		Map<String,Object>params = new HashMap<String,Object>();
 		params.put("searchCriteria", expr);
