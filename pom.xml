@@ -9,10 +9,15 @@
 	</repositories>
 
 	<modelVersion>4.0.0</modelVersion>
+	
 	<groupId>org.mitre.provenance</groupId>
+	
 	<artifactId>plus</artifactId>
+	
 	<version>3.0.0</version>
+	
 	<name>PLUS Provenance</name>
+	
 	<url>http://www.mitre.org/</url>
 	
 	<dependencies>	
@@ -43,19 +48,21 @@
 			<version>3.1.4.RELEASE</version>
 		</dependency>
 
-
+		<!-- RSS feeds reading/writing -->
 		<dependency>
 			<groupId>rome</groupId>
 			<artifactId>rome</artifactId>
 			<version>1.0</version>
 		</dependency>
 
+		<!-- JSON serialization/deserialization -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.2.4</version>
 		</dependency>
 
+		<!-- Graph database, underlying storage -->
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j</artifactId>
@@ -122,6 +129,7 @@
 	      </exclusions> 			
 		</dependency>
 
+		<!-- PROV-DM serialization -->
 		<dependency>
 			<groupId>org.openprovenance.prov</groupId>
 			<artifactId>prov-model</artifactId>
@@ -151,38 +159,44 @@
 			<artifactId>prov-json</artifactId>
 			<version>${openprov-version}</version>
 		</dependency>
-
 		
 		<dependency>
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
 			<version>1.2</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
 		</dependency>
+		
+		<!-- RESTful services -->
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-client</artifactId>
 			<version>${jersey-version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-common</artifactId>
 			<version>${jersey-version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>com.wordnik</groupId>
 			<artifactId>swagger-jersey2-jaxrs_2.10</artifactId>
 			<version>1.3.2</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-server</artifactId>
 			<version>${jersey-version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.glassfish.jersey.containers</groupId>
 			<artifactId>jersey-container-servlet-core</artifactId>
@@ -293,17 +307,6 @@
                         </apiSource>
                     </apiSources>
                 </configuration>
-                
-                <!-- 
-                <executions>                
-                    <execution>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                -->
             </plugin>
 
 			<!-- Maven's javadoc plugin is extremely strict, and starts with a default parameter -Xdoclint.
@@ -319,16 +322,31 @@
 					<additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
 			</plugin>			
-						
-	      <plugin>
-	        <groupId>org.apache.maven.plugins</groupId>
-	        <artifactId>maven-compiler-plugin</artifactId>
-	        <version>3.1</version>
-	        <configuration>
-	          <source>1.7</source>
-	          <target>1.7</target>
-	        </configuration>
-	      </plugin>
+			
+			<!-- Compiler settings; java 1.7 compilation. -->			
+	        <plugin>
+	          <groupId>org.apache.maven.plugins</groupId>
+	          <artifactId>maven-compiler-plugin</artifactId>
+	          <version>3.1</version>
+	          <configuration>
+	            <source>1.7</source>
+	            <target>1.7</target>
+	          </configuration>
+	        </plugin>
+	        
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-surefire-plugin</artifactId>
+		        <version>2.17</version>
+		        		        
+		        <configuration>
+		          <skipTests>false</skipTests>
+		          <excludes>
+		            <!--  At this point, the integration environment isn't configured yet, so those are run separately/manually. -->
+		            <exclude>**/integration/*.java</exclude>		            
+		          </excludes>
+		        </configuration>
+      		</plugin>	        
 		</plugins>
 	</build>
 
@@ -342,11 +360,10 @@
 	<description>PLUS is software that permits the logging, retrieval, and analysis of provenance information on the web.</description>
 
 	<properties>
-	    <skipTests>true</skipTests>
 		<java-version>1.7</java-version>
 		<org.springframework-version>3.2.6.RELEASE</org.springframework-version>
 		<openprov-version>0.6.1</openprov-version>
-                <jersey-version>2.5.1</jersey-version>
+        <jersey-version>2.5.1</jersey-version>
 		<org.neo4j-version>2.1.4</org.neo4j-version>
 		<copyright>MITRE 2014</copyright>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -364,10 +381,13 @@
 		<name>MITRE Corporation</name>
 		<url>http://www.mitre.org/</url>
 	</organization>
+	
 	<inceptionYear>2007</inceptionYear>
+	
 	<issueManagement>
 		<url>https://github.com/plus-provenance/plus/issues</url>
 		<system>GitHub</system>
 	</issueManagement>
+	
 	<packaging>war</packaging>
 </project>
