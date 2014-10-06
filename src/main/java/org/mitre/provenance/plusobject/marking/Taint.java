@@ -79,10 +79,10 @@ public class Taint extends HeritableMarking {
 		User u = null;
 				
 		if(actorClaimant == null) {
-			log.severe("No such actor by claimant name " + claimant + " ...faking it.");
+			log.warning("Taint object " + getId() + "/" + getName() + " is missing claimant; provided name was '" + claimant + "'");
 			u = new User(""+props.getProperty(PROP_CLAIMANT));
 		} else if(!(actorClaimant instanceof User)) {
-			log.severe("Actor " + actorClaimant + " isn't a user!");
+			log.warning("Taint object " + getId() + "/" + getName() + " can't use Actor " + actorClaimant + ": isn't a user!");
 			u = new User(""+props.getProperty(PROP_CLAIMANT));
 		} else { 
 			u = (User)actorClaimant;
