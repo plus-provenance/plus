@@ -48,17 +48,17 @@ public class TestTaint {
 		SyntheticGraphProperties p = new SyntheticGraphProperties().setComponents(3).setSGF(new GenericSGF()).setPrivilegeSet(new PrivilegeSet());
 		RandomMotifCollection rmc = new RandomMotifCollection(p);
 		
-		System.out.println("Storing test collection.");
+		// System.out.println("Storing test collection.");
 		client.report(rmc);
 		
 		// Pick the very first thing in the graph, and taint it (ensuring most everything else is tainted)
 		PLUSObject earliest = rmc.getNodesInOrderedList(ProvenanceCollection.SORT_BY_CREATION).get(0);
 		
 		// This creates and saves the taint...
-		System.out.println("Tainting first item.");
+		// System.out.println("Tainting first item.");
 		Taint t = Neo4JPLUSObjectFactory.taint(earliest, User.DEFAULT_USER_GOD, "OMG! Totes tainted!");
 		
-		System.out.println("Taint claimant:  " + t.getClaimant() + " and " + t.getStorableProperties().get("claimant"));
+		// System.out.println("Taint claimant:  " + t.getClaimant() + " and " + t.getStorableProperties().get("claimant"));
 		
 		Set<Taint> taints = Neo4JPLUSObjectFactory.getDirectTaints(earliest, User.DEFAULT_USER_GOD);
 				
@@ -82,4 +82,4 @@ public class TestTaint {
 					Neo4JPLUSObjectFactory.getDirectTaints(e.getTo(), User.DEFAULT_USER_GOD).isEmpty());
 		}		
 	}
-}
+} // End TestTaint

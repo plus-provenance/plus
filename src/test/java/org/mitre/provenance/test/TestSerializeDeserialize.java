@@ -62,7 +62,7 @@ public class TestSerializeDeserialize {
 		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
 		ProvenanceCollection col = g.fromJson(json, ProvenanceCollection.class);
 		
-		System.out.println("Took collection " + r + " round-tripped through JSON to " + col);
+		// System.out.println("Took collection " + r + " round-tripped through JSON to " + col);
 		
 		TestUtils.equivalent(r, col);    	
     }
@@ -79,7 +79,7 @@ public class TestSerializeDeserialize {
 		
 		for(int x=0; x<sgfs.length; x++) {
 			SurrogateGeneratingFunction c = sgfs[x];
-			System.out.println("Using SGF " + c.getClass().getName());
+			// System.out.println("Using SGF " + c.getClass().getName());
 			s.useSurrogateComputation(c);
 		}
 				
@@ -89,13 +89,4 @@ public class TestSerializeDeserialize {
 		
 		TestUtils.equivalent(s, o);		
 	}
-	
-	public static void foo(Class<? extends SurrogateGeneratingFunction> c) {
-		System.out.println(c.getName());
-	}
-	
-	public static void main(String [] args) throws Exception {
-		Class <? extends SurrogateGeneratingFunction> c = GenericSGF.class;
-		foo(c);
-	}
-}
+} // End TestSerializeDeserialize

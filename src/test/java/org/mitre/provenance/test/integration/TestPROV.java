@@ -38,12 +38,12 @@ public class TestPROV {
 		List<PLUSWorkflow> wfs = client.listWorkflows(20);
 		
 		for(PLUSWorkflow wf : wfs) { 
-			System.out.println("Dumping " + wf + " as PROV"); 
+			// System.out.println("Dumping " + wf + " as PROV"); 
 			
 			col = client.getWorkflowMembers(wf.getId(), 2);			
 			
 			if(col.countNodes() <= 0) { 
-				System.out.println("Workflow " + wf + " has no members.");
+				// System.out.println("Workflow " + wf + " has no members.");
 				continue;
 			}
 			
@@ -66,4 +66,4 @@ public class TestPROV {
 	public static void main(String [] args) throws Exception { 
 		new TestPROV().dumpPROV();
 	}
-}
+} // End TestPROV

@@ -85,12 +85,12 @@ public class TestClient {
 		col.addActor(someOwner);
 		
 		AbstractProvenanceClient pc = ProvenanceClient.instance;
-		System.out.println("Reporting collection " + col);
+		// System.out.println("Reporting collection " + col);
 		assertTrue("Can report successfully to server", pc.report(col));
 		
-		System.out.println("Fetching graph...");
+		// System.out.println("Fetching graph...");
 		ProvenanceCollection fetched = pc.getGraph(s.getId());
-		System.out.println("Fetched " + fetched);
+		// System.out.println("Fetched " + fetched);
 		//ProvenanceCollection fetched = col;
 
 		assertTrue("All items logged", col.countNodes() == fetched.countNodes());

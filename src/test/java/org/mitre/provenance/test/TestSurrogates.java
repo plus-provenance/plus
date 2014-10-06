@@ -57,7 +57,6 @@ public class TestSurrogates {
 			assertTrue("Dominates self", ProvenanceClient.instance.dominates(l1, l1));
 			assertTrue("Higher dominates lower (" + x + ")", ProvenanceClient.instance.dominates(l2, l1));
 			assertTrue("Lower does not dominate higher",  !ProvenanceClient.instance.dominates(l1, l2));
-
 			assertTrue("ADMIN dominates all integers (" + x + ")", ProvenanceClient.instance.dominates(PrivilegeClass.ADMIN, l1));
 		}
 	}
@@ -87,7 +86,7 @@ public class TestSurrogates {
 		
 		PLUSObject out = vc.getNode(s.getId());
 		
-		System.err.println("OUT TYPE " + out.getType() + " S TYPE " + s.getType() + " EQUAL=" + out.getType().equals(s.getType()));
+		// System.err.println("OUT TYPE " + out.getType() + " S TYPE " + s.getType() + " EQUAL=" + out.getType().equals(s.getType()));
 		
 		assertTrue("Result was a surrogate", out.isSurrogate());
 		assertTrue("Types are the same", out.getType().equals(s.getType()));
@@ -111,6 +110,7 @@ public class TestSurrogates {
 		
 		LineageDAG dag = LineageDAG.fromCollection(pc, User.PUBLIC);
 		
+		/*
 		for(PLUSObject o : dag.getNodes()) {
 			System.out.println(o); 
 		}
@@ -120,6 +120,7 @@ public class TestSurrogates {
 			//System.out.println(e.getFrom().getName() + " => " + e.getTo().getName());
 			System.out.println("RESULTING EDGE: "  + e);
 		}
+		*/
 		
 		assertTrue("Resulting graph only has one edge", dag.getEdges().size() == 1);
 		assertTrue("Resulting graph has two nodes", dag.getNodes().size() == 2); 

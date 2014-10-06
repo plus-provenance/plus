@@ -47,7 +47,7 @@ public class TestBasicProvenance {
 	public void testSearch() throws Exception { 
 		ProvenanceCollection col = Neo4JPLUSObjectFactory.searchFor("track", User.DEFAULT_USER_GOD, 20);
 		
-		System.out.println("Searching for track yielded " + col.countNodes() + " results."); 
+		// System.out.println("Searching for track yielded " + col.countNodes() + " results."); 
 		for(PLUSObject o : col.getNodes()) {
 			assertTrue("Name contains track", o.getName().toLowerCase().contains("track"));
 		}
@@ -102,7 +102,7 @@ public class TestBasicProvenance {
 		assertTrue("Can get latest objects", (objs != null && objs.countNodes() > 0));
 		assertTrue("Can get actors", (actors != null && actors.getActors().size() > 0)); 
 		
-		System.out.println("Fetching members of workflow " + wfs.get(0)); 
+		// System.out.println("Fetching members of workflow " + wfs.get(0)); 
 		for(PLUSWorkflow wf : wfs) {
 			ProvenanceCollection col = ProvenanceClient.instance.getWorkflowMembers(wf.getId(), 5);
 			assertTrue("Can fetch workflow members", (col != null));

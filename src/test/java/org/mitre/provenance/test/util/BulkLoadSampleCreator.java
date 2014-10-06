@@ -45,7 +45,7 @@ public class BulkLoadSampleCreator {
 		SyntheticGraphProperties p = new SyntheticGraphProperties().setComponents(20).setSGF(new SurgicalInferAll()).setPrivilegeSet(ps);
 		RandomMotifCollection rmc = new RandomMotifCollection(p);
 
-		System.out.println("Storing some more, including: " + rmc.getNodesInOrderedList().get(0).getCreatedAsDate());
+		// System.out.println("Storing some more, including: " + rmc.getNodesInOrderedList().get(0).getCreatedAsDate());
 		client.report(rmc);		
 	}
 
@@ -59,7 +59,7 @@ public class BulkLoadSampleCreator {
 			PLUSFile pf1 = new PLUSFile(child);
 			if(child.isFile()) {
 				String hash = pf1.hash();
-				System.out.println("Got hash " + hash);
+				// System.out.println("Got hash " + hash);
 				pf1.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, hash);
 			}
 
@@ -71,17 +71,4 @@ public class BulkLoadSampleCreator {
 
 		return pc;
 	}
-
-	public static void main(String [] args) throws Exception {
-		// addSomeMore();
-
-		client.report(hashDir(new File("C:\\Users\\dmallen\\Desktop\\eclipse\\configuration\\.settings")));
-
-		ProvenanceCollection col = Neo4JPLUSObjectFactory.getRecentlyCreated(User.DEFAULT_USER_GOD, 5);
-
-		System.out.println("LATEST 5"); 
-		for(PLUSObject o : col.getNodes()) {
-			System.out.println(o + " => " + o.getCreatedAsDate());
-		}
-	}
-}
+} // End BulkLoadSampleCreator
