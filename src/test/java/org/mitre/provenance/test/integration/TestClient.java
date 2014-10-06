@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.mitre.provenance.test;
+package org.mitre.provenance.test.integration;
 
 import static org.junit.Assert.assertTrue;
 

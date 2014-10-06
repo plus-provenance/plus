@@ -1,4 +1,4 @@
-package org.mitre.provenance.test;
+package org.mitre.provenance.test.integration;
 
 import static org.junit.Assert.*;
 
