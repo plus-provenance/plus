@@ -818,7 +818,7 @@ public class Neo4JStorage {
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put( "name", name );
 
-		String query = "match (a:Actor {name: {name}}) return a";
+		String query = "match (n:Actor {name: {name}}) return n";
 		
 		ExecutionResult result = execute(query, params );
 				
