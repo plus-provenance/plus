@@ -390,14 +390,6 @@ public class Neo4JStorage {
 		}
 	} // End getNPID
 	
-	/** @deprecated */
-	protected static String getNodeStorageType(Node n) { 
-		if(n.hasProperty(PROP_PLUSOBJECT_ID) && n.hasProperty(PROP_TYPE)) return "PLUSObject";
-		if(n.hasProperty(PROP_ACTOR_ID)) return "PLUSActor";
-		if(n.hasProperty(PROP_PRIVILEGE_ID)) return "PrivilegeClass";
-		return "other";
-	}
-	
 	/**
 	 * Get a list of PLUSObjects that this PLUSActor owns.
 	 * @param actor the actor whose objects you are interested in
@@ -456,71 +448,16 @@ public class Neo4JStorage {
 	}
 	
 	/**
-	 * Execute a cypher query, and return a provenance collection according to the results.
-	 * @param query the query to execute
-	 * @param params any bound parameters (if necessary)
-	 * @param user the user who is viewing the collection.
-	 * @param includeNodes if true, resulting collection will include any nodes, if false, they will be omitted.
-	 * @param includeEdges if true, resulting collection will include any edges, if false, they will be omitted.
-	 * @param includeNPEs if true, resulting collection will include any non-provenance edges, if false, they will be omitted.
-	 * @return a provenance collection
-	 * @deprecated
+	 * Get a collection of actors from the store
+	 * @param maxNumber the maximum number to return
+	 * @return a provenance collection containing actors
 	 * @throws PLUSException
-	 * TODO
 	 */
-	public static ProvenanceCollection fetchProvenance(
-			String query, Map<String,Object>params, User user,
-			boolean includeNodes, boolean includeEdges, boolean includeNPEs) throws PLUSException { 
-		if(db == null) initialize();
-		
-		ViewedCollection vc = new ViewedCollection(user);
-		
-		ExecutionResult er = execute(query, params);
-		for(String columnName : er.columns()) { 
-			Iterator<?> it = er.columnAs(columnName);
-			
-			while(it.hasNext()) { 
-				Object o = it.next();
-				
-				if(o instanceof Node) { 
-					Node n = (Node)o;
-					String nt = getNodeStorageType(n);
-					
-					if("PLUSObject".equals(nt)) { 
-						PLUSObject po = Neo4JPLUSObjectFactory.newObject(n);
-						po = po.getVersionSuitableFor(user);
-						if(po != null) { if(includeNodes) vc.addNode(po); } 
-						else log.warning("No suitable version of found object for " + user);
-					} else { 
-						log.warning("Currently, this method does not support result columns of type " + 
-					             "Node => " + nt);
-						break;
-					}
-				} else if(o instanceof Relationship) { 
-					Relationship r = (Relationship)o;
-					if(r.hasProperty(PROP_NPEID)) { 
-						NonProvenanceEdge npe = Neo4JPLUSObjectFactory.newNonProvenanceEdge(r);
-						if(npe != null && includeNPEs) vc.addNonProvenanceEdge(npe);
-					} else { 
-						PLUSEdge pe = Neo4JPLUSObjectFactory.newEdge(r);
-						if(pe != null && includeEdges) vc.addEdge(pe);
-					}
-				} else { 
-					log.warning("Currently, this method does not support result columns of instance type " + 
-							 o.getClass().getCanonicalName());
-					break;
-				}				
-			} // End while
-		} // End for
-		
-		return vc;
-	} // End fetchProvenance
-	
 	public static ProvenanceCollection getActors(int maxNumber) throws PLUSException { 
 		if(db == null) initialize();
 		
 		String query = "match (n:" + Neo4JStorage.LABEL_ACTOR.name() + ") " + 
-		        "where has(n.aid) " + 
+		        "where has(n.aid) " +  // TODO this portion of the query looks redundant; consider removing/testing 
                 "return n " + 
 		        "order by n.name desc " + 
 		        "limit " + maxNumber;
@@ -545,6 +482,7 @@ public class Neo4JStorage {
 	} // End getActors
 		
 	/**
+	 * Check to see if a given NPE exists in the store.
 	 * @param npe a non-provenance edge
 	 * @return true if it is in the store, false otherwise.
 	 */
@@ -559,6 +497,7 @@ public class Neo4JStorage {
 	}
 
 	/**
+	 * Determine whether a given PLUSEdge exists in the store.
 	 * @param edge a PLUSEdge
 	 * @return true if it is in the store, false otherwise.
 	 */
@@ -734,8 +673,7 @@ public class Neo4JStorage {
 	 * @throws PLUSException
 	 */
 	public boolean pathExists(PLUSObject one, PLUSObject two) throws PLUSException {
-		if(db == null) initialize();
-		
+		if(db == null) initialize();		
 		return pathExistsViaOperation(one, two, "bling") || pathExistsViaOperation(one, two, "fling");
 	} // End pathExists
 	
@@ -749,7 +687,8 @@ public class Neo4JStorage {
 	 * @throws PLUSException
 	 */
 	public static boolean pathExistsViaOperation(PLUSObject one, PLUSObject two, String operation) throws PLUSException { 
-		if(!"bling".equals(operation) && !"fling".equals(operation)) throw new PLUSException("Invalid operation " +operation + ": valid is bling, fling");
+		if(!"bling".equals(operation) && !"fling".equals(operation)) 
+			throw new PLUSException("Invalid operation " +operation + ": valid is bling, fling");
 		
 		if(db == null) initialize();
 		
@@ -773,12 +712,11 @@ public class Neo4JStorage {
 	/** 
 	 * Check to see if a privilege class exists.
 	 * @param id the ID of the privilege class
-	 * @return a Node corresponding to its storage.
-	 * @throws PLUSException
+	 * @return a Node corresponding to its storage, or null if none exists.
 	 */
-	public static Node privilegeClassExistsById(String id) throws PLUSException {
+	public static Node privilegeClassExistsById(String id) {
 		if(db == null) initialize();
-		if(id == null || "".equals(id)) throw new PLUSException("id cannot be empty or null!");
+		if(id == null || "".equals(id)) return null;
 		
 		if(cache.containsKey(id)) return cache.get(id);
 		
@@ -797,6 +735,12 @@ public class Neo4JStorage {
 		return result;		
 	} // End privilegeClassExistsById
 	
+	/**
+	 * Check to see if a privilege exists by a given name.
+	 * @param name the name of the privilege.
+	 * @return the Node that stores it, or null if it does not exist.
+	 * @throws PLUSException
+	 */
 	public static Node privilegeExistsByName(String name) throws PLUSException { 
 		if(db == null) initialize();
 		
@@ -808,6 +752,12 @@ public class Neo4JStorage {
 		return result;
 	} // End privilegeExistsByName
 	
+	/**
+	 * Check to see if an actor exists by a given name.
+	 * @param name the name to check.  
+	 * @return the Node that stores the actor (if it exists) or null if it does not.  If the name provided is empty or null, the
+	 * return value will always be null.
+	 */
 	public static Node actorExistsByName(String name) {
 		if(db == null) initialize();
 		
