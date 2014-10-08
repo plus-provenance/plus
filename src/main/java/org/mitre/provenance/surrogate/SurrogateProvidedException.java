@@ -27,7 +27,7 @@ import org.mitre.provenance.plusobject.*;
  * 
  * <p>The exception itself is just a wrapper for a SurrogateDetail object, which has the
  * details of the surrogate response to the query.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class SurrogateProvidedException extends Exception {	

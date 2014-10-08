@@ -32,7 +32,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * A generic surrogate generating function that creates a redacted node of the same type.
- * @author DMALLEN
+ * @author moxious
  */
 public class GenericSGF extends SurrogateGeneratingFunction {
 	public PLUSObject generateSurrogate(PLUSObject object, User user) 

@@ -27,7 +27,7 @@ import org.mitre.provenance.tools.PLUSUtils;
 /**
  * An individual or organization that can do stuff.  Part of the OPM model, and useful to modeling multiple
  * participants in a PLUS federation. 
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSActor implements PropertyCapable {
 	/** Name of the actor */

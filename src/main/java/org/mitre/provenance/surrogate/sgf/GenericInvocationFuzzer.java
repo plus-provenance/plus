@@ -27,7 +27,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * An SGF that will work with any invocation.  Removes its name and all metadata.
- * @author DMALLEN
+ * @author moxious
  */
 public class GenericInvocationFuzzer extends SurrogateGeneratingFunction {
 	public PLUSObject generateSurrogate(PLUSObject object, User user) 

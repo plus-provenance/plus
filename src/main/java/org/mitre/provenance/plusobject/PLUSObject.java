@@ -55,7 +55,7 @@ import org.mitre.provenance.user.User;
  * Types are used to determine which subclass is best suited to load the
  * PLUSObject. (Check extentLoaderMappings for more details)
  * 
- * @author DMALLEN
+ * @author moxious
  * 
  */
 public class PLUSObject extends Surrogateable implements Comparable<Object>,

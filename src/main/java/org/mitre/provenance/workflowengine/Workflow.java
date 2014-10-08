@@ -32,7 +32,7 @@ import org.mitre.provenance.workflowengine.activity.Activity;
  * <p>This is <b>not</b> a fully-featured workflow engine.  There are numerous limitations to the
  * proper functioning of the engine.  As of 3/2008, the PLUS MSR plans to later add hooks into 
  * more fully-featured workflow engines to make up for the shortcomings and limitations of this code.
- * @author DMALLEN
+ * @author moxious
   */
 public class Workflow {
 	protected static Logger log = Logger.getLogger(Workflow.class.getName());

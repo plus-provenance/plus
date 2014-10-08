@@ -20,7 +20,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * This SGF votes to INFER all edges on the matched object.
- * @author DMALLEN
+ * @author moxious
  */
 public class SurgicalInferAll extends SurgicalSGF {
 	public SurgicalInferAll() { this("##"); }

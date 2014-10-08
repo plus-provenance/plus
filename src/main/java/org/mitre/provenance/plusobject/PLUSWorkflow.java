@@ -21,7 +21,7 @@ import org.mitre.provenance.PropertySet;
 
 /**
  * An abstract workflow.   This is usually used to group a set of provenance objects together into a cohesive set of operations.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSWorkflow extends PLUSObject {	
 	/**

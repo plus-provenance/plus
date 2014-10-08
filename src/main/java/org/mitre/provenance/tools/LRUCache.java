@@ -19,7 +19,7 @@ import java.util.Map;
 
 /**
  * Least-recently used cache implementation.
- * @author DMALLEN
+ * @author moxious
  */
 public class LRUCache<K,V> {
 	public static int MINIMUM_CACHE_SIZE = 100;

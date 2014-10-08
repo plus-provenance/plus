@@ -20,7 +20,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
  * Base class for synthetically generated graphs, that provide various convenience methods.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public abstract class SyntheticGraph extends ProvenanceCollection {

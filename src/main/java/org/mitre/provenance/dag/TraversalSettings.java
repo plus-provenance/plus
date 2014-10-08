@@ -32,7 +32,7 @@ import javax.ws.rs.core.MultivaluedMap;
  * 
  * <p>For example, that will create a TraversalSettings object that instructs the code to fetch all nodes forward of
  * a starting point, only one hop away, returning a set of nodes but not edges.
- * @author DMALLEN
+ * @author moxious
  */
 public class TraversalSettings {
 	public static final TraversalSettings UNLIMITED = new TraversalSettings(-1, -1, true, true, true, true, true, true, true);

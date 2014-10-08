@@ -28,7 +28,7 @@ import org.mitre.provenance.user.User;
  * A collection of provenance nodes and edges that has the context of all being viewable by a given user.  ViewedCollection objects also 
  * have a "focus" or a node that the user is most interested in, or caused the graph to be generated in the first place.  The focus acts
  * as an entry point into the graph.
- * @author DMALLEN
+ * @author moxious
  */
 public class ViewedCollection extends ProvenanceCollection {
 	/** The user that's viewing the DAG */

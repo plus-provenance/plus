@@ -52,7 +52,7 @@ import org.mitre.provenance.user.User;
  * 
  * <p>This class contains most of the implementation of the surrogate function described in the "Surrogate Parenthood"
  * paper.  To generate new LineageDAGs from raw provenance, using the surrogate algorithm, see the fromCollection() method.
- * @author DMALLEN
+ * @author moxious
  */
 public class LineageDAG extends ViewedCollection implements FocusedCollection {
 	private static final Logger log = Logger.getLogger(LineageDAG.class.getName());

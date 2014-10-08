@@ -30,7 +30,7 @@ import org.mitre.provenance.plusobject.PLUSObject;
  * Surrogates can either specify each edge individually on a case-by-case basis, or they can specify an "edge policy",
  * which has the effect of always hiding/showing/inferring edges.
  * @see SurrogateGeneratingFunction#generateSurrogate(PLUSObject, org.mitre.provenance.user.User)
- * @author DMALLEN
+ * @author moxious
  */
 public class SurrogateDetail {
 	protected SurrogateQuality quality;

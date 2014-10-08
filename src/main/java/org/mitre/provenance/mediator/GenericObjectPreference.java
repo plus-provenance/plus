@@ -24,7 +24,7 @@ import org.mitre.provenance.user.PrivilegeSet;
 /**
  * A basic way to figure out preference for surrogates with no additional information.  
  * This is not the preferable way, but it beats having no default.
- * @author DMALLEN
+ * @author moxious
  */
 public class GenericObjectPreference extends ObjectPreference {
 	protected static Logger log = Logger.getLogger(GenericObjectPreference.class.getName());

@@ -21,7 +21,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * This SGF sets the edge vote to HIDE on the matched object.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class SurgicalHideFirst extends SurgicalSGF {

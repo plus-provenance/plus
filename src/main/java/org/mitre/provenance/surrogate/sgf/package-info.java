@@ -16,7 +16,7 @@
  * This package contains implementations of surrogate generating functions
  */
 /**
- * @author DMALLEN
+ * @author moxious
  *
  */
 package org.mitre.provenance.surrogate.sgf;

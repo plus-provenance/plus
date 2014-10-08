@@ -21,7 +21,7 @@ package org.mitre.provenance.surrogate;
  * 
  * <p>A SignPost is <b>never</b> actual data content.  It is just a sign pointing elsewhere for
  * more information about the data item.  
- * @author DMALLEN
+ * @author moxious
  */
 public class SignPost {
 	/** Default sign post indicating that an object was sourced locally, with no further information. */

@@ -18,7 +18,7 @@ import org.mitre.provenance.plusobject.PLUSObject;
 
 /**
  * A class that a surrogate can use to define a computation that votes on edges. 
- * @author DMALLEN
+ * @author moxious
  */
 public interface EdgeVoter {
 	/**

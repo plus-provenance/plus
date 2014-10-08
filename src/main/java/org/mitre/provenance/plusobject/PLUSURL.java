@@ -19,7 +19,7 @@ import java.net.URL;
 
 /**
  * A web URL with a name.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSURL extends PLUSString {
 	protected URL url;

@@ -16,7 +16,7 @@
 
 /*
  * Lightweight provenance library for javascript.
- * @author DMALLEN
+ * @author moxious
  */
 function ProvenanceGraph(d3json) { 
 	this.d3json = d3json;

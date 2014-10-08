@@ -26,7 +26,7 @@ import org.mitre.provenance.workflowengine.activity.Activity;
  * as an "introduction to" B.  
  * 
  * <p>There are two special case inputs and outputs, the "start state" and "end state".
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class Transition {

@@ -22,7 +22,7 @@ import org.mitre.provenance.surrogate.SignPost;
  * <p>The type of a PLUSEdge <b>must always be</b> one of the enumerated strings in this class.  For any other type of edge (bearing non-
  * provenance semantics) use NonProvenanceEdge
  * @see org.mitre.provenance.npe.NonProvenanceEdge
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSEdge extends AbstractDirectedEdge {
 	/** A marks edge indicates that one provenance object provides additional information about another.  As an example, Taint objects mark what they taint */

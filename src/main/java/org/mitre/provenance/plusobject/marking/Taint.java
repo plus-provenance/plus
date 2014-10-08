@@ -29,7 +29,7 @@ import org.mitre.provenance.user.User;
  * Taints are special kinds of PLUSObjects that are asserted about other PLUSObjects.  They show
  * up in the lineage DAG as proper elements, but they are related to other nodes by non-lineage
  * edges (i.e. PLUSEdge.EDGE_TYPE_MARKING)
- * @author DMALLEN
+ * @author moxious
  */
 public class Taint extends HeritableMarking {
 	public static final String MARK_TYPE = "taint";		

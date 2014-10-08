@@ -32,7 +32,7 @@ import org.mitre.provenance.user.User;
  * objects that match by name.   So the SGF can be applied as a matter of policy to all objects, but it will only act in 
  * certain tunable circumstances.
  * 
- * @author DMALLEN
+ * @author moxious
  */
 public abstract class SurgicalSGF extends SurrogateGeneratingFunction {
 	protected String MARKER = "##";	

@@ -26,7 +26,7 @@ import com.google.gson.JsonPrimitive;
 /**
  * This is a wrapper class that allows a JsonObject from google GSON to behave like a PropertyContainer.
  * This makes it a lot easier to get/set properties out of a simple container into provenance objects.
- * @author DMALLEN
+ * @author moxious
  */
 public class JsonObjectPropertyWrapper implements PropertySet {
 	JsonObject obj = null;

@@ -23,7 +23,7 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 /**
  * Attack where an extra thread is added to the graph to represent illicit modification
  * of data, and re-injection into the workflow.
- * @author DMALLEN
+ * @author moxious
  */
 public class DataModificationAttack extends BaseGraph {
 	public DataModificationAttack() throws Exception { 

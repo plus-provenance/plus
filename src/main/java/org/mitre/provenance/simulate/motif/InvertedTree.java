@@ -19,7 +19,7 @@ import org.mitre.provenance.plusobject.PLUSString;
 
 /** 
  * Inverted tree graph motif.
- * @author DMALLEN
+ * @author moxious
  */
 public class InvertedTree extends Motif {
 	public InvertedTree() { 

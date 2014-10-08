@@ -17,7 +17,7 @@ package org.mitre.provenance.surrogate;
 /**
  * This object encapsulates "surrogate quality" metadata.  Use this with surrogates to indicate
  * completeness, accuracy, and any other relevant quality attributes.
- * @author DMALLEN
+ * @author moxious
  */
 public class SurrogateQuality extends org.mitre.provenance.Metadata {
 	private static final long serialVersionUID = 4330606236030800615L;

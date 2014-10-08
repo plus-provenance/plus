@@ -22,7 +22,7 @@ import org.mitre.provenance.PropertySet;
 /**
  * An abstract activity description.  Note that this is *not* an instance of the activity's execution.  For that,
  * you want PLUSInvocation.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSActivity extends PLUSObject
 {

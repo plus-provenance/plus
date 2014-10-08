@@ -26,7 +26,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 /**
  * A PLUS User, that is, an individual or organization using the provenance system.
  * It is extended from PLUSActor because users themselves can participate in provenance graphs.
- * @author DMALLEN
+ * @author moxious
  */
 public class User extends PLUSActor {
 	protected static Logger log = Logger.getLogger(User.class.getName());

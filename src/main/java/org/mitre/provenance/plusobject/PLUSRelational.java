@@ -24,7 +24,7 @@ import org.mitre.provenance.PropertySet;
 
 /**
  * A PLUSObject that is attached to a relational database.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSRelational extends PLUSDataObject {
 	protected static Logger log = Logger.getLogger(PLUSRelational.class.getName());

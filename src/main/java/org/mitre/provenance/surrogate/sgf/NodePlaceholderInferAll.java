@@ -28,7 +28,7 @@ import org.mitre.provenance.user.User;
  * This function always returns an unnamed PLUSGeneric node, no matter what the input is.
  * The edge policy is set to INFER_ALL.   Effectively, this destroys all information about the node except
  * for its ID, but retains graph connectivity.
- * @author DMALLEN
+ * @author moxious
  */
 public class NodePlaceholderInferAll extends SurrogateGeneratingFunction {
 	public PLUSObject generateSurrogate(PLUSObject object, User user) {

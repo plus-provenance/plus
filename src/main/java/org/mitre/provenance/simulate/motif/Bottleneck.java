@@ -18,7 +18,7 @@ import org.mitre.provenance.plusobject.*;
 
 /**
  * Bottleneck graph motif.  A bottleneck is where >= 2 nodes feed into a "choke point", which feeds out to >= 2 nodes.
- * @author DMALLEN
+ * @author moxious
  */
 public class Bottleneck extends Motif {
 	public Bottleneck() { 

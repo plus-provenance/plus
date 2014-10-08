@@ -20,7 +20,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * A content hasher which uses the JRE's built-in implementation of SHA-256.
  * See http://download.oracle.com/javase/1.4.2/docs/api/java/security/MessageDigest.html for more information.
- * @author DMALLEN
+ * @author moxious
  */
 public class SHA256ContentHasher extends ContentHasher {
 	MessageDigest digester; 

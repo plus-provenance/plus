@@ -17,6 +17,6 @@
  * graphs can be thought of as a conjoined set of graph motifs.
  */
 /**
- * @author DMALLEN
+ * @author moxious
  */
 package org.mitre.provenance.simulate.motif;

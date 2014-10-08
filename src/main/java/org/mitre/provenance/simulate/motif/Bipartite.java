@@ -19,7 +19,7 @@ import org.mitre.provenance.plusobject.PLUSString;
 
 /**
  * Bipartite graph motif.
- * @author DMALLEN
+ * @author moxious
  */
 public class Bipartite extends Motif {
 	public Bipartite() { 

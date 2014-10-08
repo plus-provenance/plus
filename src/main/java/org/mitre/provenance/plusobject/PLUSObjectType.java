@@ -20,7 +20,7 @@ import org.mitre.provenance.plusobject.marking.Taint;
 
 /**
  * Models the type of a PLUSObject.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSObjectType
 {

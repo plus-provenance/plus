@@ -18,7 +18,7 @@ import org.mitre.provenance.PLUSException;
 
 /**
  * Exception used to indicate that a given object does not exist.
- * @author DMALLEN
+ * @author moxious
  */
 public class DoesNotExistException extends PLUSException {
 	private static final long serialVersionUID = 5680935251131876261L;

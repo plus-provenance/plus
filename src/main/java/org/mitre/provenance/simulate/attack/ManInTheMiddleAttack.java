@@ -22,7 +22,7 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 /**
  * Attack where extra nodes are introduced into the graph at each junction,
  * representing either monitoring, data stealing, etc. 
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class ManInTheMiddleAttack extends BaseGraph {

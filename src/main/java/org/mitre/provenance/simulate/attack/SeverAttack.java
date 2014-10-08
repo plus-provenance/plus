@@ -16,7 +16,7 @@ package org.mitre.provenance.simulate.attack;
 
 /**
  * Attack where the base graph is severed into two distinct graphs by removing a single edge.
- * @author DMALLEN
+ * @author moxious
  */
 public class SeverAttack extends BaseGraph {
 	public SeverAttack() throws Exception { 

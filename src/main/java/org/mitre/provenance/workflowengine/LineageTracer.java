@@ -28,7 +28,7 @@ import org.mitre.provenance.workflowengine.activity.Activity;
  * This particular class, while concrete, does nothing but print out debugging messages about the events that are
  * being fired.  You need to subclass this to do something useful.
  * 
- * @author DMALLEN
+ * @author moxious
  */
 public class LineageTracer {
 	protected static Logger log = Logger.getLogger(LineageTracer.class.getName());

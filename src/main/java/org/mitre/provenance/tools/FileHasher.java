@@ -36,7 +36,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 
 /**
  * A simple tool to ease hashing/extraction of metadata of local files.
- * @author DMALLEN
+ * @author moxious
  */
 public class FileHasher {		
 	protected static final Logger log = Logger.getLogger(FileHasher.class.getName());

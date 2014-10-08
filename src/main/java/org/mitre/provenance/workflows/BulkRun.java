@@ -27,12 +27,10 @@ import org.mitre.provenance.user.PrivilegeSet;
 
 /**
  * A quick utility to populate a provenance database with some test cases.
- * @author DMALLEN
+ * @author moxious
  */
 public class BulkRun {
-	public BulkRun() { 
-		
-	}
+	public BulkRun() { ; }  		
 	
 	/**
 	 * This method takes some time to run.  It's intended to populate the database with a sample of basic provenance workflows.
@@ -41,7 +39,7 @@ public class BulkRun {
 	 */
 	public void run() throws Exception { 
 		List<ProvenanceCollection> cols = new ArrayList<ProvenanceCollection>();
-		
+	
 		PrivilegeSet ps = new PrivilegeSet();
 		ps.addPrivilege(PrivilegeClass.PUBLIC);
 
@@ -73,21 +71,19 @@ public class BulkRun {
 		
 		AMPPDemo a = new AMPPDemo(); a.finalize();
 		cols.add(a); 
-		
+	
 		AnalysisWorkflow af =  new AnalysisWorkflow();  af.finalize();
 		cols.add(af);
-				
+			
 		SimpleWorkflow sf = new SimpleWorkflow();
 		cols.add(sf);
 						
 		cols.add(TemperatureConversion.create());
-		
+
 		for(ProvenanceCollection col : cols) { 
 			Neo4JStorage.store(col);			
 		}		
 	}
 	
-	public static void main(String [] args) throws Exception {
-		new BulkRun().run();
-	}
-}
+	public static void main(String [] args) throws Exception { new BulkRun().run(); }
+} // End BulkRun

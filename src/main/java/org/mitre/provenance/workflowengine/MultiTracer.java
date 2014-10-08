@@ -23,7 +23,7 @@ import org.mitre.provenance.workflowengine.activity.Activity;
 /**
  * All this object does is act like a single LineageTracer when in fact it invokes multiple tracers in the background.
  * This way, a workflow can use only one tracer, but have it do many different things.
- * @author DMALLEN
+ * @author moxious
  */
 public class MultiTracer extends LineageTracer {
 	protected Vector <LineageTracer> tracers;

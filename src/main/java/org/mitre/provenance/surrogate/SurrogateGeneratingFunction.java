@@ -20,7 +20,7 @@ import org.mitre.provenance.user.User;
 /**
  * This function describes the interface for building a surrogate generating function.
  * @see SurrogateGeneratingFunction#generateSurrogate(PLUSObject, User)
- * @author DMALLEN
+ * @author moxious
  *
  */
 public abstract class SurrogateGeneratingFunction {

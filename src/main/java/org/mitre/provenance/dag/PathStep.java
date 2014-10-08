@@ -20,7 +20,7 @@ import org.mitre.provenance.plusobject.PLUSObject;
 /**
  * A single step movement through a LineageDAG.  You could think of a LineageDAG as a pile of these, 
  * or a DAGPath as a list of sequential PathSteps.  
- * @author DMALLEN
+ * @author moxious
  */
 public class PathStep implements Cloneable {
 	/** The node from which the step was taken */

@@ -35,7 +35,7 @@ import org.mitre.provenance.workflowengine.activity.Activity;
  * This object implements the lineage tracer API and is used for capturing information about workflows
  * that are being executed.  The captured information is stored in an PLUS-specific schema within a 
  * relational database.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class RelationalLineageCapture extends LineageTracer {

@@ -20,7 +20,7 @@ import org.mitre.provenance.plusobject.PLUSString;
 
 /**
  * Diamond graph motif.   A diamond is where 1 node feeds downstream to >= 2 nodes, which then re-converge to one downstream node.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class Diamond extends Motif {

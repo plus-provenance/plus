@@ -19,7 +19,7 @@ package org.mitre.provenance.plusobject;
  * having them mixed in with invocations, etc.  It also sets the object type to "data" all the time.  Ho hum.
  * 
  * <p>All constructors call super
- * @author DMALLEN
+ * @author moxious
  */
 public abstract class PLUSDataObject extends PLUSObject {
 	public PLUSDataObject() { 

@@ -20,7 +20,7 @@ import org.mitre.provenance.user.User;
 
 /**
  * This SGF sets an edge policy of "HIDE ALL" on the matched object.
- * @author DMALLEN
+ * @author moxious
  * @see SurgicalSGF
  */
 public class SurgicalHideAll extends SurgicalSGF {

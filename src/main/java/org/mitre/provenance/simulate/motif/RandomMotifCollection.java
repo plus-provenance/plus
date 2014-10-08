@@ -25,7 +25,7 @@ import org.mitre.provenance.simulate.SyntheticGraphProperties;
 
 /**
  * This class mocks up a synthetic provenance DAG by assembling a random collection of various motifs.
- * @author DMALLEN
+ * @author moxious
  */
 public class RandomMotifCollection extends SyntheticGraph {	
 	protected PLUSWorkflow wf = null;

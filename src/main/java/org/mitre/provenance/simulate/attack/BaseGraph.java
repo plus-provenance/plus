@@ -26,7 +26,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 /**
  * This is a model of a base NCEL graph, re-created in code.
  * Subclasses will launch different kinds of attacks on this graph.
- * @author DMALLEN
+ * @author moxious
  */
 public class BaseGraph {
 	PLUSObject _b; 

@@ -16,7 +16,7 @@ package org.mitre.provenance.surrogate;
 
 /**
  * This exception is used by surrogacy functions to indicate that something bad has happened.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class SurrogateException extends Exception {

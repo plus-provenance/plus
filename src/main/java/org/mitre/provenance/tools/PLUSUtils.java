@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 
 /**
  * This is a garbage can class, with utility methods relevant to different places in the code.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSUtils {
 	private static final String PLUS_OID_PREFIX = "urn:uuid:mitre:plus:";

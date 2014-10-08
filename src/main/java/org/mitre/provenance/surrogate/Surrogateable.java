@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Represents and object that can either be a surrogate, or have surrogates generated for it.
  * A surrogate is an alternate version of a provenance object, usually with less information, that is
  * releasable to someone with fewer permissions than are required to see the full object.
- * @author DMALLEN
+ * @author moxious
  */
 public abstract class Surrogateable {
 	protected static Logger log = Logger.getLogger(Surrogateable.class.getName());

@@ -16,6 +16,6 @@
  * This package contains implementations of edge voters.
  */
 /**
- * @author DMALLEN
+ * @author moxious
  */
 package org.mitre.provenance.surrogate.edgevoter;

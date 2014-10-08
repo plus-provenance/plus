@@ -16,7 +16,7 @@
  * Classes related to simulating provenance graphs for testing/experimentation.
  */
 /**
- * @author DMALLEN
+ * @author moxious
  *
  */
 package org.mitre.provenance.simulate;

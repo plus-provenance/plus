@@ -22,7 +22,7 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 
 /**
  * Attack where one extra side-thread is added representing theft of a data item.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class DataStealingAttack extends BaseGraph {

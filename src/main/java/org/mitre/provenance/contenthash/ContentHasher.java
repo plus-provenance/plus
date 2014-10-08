@@ -22,7 +22,7 @@ import java.security.MessageDigest;
 /**
  * In certain contexts, it may be useful to pair a PLUSObject with a hash of the contents of the data asset that it represents.
  * This abstract class provides methods and an interface useful for various content hashing algorithms.
- * @author DMALLEN
+ * @author moxious
  */
 public abstract class ContentHasher {
 	protected byte[] hashWith(InputStream is, MessageDigest digester) throws IOException { 

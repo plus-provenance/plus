@@ -17,7 +17,7 @@ package org.mitre.provenance.plusobject;
 /**
  * A generic plus object.  Contains no data other than what is in the default PLUSObject base type.
  * Default plus objects can't be instantiated and written to the DB though, so we have PLUSGeneric.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSGeneric extends PLUSObject {
 	public static final String PLUS_SUBTYPE_GENERIC = "generic";

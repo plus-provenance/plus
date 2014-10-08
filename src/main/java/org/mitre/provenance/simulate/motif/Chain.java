@@ -19,7 +19,7 @@ import org.mitre.provenance.plusobject.PLUSString;
 
 /**
  * Chained graph motif.   A chain is just a linear progression of >= 2 nodes.
- * @author DMALLEN
+ * @author moxious
  */
 public class Chain extends Motif {
 	public Chain() { 

@@ -24,7 +24,7 @@ import org.mitre.provenance.db.neo4j.Neo4JStorage;
  * 
  * <p>These helper classes help generate instances of graphs that demonstrate attacks.
  * 
- * @author DMALLEN
+ * @author moxious
  */
 public class AttackGenerator {
 	public static void main(String [] args) throws Exception { 

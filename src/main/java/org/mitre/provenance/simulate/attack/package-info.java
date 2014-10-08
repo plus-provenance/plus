@@ -22,6 +22,6 @@
  * hypothesis of what these changes will look like.
  */
 /**
- * @author DMALLEN
+ * @author moxious
  */
 package org.mitre.provenance.simulate.attack;

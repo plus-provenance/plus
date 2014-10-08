@@ -21,7 +21,7 @@ import java.util.*;
 /**
  * Another special bogus activity.  This one emits specified objects in its output.
  * The execute() method doesn't even do anything except parrot the tuples you gave it earlier.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSObjectEmittingActivity extends Activity {
 	Hashtable <String,PLUSObject> emitted;

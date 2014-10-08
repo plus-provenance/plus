@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /**
- * @author DMALLEN
+ * @author moxious
  * This package contains classes relevant to the use and traversal of directed acyclic graphs
  */
 package org.mitre.provenance.dag;

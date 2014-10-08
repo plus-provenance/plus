@@ -24,7 +24,7 @@ import java.util.Random;
 /**
  * An edge voter that can be used for test purposes and in experimental code.  It votes at random,
  * or according to assigned probabilities for votes given in the constructor.
- * @author DMALLEN
+ * @author moxious
  */
 public class RandomEdgeVoter implements EdgeVoter {
 	protected double visible = 0.33;

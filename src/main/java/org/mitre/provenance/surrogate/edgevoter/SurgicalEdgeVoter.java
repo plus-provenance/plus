@@ -20,7 +20,7 @@ import org.mitre.provenance.surrogate.EdgeVoter;
 
 /**
  * Make one particular vote on one particular edge.
- * @author DMALLEN
+ * @author moxious
  */
 public class SurgicalEdgeVoter implements EdgeVoter {
 	String markerID; 

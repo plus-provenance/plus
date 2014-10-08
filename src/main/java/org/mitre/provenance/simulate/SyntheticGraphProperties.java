@@ -23,7 +23,7 @@ import org.mitre.provenance.user.PrivilegeSet;
 
 /**
  * This object contains parameters for generating synthetic graphs.
- * @author DMALLEN
+ * @author moxious
  */
 public class SyntheticGraphProperties {
 	/** The name of the workflow which holds the synthetic graph. */

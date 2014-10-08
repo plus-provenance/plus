@@ -21,7 +21,7 @@ import org.mitre.provenance.PropertySet;
 
 /**
  * The simplest plus data item possible - just a string.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSString extends PLUSDataObject {
 	String content;

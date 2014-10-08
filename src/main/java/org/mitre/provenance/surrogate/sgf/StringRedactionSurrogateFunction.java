@@ -27,7 +27,7 @@ import java.util.Date;
 /**
  * Sample surrogate function.  Given a simple string, replace all instances of "banned words"
  * with the string "(REDACTED)"
- * @author DMALLEN
+ * @author moxious
  */
 public class StringRedactionSurrogateFunction extends SurrogateGeneratingFunction {
 	/** The specific list of words that are banned. */

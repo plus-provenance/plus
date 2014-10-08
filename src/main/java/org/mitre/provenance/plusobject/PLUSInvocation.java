@@ -28,7 +28,7 @@ import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
  * Invocations depend on activities and workflows.  Note that this object initially stores only the ID suitable
  * for fetching those objects.  It does not automatically load those objects.  Because they are mutually dependent,
  * you have to be careful not to have automatic code that causes one to load the other recursively.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSInvocation extends PLUSObject {
 	/** Stores the workflow associated with this invocation */

@@ -30,7 +30,7 @@ import org.mitre.provenance.user.PrivilegeClass;
 /**
  * Component of a DAG, consisting of a single invocation and a number of outputs.  Used
  * for building larger composite synthetic DAGs.
- * @author DMALLEN
+ * @author moxious
  */
 public class DAGComponent extends ProvenanceCollection {	
 	public static Random randGen = new Random();

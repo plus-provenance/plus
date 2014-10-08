@@ -994,27 +994,13 @@ public class Neo4JStorage {
 		return raw;
 	}
 	
-	public static boolean update(PLUSObject o, String propName, Object propValue, String newPropName, Object newPropValue) throws PLUSException {
-		if(newPropName == null || "".equals(newPropName)) throw new PLUSException("Invalid new property name");
-		
-		if(db == null) initialize();
-		
-		Node n = exists(o);
-		if(n == null) throw new PLUSException("Can't update non-existant node " + o.getId());
-		
-		if(!n.hasProperty(propName)) throw new PLUSException("Can't update property " + propName + " because that node doesn't have that property.");
-		
-		if(!newPropName.equals(propName))
-			n.removeProperty(propName);
-		
-		if(propValue != null && !formatProperty(propValue).equals(n.getProperty(propName)))
-			throw new PLUSException("Cannot update property '" + propName + "' on " + o.getId() + " because you said its current value was " + 
-					formatProperty(propValue) + " and that doesn't match what I have (" + n.getProperty(propName));
-		
-		n.setProperty(newPropName, formatProperty(newPropValue));
-		return true;
-	} // End update
-	
+	/**
+	 * Store a PLUSObject in the database.  This checks for duplicates, and will return the existing node (without doing anything new) if 
+	 * the OID of the object already exists in the database.
+	 * @param o the object to store
+	 * @return the new Node created, or the pre-existing node (if applicable)
+	 * @throws PLUSException
+	 */
 	public static Node store(PLUSObject o) throws PLUSException {
 		if(db == null) initialize(); 
 				
@@ -1065,10 +1051,22 @@ public class Neo4JStorage {
 		} 
 	} // End store
 	
+	/**
+	 * Given a metadata key name, this returns the name of the neo4j property used to store that metadata property.
+	 * @param keyName a metadata keyname.
+	 * @return a neo4j property name suitable for use in a node.
+	 */
 	public static String getMetadataPropertyName(Object keyName) { 
 		return METADATA_PREFIX + ":" + keyName; 
 	}
 	
+	/**
+	 * Store a collection
+	 * @param col the provenance collection
+	 * @return the number of new objects created (if some already exist, they will not be re-created, so this number may be
+	 * less than the total number of items in the collection)
+	 * @throws PLUSException
+	 */
 	public static int store(ProvenanceCollection col) throws PLUSException {
 		if(db == null) initialize(); 
 		int x = 0;
@@ -1100,6 +1098,15 @@ public class Neo4JStorage {
 		return x;
 	}
 	
+	/**
+	 * Store an object that is capable of expressing itself as a set of properties; this is a common
+	 * interface for a number of provenance classes.
+	 * <p>Note that this method does not check to see whether the object already exists or not; caller is
+	 * responsible for establishing whether or not the object should be created.
+	 * @param n4jc a property capable object
+	 * @return the node created, containing the properties
+	 * @throws PLUSException
+	 */
 	public static Node store(PropertyCapable n4jc) throws PLUSException {
 		if(db == null) initialize(); 
 		if(n4jc == null) throw new PLUSException("Cannot store null object."); 

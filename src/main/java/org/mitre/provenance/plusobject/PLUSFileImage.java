@@ -16,7 +16,7 @@ package org.mitre.provenance.plusobject;
 
 /**
  * An image file.  This is a simple hack used to display images as data items.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSFileImage extends PLUSFile {
 	public static final String PLUS_SUBTYPE_FILE_IMAGE = "file-image";

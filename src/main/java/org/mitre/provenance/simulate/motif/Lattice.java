@@ -19,7 +19,7 @@ import org.mitre.provenance.plusobject.PLUSString;
 
 /**
  * Lattice graph motif.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class Lattice extends Motif {

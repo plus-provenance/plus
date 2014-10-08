@@ -39,7 +39,7 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
  * tends to store nodes/edges in a map, but we need to be able to refer to them in an ordered list.  The super-class doesn't
  * support that, so we need to implement that for this class.
  * 
- * @author DMALLEN
+ * @author moxious
  */
 public class DAGAholic extends SyntheticGraph {
 	protected static Logger log = Logger.getLogger(DAGAholic.class.getName());

@@ -38,7 +38,7 @@ import org.mitre.provenance.user.PrivilegeSet;
  * 
  * <p>This base class does all of the house-keeping.  Extensions of this class actually specify the
  * shapes that are studied.
- * @author DMALLEN
+ * @author moxious
  */
 public class Motif extends ProvenanceCollection {
 	protected String wfName; 

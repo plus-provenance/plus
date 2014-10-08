@@ -28,7 +28,7 @@ import org.mitre.provenance.contenthash.SHA256ContentHasher;
 
 /**
  * A generic file existing in some abstract path.
- * @author DMALLEN
+ * @author moxious
  */
 public class PLUSFile extends PLUSDataObject {
 	protected File file;

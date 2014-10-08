@@ -29,7 +29,7 @@ import org.mitre.provenance.workflowengine.activity.Activity;
 /**
  * The simplest, most straightforward workflow available.
  * A transitions to B, transitions to C.  End of story.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class SimpleWorkflow extends ProvenanceCollection {

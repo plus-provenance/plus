@@ -31,7 +31,7 @@ import org.mitre.provenance.workflowengine.Transition;
  * There are two types of transitions; "transitions" are arcs <b>out of</b> the activity going 
  * elsewhere.  "introductions" are arcs <b>into</b> the activity coming from elsewhere.  In this
  * sense, they can be thought of as a graph or form of doubly linked list.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class Activity {	

@@ -20,7 +20,7 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 /**
  * Disruption attack where the graph is drastically cut off because resources are
  * disrupted or taken off line.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class DisruptionAttack extends BaseGraph {

@@ -32,7 +32,7 @@ import org.mitre.provenance.tools.PLUSUtils;
  * A collection of provenance objects, nodes and edges.
  * Basic provenance collections cannot be assumed to be well-connected.  They do not necessarily comprise a graph.  See LineageDAG
  * for an example of an actual graph, which extends this class.
- * @author DMALLEN
+ * @author moxious
  * @see org.mitre.provenance.dag.LineageDAG
  */
 public class ProvenanceCollection implements Cloneable {

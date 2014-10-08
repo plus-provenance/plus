@@ -16,7 +16,7 @@ package org.mitre.provenance.plusobject.json;
 
 /**
  * A simple exception to indicate problems serializing JSON
- * @author DMALLEN
+ * @author moxious
  */
 public class JsonFormatException extends Exception {
 	private static final long serialVersionUID = -6627577638665183362L;

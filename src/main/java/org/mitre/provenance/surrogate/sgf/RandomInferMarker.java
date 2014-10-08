@@ -21,7 +21,7 @@ import org.mitre.provenance.user.User;
 /**
  * This SGF is used for testing and experimentation purposes.  It has the effect of voting INFER randomly on edges,
  * according to the specified CHANCE percentage.
- * @author DMALLEN
+ * @author moxious
  */
 public class RandomInferMarker extends SurrogateGeneratingFunction {
 	public static final float CHANCE = (float)0.3; 

@@ -35,7 +35,7 @@ import org.mitre.provenance.tools.PLUSUtils;
  * about the nature of the information in the DAG.  This is a first-class object which can be
  * written, loaded, and so on.
  * @see LineageDAG#getFingerPrint()
- * @author DMALLEN
+ * @author moxious
  */
 public class FingerPrint extends DAGWatcher implements PropertyCapable {
 	private static final Logger log = Logger.getLogger(FingerPrint.class.getName());

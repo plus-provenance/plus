@@ -17,7 +17,7 @@ package org.mitre.provenance.workflowengine.activity;
 /**
  * This class exists just to create a separate type for activity exceptions, so that they can be handled
  * separately.
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class ActivityException extends Exception {

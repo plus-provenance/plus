@@ -24,7 +24,7 @@ import org.mitre.provenance.plusobject.PLUSObject;
  * This object holds an entire collection of paths, keyed by their source/destination.
  * Because more than one distinct path can exist from A -> B, the values are lists of DAGPaths, rather than a
  * single DAGPath.
- * @author DMALLEN
+ * @author moxious
  */
 public class PathCollection extends HashMap<String,List<DAGPath>> {
 	private static final long serialVersionUID = 3645381305648440636L;

@@ -38,7 +38,7 @@ import com.google.gson.JsonObject;
 
 /**
  * An object that knows how to take JSON objects and turn them into ProvenanceCollections.
- * @author DMALLEN
+ * @author moxious
  */
 public class JSONConverter {
 	private static Logger log = Logger.getLogger(JSONConverter.class.getName());

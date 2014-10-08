@@ -20,7 +20,7 @@ import org.mitre.provenance.plusobject.PLUSObject;
  * A kind of marking that can be inherited down the lineage tree.  E.g. in the lineage DAG
  * A -> B -> C, if A has a particular heritable marking, then B and C can be considered to have
  * the same marking.
- * @author DMALLEN
+ * @author moxious
  */
 public abstract class HeritableMarking extends Marking {	
 	public HeritableMarking() { 

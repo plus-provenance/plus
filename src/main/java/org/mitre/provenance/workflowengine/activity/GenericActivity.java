@@ -23,7 +23,7 @@ import org.mitre.provenance.plusobject.*;
  * is not executable.  This is to create the differentiation between: <b>(a)</b> a java Activity object 
  * that the user created in order to execute as part of a workflow, and <b>(b)</b> an Activity object
  * created as a result of pulling data from the database. 
- * @author DMALLEN
+ * @author moxious
  *
  */
 public class GenericActivity extends Activity {
