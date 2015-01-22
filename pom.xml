@@ -340,7 +340,7 @@
 		        <version>2.17</version>
 		        		        
 		        <configuration>
-		          <skipTests>false</skipTests>
+		          <skipTests>true</skipTests>
 		          <excludes>
 		            <!--  At this point, the integration environment isn't configured yet, so those are run separately/manually. -->
 		            <exclude>**/integration/*.java</exclude>		            
