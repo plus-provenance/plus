@@ -27,6 +27,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -68,6 +69,7 @@ public class ObjectServices {
 	@Path("/search")
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
+        // @Consumes("application/x-javascript")
 	@ApiOperation(value = "Search for provenance objects by a given search term", notes="", response=ProvenanceCollection.class)
 	@ApiResponses(value = {
 	  @ApiResponse(code = 400, message="Error processing search")	  
