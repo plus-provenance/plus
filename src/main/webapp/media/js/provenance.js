@@ -243,7 +243,8 @@ function Provenance() {
 		props.type = "POST";
 		props.data = { searchTerm: properties.searchTerm };
 		props.url = "/plus/api/object/search";
-		props.contentType = "application/x-javascript";
+		// props.contentType = "application/x-javascript";
+                props.contentType = "application/x-www-form-urlencoded";
 		
 		console.log("POSTING SEARCH");
 		props.success = function(d) { 
