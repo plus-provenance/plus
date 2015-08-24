@@ -155,7 +155,10 @@ public class DAGServices {
 			}
 		}
 		
-		if(reasons.length() > 0) throw new CollectionFormatException(reasons.toString());
+		// [piekutsj] Commenting out the exception, keeping the warnings.  This action subject to revision at a later time, but for now,
+		// after some discussion it was decided that it would be best if REST actions were consistent to how local behaves, 
+		// i.e., skip duplicate node, with warning.
+		//if(reasons.length() > 0) throw new CollectionFormatException(reasons.toString());
 		
 		return col;
 	} // End checkGraphFormat
