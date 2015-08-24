@@ -489,6 +489,7 @@ public class ProvenanceCollection implements Cloneable {
 		Map<String,PLUSObject> on = other.nodes;
 		Map<String,PLUSEdge> oe = other.edges;
 		Map<String,NonProvenanceEdge> npes = other.npes;
+		Map<String,PLUSActor> oa = other.actors;
 		
 		for(String k : on.keySet()) {
 			if(addNode(on.get(k), force)) itemsAdded++;  
@@ -497,6 +498,11 @@ public class ProvenanceCollection implements Cloneable {
 		for(String k : oe.keySet()) {
 			if(addEdge(oe.get(k), force)) itemsAdded++; 
 		}
+		
+		for(String k : oa.keySet()) { 
+			if(addActor(oa.get(k), force)) itemsAdded++;
+		}
+		
 		
 		for(String k : npes.keySet()) { 
 			if(addNonProvenanceEdge(npes.get(k), force)) itemsAdded++;
