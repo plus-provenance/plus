@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 
-package org.mitre.provenance.simulate.motif;
+package org.mitre.provenance.tools;
+
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.client.ProvenanceClientException;
 import org.mitre.provenance.client.RESTProvenanceClient;
 import org.mitre.provenance.simulate.SyntheticGraphProperties;
+import org.mitre.provenance.simulate.motif.RandomMotifCollection;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,7 +70,7 @@ public class RemoteLoader {
 		case 0: 								
 			while (numGraphs == 0) { 
 				System.out.printf("Generating Motif Graph number "  + count + "........");
-				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth, "REST"); //construct REST graph
+				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth); //construct REST graph
 				System.out.printf( " done.%n");
 				
 				Instant start = Instant.now(); //Start timer to record how long Uploading takes
@@ -103,7 +105,7 @@ public class RemoteLoader {
 		default: 								
 			for (int i=1; i<=numGraphs; i++) {
 				System.out.printf("Generating Motif Graph number "  + i + "........");
-				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth, "REST");
+				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth);
 				System.out.printf(" done.%n");
 					
 				Instant start = Instant.now();
@@ -161,7 +163,7 @@ public class RemoteLoader {
 		case 0: 								
 			while (numGraphs == 0) { 
 				System.out.printf("Generating Motif Graph number "  + count + "........");
-				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth, "REST"); //construct REST graph
+				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth); //construct REST graph
 				System.out.printf( " done.%n");
 				
 				Instant start = Instant.now(); //Start timer to record how long Uploading takes
@@ -196,7 +198,7 @@ public class RemoteLoader {
 		default: 								
 			for (int i=1; i<=numGraphs; i++) {
 				System.out.printf("Generating Motif Graph number "  + i + "........");
-				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth, "REST");
+				RandomMotifCollection RandomMotif = new RandomMotifCollection(Synth);
 				System.out.printf(" done.%n");
 					
 				Instant start = Instant.now();

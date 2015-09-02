@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.mitre.provenance.client;
+package org.mitre.provenance.tools;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -23,11 +23,11 @@ import java.util.Scanner;
 
 import java.time.Instant;
 import org.mitre.provenance.PLUSException;
+import org.mitre.provenance.client.RESTProvenanceClient;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.simulate.motif.Diamond;
 import org.mitre.provenance.simulate.motif.Motif;
-import org.mitre.provenance.simulate.motif.MotifLooper2;
-import org.mitre.provenance.simulate.motif.RemoteLoader;
+import org.mitre.provenance.tools.RemoteLoader;
 
 public class SelectivityTest {
 	/*
@@ -103,7 +103,7 @@ public class SelectivityTest {
 		String query = "MATCH (n:Provenance) where n.name =~\"SelectivityTest number.*\" return n;";
 		
 		Instant start = Instant.now();
-		collection = client.Query(query);
+		collection = client.query(query);
 		Instant end = Instant.now();
 		int instantTime = (int) Duration.between(start,end).getSeconds();
 		

@@ -24,11 +24,15 @@ import org.mitre.provenance.plusobject.PLUSString;
  *
  */
 public class Diamond extends Motif {
-	public Diamond() { 
-		super("Diamond"); 
-		init(); 
+	public Diamond() {
+		this("Diamond");
 	}
 
+	public Diamond(String name) {
+		super(name);
+		init();
+	}
+	
 	protected void init() {
 		PLUSString begin = new PLUSString("Diamond: BEGIN");
 		PLUSString m1 = new PLUSString("Diamond: Middle 1 ##"); 
