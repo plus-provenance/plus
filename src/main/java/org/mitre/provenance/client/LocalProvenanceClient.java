@@ -14,7 +14,9 @@
  */
 package org.mitre.provenance.client;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
@@ -27,6 +29,13 @@ import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
 import org.mitre.provenance.user.PrivilegeClass;
 import org.mitre.provenance.user.User;
+import org.neo4j.cypher.javacompat.ExecutionResult;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.ResourceIterator;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.TransactionFailureException;
+
 
 /**
  * This class permits the use of a provenance client attached to a local database.  This local class is essentially a 
@@ -38,6 +47,7 @@ import org.mitre.provenance.user.User;
  */
 public class LocalProvenanceClient extends AbstractProvenanceClient {
 	protected User user = User.PUBLIC;
+	protected static Logger log = Logger.getLogger(LocalProvenanceClient.class.getName());
 	
 	public LocalProvenanceClient() { this(User.PUBLIC); }
 	
@@ -159,5 +169,61 @@ public class LocalProvenanceClient extends AbstractProvenanceClient {
 		} catch (PLUSException e) {
 			throw new ProvenanceClientException(e);
 		}
+	}
+
+	/**
+	 * TODO: code in this method should be refactored into Neo4JStorage, then called
+	 * again in the service layer for reuse, better internal settings.
+	 */
+	public ProvenanceCollection query(String query) throws IOException {
+		ProvenanceCollection col = new ProvenanceCollection();
+		try (Transaction tx = Neo4JStorage.beginTx()) { 
+			log.info("Query for " + query);
+			ExecutionResult rs = Neo4JStorage.execute(query);
+
+			int limit = 500;
+			
+			for(String colName : rs.columns()) {
+				int x=0;							
+				ResourceIterator<?> it = rs.columnAs(colName);
+
+				while(it.hasNext() && x < limit) {
+					Object next = it.next();
+					
+					if(next instanceof Node) { 
+						if(Neo4JStorage.isPLUSObjectNode((Node)next))  
+							col.addNode(Neo4JPLUSObjectFactory.newObject((Node)next));
+						else { 
+							log.info("Skipping non-provnenace object node ID " + ((Node)next).getId());
+							continue;
+						}
+					} else if(next instanceof Relationship) { 
+						Relationship rel = (Relationship)next;
+						if(Neo4JStorage.isPLUSObjectNode(rel.getStartNode()) && 
+						   Neo4JStorage.isPLUSObjectNode(rel.getEndNode())) {
+							col.addNode(Neo4JPLUSObjectFactory.newObject(rel.getStartNode()));
+							col.addNode(Neo4JPLUSObjectFactory.newObject(rel.getEndNode()));
+							col.addEdge(Neo4JPLUSObjectFactory.newEdge(rel));
+						} else { 
+							log.info("Skipping non-provenace edge not yet supported " + rel.getId());
+						}
+					}
+				} // End while
+				
+				it.close();
+				
+				if((col.countEdges() + col.countNodes()) >= limit) break;
+			}			
+			
+			tx.success();
+		} catch(TransactionFailureException tfe) { 
+			// Sometimes neo4j does the wrong thing, and throws these exceptions failing to commit
+			// on simple read-only queries.  Which doesn't make sense.  Subject to a bug report.
+			log.warning("Transaction failed when searching graph: " + tfe.getMessage() + " / " + tfe);
+		} catch(Exception exc) { 
+			exc.printStackTrace();
+		}	
+		
+		return col;
 	}
 } // End LocalProvenanceClient

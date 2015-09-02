@@ -74,12 +74,12 @@ public abstract class AbstractProvenanceClient {
 	}
 	
 	/**
-	 * Send a Cypher query to a host and and return the graph
+	 * Send a Cypher query and return the graph
 	 * @param the query string written in Cypher
 	 * @return the requested query stored as a ProvenanceCollection
 	 * @throws IOException
 	 */
-	public abstract ProvenanceCollection Query(String query) throws IOException; 
+	public abstract ProvenanceCollection query(String query) throws IOException; 
 	
 	
 	/**

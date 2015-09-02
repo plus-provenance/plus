@@ -1,5 +1,6 @@
 package org.mitre.provenance.client;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.mitre.provenance.Metadata;
@@ -74,6 +75,10 @@ public class DummyProvenanceClient extends AbstractProvenanceClient {
 
 	public PLUSActor actorExistsByName(String name)
 			throws ProvenanceClientException {
+		throw new RuntimeException(msg);
+	}
+
+	public ProvenanceCollection query(String query) throws IOException {
 		throw new RuntimeException(msg);
 	}
 }

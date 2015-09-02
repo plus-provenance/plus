@@ -267,7 +267,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		throw new ProvenanceClientException("Not yet implemented.");
 	}
 	
-	public ProvenanceCollection Query(String query) throws IOException
+	public ProvenanceCollection query(String query) throws IOException
 	{
 		URL url = new URL("http://" + host + ":" + port + API_DEPLOY_PATH + QUERY_PATH);
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
