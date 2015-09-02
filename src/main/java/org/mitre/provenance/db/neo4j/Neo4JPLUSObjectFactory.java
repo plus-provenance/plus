@@ -74,8 +74,6 @@ import org.neo4j.graphdb.traversal.Uniqueness;
  * @author moxious
  */
 public class Neo4JPLUSObjectFactory {
-	protected static final LRUCache<String,PLUSObject> cache = new LRUCache<String,PLUSObject>(500);
-	
 	protected static final Logger log = Logger.getLogger(Neo4JPLUSObjectFactory.class.getName());
 		
 	/**
@@ -270,8 +268,6 @@ public class Neo4JPLUSObjectFactory {
 	} // End newEdge
 	
 	public static PLUSObject newObject(String oid) throws PLUSException {
-		if(cache.containsKey(oid)) return cache.get(oid);
-		
 		Node n = Neo4JStorage.oidExists(oid);
 		if(n == null) throw new DoesNotExistException(oid);
 		return newObject(n);
@@ -284,7 +280,6 @@ public class Neo4JPLUSObjectFactory {
 			if(!Neo4JStorage.isPLUSObjectNode(n)) throw new PLUSException("Node " + n.getId() + " isn't a PLUSObject node");
 			
 			String oid = (String)n.getProperty(Neo4JStorage.PROP_PLUSOBJECT_ID, null);
-			if(cache.containsKey(oid)) return cache.get(oid);
 			
 			String t = ""+n.getProperty(Neo4JStorage.PROP_TYPE);
 			String st = ""+n.getProperty(Neo4JStorage.PROP_SUBTYPE);
@@ -334,8 +329,6 @@ public class Neo4JPLUSObjectFactory {
 			o.setPrivileges(ps);
 		
 			tx.success();
-
-			cache.put(o.getId(), o);
 			
 			return o;
 		}		

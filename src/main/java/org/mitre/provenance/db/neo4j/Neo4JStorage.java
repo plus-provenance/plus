@@ -72,18 +72,7 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
  */
 public class Neo4JStorage {
 	protected static Logger log = Logger.getLogger(Neo4JStorage.class.getName());
-	
-	/** Caching is a legacy feature from a previous implementation.  It's probably not a good idea to use PLUS node caching
-	 * because Neo4J offers better options itself.  See Neo's documentation on memory mapping files for options on how to 
-	 * greatly speed up database access and keep nodes cached in memory: http://docs.neo4j.org/chunked/stable/configuration-io-examples.html
-	 */
-	protected static final boolean USE_CACHING = false;
-	protected static LRUCache<String,Node> cache = new LRUCache<String,Node>(1); 
-	
-	static { 
-		if(USE_CACHING) cache = new LRUCache<String,Node>(1000);
-	}
-	
+			
 	public static final String METADATA_PREFIX = "metadata";
 	
 	/** Neo4J relationship type: one object input to another */
@@ -469,8 +458,7 @@ public class Neo4JStorage {
 			ResourceIterator<Node> ns = result.columnAs("n");
 						
 			while(ns.hasNext()) {
-				Node an = ns.next();				
-				if(USE_CACHING) cache.put(""+an.getProperty(PROP_ACTOR_ID), an);		
+				Node an = ns.next();						
 				col.addActor(Neo4JPLUSObjectFactory.newActor(an));
 			}
 			
@@ -718,8 +706,6 @@ public class Neo4JStorage {
 		if(db == null) initialize();
 		if(id == null || "".equals(id)) return null;
 		
-		if(cache.containsKey(id)) return cache.get(id);
-		
 		assert(db != null); 
 		
 		Node result = null;
@@ -728,7 +714,6 @@ public class Neo4JStorage {
 			IndexHits<Node> hits = mgr.getNodeAutoIndexer().getAutoIndex().get(PROP_PRIVILEGE_ID, id);
 		
 			result = hits.getSingle();		
-			if(USE_CACHING) if(result != null) cache.put(id, result);
 			tx.success();
 		}
 		
@@ -748,7 +733,6 @@ public class Neo4JStorage {
 		
 		Node result = db.index().getNodeAutoIndexer().getAutoIndex().get("name", name).getSingle();	
 		
-		if(USE_CACHING) if(result != null) cache.put(""+result.getProperty(PROP_PRIVILEGE_ID), result);
 		return result;
 	} // End privilegeExistsByName
 	
@@ -763,8 +747,6 @@ public class Neo4JStorage {
 		
 		if(name == null || "".equals(name)) return null;
 		
-		if(cache.containsKey("ACTOR::" + name)) return cache.get("ACTOR::" + name);
-		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put( "name", name );
 
@@ -776,10 +758,6 @@ public class Neo4JStorage {
 		if(!ns.hasNext()) return null;
 		
 		Node n = ns.next();
-		if(USE_CACHING) { 
-			cache.put(""+n.getProperty(PROP_ACTOR_ID), n);
-			cache.put("ACTOR::" + name, n);
-		}
 	
 		return n;
 	} // End actorExistsByName
@@ -789,8 +767,6 @@ public class Neo4JStorage {
 		
 		if(aid == null || "".equals(aid)) return null;
 		
-		if(cache.containsKey(aid)) return cache.get(aid);
-		
 		Map<String,Object> params = new HashMap<String,Object>();
 		params.put(PROP_ACTOR_ID, aid);
 		
@@ -798,12 +774,10 @@ public class Neo4JStorage {
 		
 		Iterator<Node> ns = Neo4JStorage.execute(query, params).columnAs("n");
 		if(!ns.hasNext()) {
-			if(USE_CACHING) cache.put(aid, null);
 			return null;
 		}
 		
 		Node n = ns.next();
-		if(USE_CACHING) cache.put(aid, n);
 		return n;
 	} // End actorExists
 	
