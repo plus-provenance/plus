@@ -14,6 +14,7 @@
  */
 package org.mitre.provenance.client;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -71,6 +72,15 @@ public abstract class AbstractProvenanceClient {
 	public ProvenanceCollection getGraph(PLUSObject obj, TraversalSettings desc) throws ProvenanceClientException { 
 		return getGraph(obj.getId(), desc); 
 	}
+	
+	/**
+	 * Send a Cypher query to a host and and return the graph
+	 * @param the query string written in Cypher
+	 * @return the requested query stored as a ProvenanceCollection
+	 * @throws IOException
+	 */
+	public abstract ProvenanceCollection Query(String query) throws IOException; 
+	
 	
 	/**
 	 * Determine whether or not an object exists.

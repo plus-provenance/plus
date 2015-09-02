@@ -14,8 +14,18 @@
  */
 package org.mitre.provenance.client;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
@@ -67,6 +77,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String API_DEPLOY_PATH = "/plus/api";
 	protected static final String PRIVILEGE_PATH = "/privilege/dominates/";
 	protected static final String SEARCH_PATH = "/object/search/";
+	protected static final String QUERY_PATH = "/graph/search";
 	protected static final String GET_ACTOR_PATH = "/actor/";
 	protected static final String GET_ACTOR_BY_NAME_PATH = "/actor/name/";
 	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners";
@@ -78,6 +89,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String GET_SINGLE_NODE_PATH = "/object/";
 	
 	protected Client client = null;
+	
+	public RESTProvenanceClient() {
+		
+	}
 	
 	public RESTProvenanceClient(String host) throws ProvenanceClientException {
 		this(host, "80");
@@ -144,7 +159,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	/**
 	 * Performs various checks on a response from the server; ideally this does nothing at all, but may 
 	 * throw an exception in various common error conditions (response is a 404, etc)
-	 * @param r the response
+	 * @param r the responseI
 	 * @throws ProvenanceClientException
 	 */
 	protected void validateResponse(Response r) throws ProvenanceClientException {
@@ -182,12 +197,27 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	    validateResponse(response);
 	    
 		String output = response.readEntity(String.class);
-	    
+	   
+		
 	    System.out.println(response); 
-	    System.out.println(response.getLength());
+		System.out.println(response.getLength());
 	    System.out.println(response.getStatus());
 	    System.out.println(output);
 		return true;
+	}
+	
+	public boolean report(ProvenanceCollection col, String quiet) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(NEW_GRAPH_PATH);
+
+		MultivaluedMap<String,String> formData = new MultivaluedHashMap<String,String>();
+		String json = JSONConverter.provenanceCollectionToD3Json(col);
+	    formData.add("provenance", json);
+	    
+	    Response response = r.post(Entity.form(formData));	    				 
+	    
+	    validateResponse(response);
+	    
+	    return true;
 	}
 	
 	public ProvenanceCollection getGraph(String oid) throws ProvenanceClientException {
@@ -199,8 +229,11 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		Builder r = getRequestBuilderForPath(GET_GRAPH_PATH + oid, params);
 
 		System.out.println(r);
+		System.out.println("GOT THIS FAR!");
 		
 		Response response = r.get();
+		System.out.println("GOT THIS FAR 2!");
+		
 		return provenanceCollectionFromResponse(response);
 	} // End getGraph
 	
@@ -222,11 +255,11 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	public ProvenanceCollection search(String searchTerm, int max)
 			throws ProvenanceClientException {
 		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
-		params.add("n", max);		
+		params.add("n", max);		//Add a get-parameter, replace "n" with "query" and max with string of cypher query. 
 		
-		Builder r = getRequestBuilderForPath(SEARCH_PATH + searchTerm, params);
-		Response response = r.get();				
-		return provenanceCollectionFromResponse(response);
+		Builder r = getRequestBuilderForPath(SEARCH_PATH + searchTerm, params); //create REST object
+		Response response = r.get();			//actually going to server and fetching data	
+		return provenanceCollectionFromResponse(response); //turn JSON/HTTP stuff into a provenance collection
 	}
 	
 	public ProvenanceCollection search(Metadata parameters, int max)
@@ -234,12 +267,52 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		throw new ProvenanceClientException("Not yet implemented.");
 	}
 	
+	public ProvenanceCollection Query(String query) throws IOException
+	{
+		URL url = new URL("http://" + host + ":" + port + API_DEPLOY_PATH + QUERY_PATH);
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
+		connection.setRequestMethod("POST");
+		connection.setRequestProperty("Host", host);
+		connection.setRequestProperty("Accept", "application/json");
+		connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; chartset=UTF-8");
+		connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+		connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
+		
+		System.out.println("Flag (1)");
+		
+		OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+		writer.write( "query=" + URLEncoder.encode(query, "UTF-8"));
+		writer.close();
+		
+		System.out.println("Flag (2)");
+		
+		BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		String line;
+		StringBuffer jsonString = new StringBuffer();
+		
+		System.out.println("Flag (3)");
+
+		while ((line = reader.readLine()) != null) {
+			jsonString.append(line);
+		}
+		
+		reader.close();
+		connection.disconnect();
+		System.out.println("Flag (4)");
+		
+		String outputString = jsonString.toString();
+		System.out.println("Flag (5)");
+		return provenanceCollectionFromResponse(outputString);
+	}
+	
 	protected ProvenanceCollection provenanceCollectionFromResponse(Response r) throws ProvenanceClientException { 
 		validateResponse(r);
-		
 		String responseTxt = r.readEntity(String.class);
-		
 		System.out.println(responseTxt);
+	
 		return provenanceCollectionFromResponse(responseTxt); 
 	}
 	
@@ -250,6 +323,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 */
 	protected ProvenanceCollection provenanceCollectionFromResponse(String response) { 
 		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
+		System.out.println("Flag (6)");
 		return g.fromJson(response, ProvenanceCollection.class);		
 	}
 	
