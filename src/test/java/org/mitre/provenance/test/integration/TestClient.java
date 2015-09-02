@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.client.AbstractProvenanceClient;
+import org.mitre.provenance.client.LocalProvenanceClient;
 import org.mitre.provenance.client.ProvenanceClient;
 import org.mitre.provenance.client.ProvenanceClientException;
 import org.mitre.provenance.client.RESTProvenanceClient;
@@ -35,7 +36,7 @@ import org.mitre.provenance.plusobject.ProvenanceCollection;
 public class TestClient {
     @Before
     public void setUp() throws ProvenanceClientException {
-        ProvenanceClient.instance = new RESTProvenanceClient("localhost", "8080");
+        ProvenanceClient.instance = new LocalProvenanceClient(); // new RESTProvenanceClient("localhost", "8080");
     }
 	
     @Test
