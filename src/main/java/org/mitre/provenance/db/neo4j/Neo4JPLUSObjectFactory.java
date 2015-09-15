@@ -1053,6 +1053,26 @@ public class Neo4JPLUSObjectFactory {
 			return null;
 		}
 	}
+	
+	// BLING method appears to only retrieve one hop backward.  This recursive method retrieves all BLING.
+	public static ProvenanceCollection getFullBLING(String oid, User user) {
+		ProvenanceCollection col = new ProvenanceCollection();
+		try {
+			ProvenanceCollection additions = Neo4JPLUSObjectFactory.getIncidentEdges(Arrays.asList(new String[] { oid }), user, "bling", true, false);
+			col.addAll(additions);
+			Iterator<PLUSObject> nodeIt = additions.getNodesInOrderedList().iterator();
+			while (nodeIt.hasNext()) {
+				PLUSObject o = nodeIt.next();
+				if (!oid.equals(o.getId())) {
+					col.addAll(Neo4JPLUSObjectFactory.getFullBLING(o.getId() , user));
+				}
+			}
+			return col;
+		} catch (PLUSException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
 	public static ProvenanceCollection getFLING(String id, User user) {
 		return getFLING(Arrays.asList(new String[] { id }), user);
@@ -1071,6 +1091,26 @@ public class Neo4JPLUSObjectFactory {
 				
 		return null;
 	} // End getFLING
+	
+	// getFLING method appears to only retrieve one hop forward.  This recursive method retrieves all FLING.
+	public static ProvenanceCollection getFullFLING(String oid, User user) {
+		ProvenanceCollection col = new ProvenanceCollection();
+		try {
+			ProvenanceCollection additions = Neo4JPLUSObjectFactory.getIncidentEdges(Arrays.asList(new String[] { oid }), user, "fling", true, false);
+			col.addAll(additions);
+			Iterator<PLUSObject> nodeIt = additions.getNodesInOrderedList().iterator();
+			while (nodeIt.hasNext()) {
+				PLUSObject o = nodeIt.next();
+				if (!oid.equals(o.getId())) {
+					col.addAll(Neo4JPLUSObjectFactory.getFullFLING(o.getId() , user));
+				}
+			}
+			return col;
+		} catch (PLUSException e) {
+			e.printStackTrace();
+			return null;
+		}
+	} // End getFullFLING
 	
 	/**
 	 * Get the most recently created provenance objects.

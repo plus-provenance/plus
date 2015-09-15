@@ -15,7 +15,11 @@
 package org.mitre.provenance.services;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +39,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.mitre.provenance.Metadata;
 import org.mitre.provenance.PLUSException;
 import org.mitre.provenance.dag.ViewedCollection;
 import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
@@ -110,6 +115,173 @@ public class ObjectServices {
 			return ServiceUtility.ERROR(exc.getMessage());			
 		}		
 	}	
+
+	@Path("/taint/marktaintandfling/{id:.*}")	
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)	
+	@ApiOperation(value = "Mark taint and return a provenance graph containing contaminated FLING", notes = "", response = ProvenanceCollection.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message = "Invalid data provided")	  
+	})
+	/**
+	 * Given a node id or (ASIAS-specific) meta_id value in node Metadata, mark node as tainted and return the FLING of that marking.
+	 * @param id the oid or meta_id (ASIAS-specific) of the node that should be marked tainted.
+	 * @return a D3 JSON formatted provenance collection
+	 * @author piekut
+	 */
+	public Response taintFLING(@Context HttpServletRequest req,
+			@ApiParam(value="oid or meta_id (ASIAS-specific) of node to be marked tainted", required=true) 
+			@PathParam("id") String id,
+			@ApiParam(value="maximum items to return", required=true) @DefaultValue("50") @QueryParam("n") int n) { 
+		int limit = 100;		
+		      		
+		if(id == null || "".equals(id)) {
+			return ServiceUtility.BAD_REQUEST("No node oid or meta_id (ASIAS-specific) value specified");
+		}
+		
+		boolean use_meta_id = false;  // Generic case, mark by node OID.
+		if (!id.startsWith("urn:uuid:")) { use_meta_id=true; }  // ASIAS-specific (meta_id) if not recognized OID format.
+		
+		ProvenanceCollection col =  new ProvenanceCollection();
+		try { 						
+			PLUSObject node;
+			
+			if (use_meta_id) { // ASIAS-specific
+				// find node that was identified by meta_id.
+				ProvenanceCollection matchSet = org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory
+					.loadBySingleMetadataField(ServiceUtility.getUser(req), "meta_id", id);		
+				int numMatches = matchSet.getNodes().size();  
+
+				if (numMatches==0) { return ServiceUtility.NOT_FOUND("No object found with meta_id='"+id+"'."); }
+				else if (numMatches!=1) { return ServiceUtility.ERROR("ERROR:  duplicate matches found for meta_id='"+id+"'."); }
+				
+				node = matchSet.getNodes().iterator().next();
+			}
+			else {  //  default condition, retrieve node be OID.
+				node = org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory.load(id, ServiceUtility.getUser(req));
+			}
+			
+			// Mark the specified node as tainted.
+			try {
+				org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory.taint(node, ServiceUtility.getUser(req), "using REST service to taint node and return FLING");
+			}
+			catch (Exception e) {
+				return ServiceUtility.ERROR("Failed to mark node with meta_id='"+id+"':  " + e.getMessage());
+			}
+		
+			// Finally retrieve collection of tainted nodes downstream (i.e., FLING).
+			try {
+				col.addNode(node);  // add affected node, for completeness.
+				col.addAll(org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory.getFullFLING(node.getId(), ServiceUtility.getUser(req)));
+			}
+			catch (Exception e) {
+				return ServiceUtility.ERROR("Taint mark successful for node with id value '"+id+"', but FLING could not be retrieved:  " + e.getMessage());
+			}
+		} catch(Exception exc) { 
+			exc.printStackTrace();
+			return ServiceUtility.ERROR(exc.getMessage());
+		}
+		return ServiceUtility.OK(col, req);		
+	} // End 
+	
+	
+	
+	@Path("/groupbyhash/{process_name:.*}")	
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Retrieve all nodes belonging to particular type (name), and group based on their hashed value", 
+		notes = "", response = HashMap.class)
+	@ApiResponses(value = {
+	  @ApiResponse(code = 400, message = "Invalid data provided")	  
+	})
+	/**
+	 * Retrieve all nodes belonging to particular type (name), and report on the hash-match of specified types.
+	 * @param process_name the name of the process nodes to examine.
+	 * @return a Map of nodes grouped by matching hash value.
+	 * @author piekut
+	 */
+	public Response groupTypeNodesByHashValue(@Context HttpServletRequest req,
+			@ApiParam(value="name of node type to traverse", required=true) 
+			@PathParam("process_name") String process_name) { 
+		      		
+		if (process_name == null || "".equals(process_name)) {
+			return ServiceUtility.BAD_REQUEST("No process_name specified.");
+		}
+		
+		ProvenanceCollection col =  new ProvenanceCollection();
+		// variable storing groupings of hash matches.
+		Map<String, ArrayList<String>> hashvalueMap = new TreeMap<String, ArrayList<String>>();
+		try { 
+			// Below line retrieves all nodes with name {process_name}
+			col =  org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory.searchFor(process_name, ServiceUtility.getUser(req));
+			int countRecs = 0;
+			
+			Iterator<PLUSObject> nodeIt = col.getNodes().iterator();
+			while (nodeIt.hasNext()) {  // looping through all nodes with name {process_name}
+				PLUSObject node = nodeIt.next();
+				
+				// since Neo4JPLUSObjectFactory.searchFor is fuzzy match, filter out to be exact 			
+				if (node.getName().equals(process_name)) {  
+					countRecs++; 
+					
+					// get hashValue of node, if it exists.
+					String hashValue = (String) node.getMetadata().get(Metadata.CONTENT_HASH_SHA_256);
+					if (hashValue==null) { hashValue="[No Content]"; }
+					hashValue = process_name + " with hash value " + hashValue + ":";
+					
+					//Shove it into hashmap for later retrieval.
+					ArrayList<String> hashArray = new ArrayList<String>();
+					
+					if (node.getMetadata().containsKey("meta_id")) {   // ASIAS-specific block!
+						// Special case handling for ASIAS.  Generic case handled in the "else" block.
+						String hashArrayValue = node.getId();
+						ProvenanceCollection backwardsLineage = org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory.getFullBLING(node.getId(), ServiceUtility.getUser(req));
+						Iterator<PLUSObject> blingNodes= backwardsLineage.getNodesInOrderedList().iterator();
+						while (blingNodes.hasNext()) {
+							PLUSObject blingNode = blingNodes.next();
+							if (blingNode.getMetadata().containsKey("input_partition")) { 
+								// The hash value is the input_partition value of the root node of the FLING.
+								// Since that value potentially does not uniquely distinguish the runs, the meta_id
+								// of the node is appended to the return set.
+								hashArrayValue = (String) blingNode.getMetadata().get("input_partition")
+										+ " [" +node.getMetadata().get("meta_id") + "]"; 
+								break;
+							}
+						}
+						hashArray.add(hashArrayValue);
+					}
+					else {  
+						// This is the default scenario, for nodes in any other format than ASIAS.  
+						// Returns OID as identifier.
+						hashArray.add(node.getId()); 
+					}
+					
+					// Here the code looks for previously grouped values for this hash, and if found, appends to 
+					// hashArray and stores in hashvalueMap, the return variable. 
+					if (!hashvalueMap.isEmpty() && hashvalueMap.containsKey(hashValue)) {
+						hashArray.addAll(hashvalueMap.get(hashValue));
+					}
+					hashvalueMap.put(hashValue, hashArray);
+				}
+			}
+						
+			
+			if (countRecs==0) { // warning if no nodes found.
+				return ServiceUtility.NOT_FOUND("No records found with name '"+process_name+"'");
+			}		
+			
+		} catch(Exception exc) { 
+			exc.printStackTrace();
+			return ServiceUtility.ERROR(exc.getMessage());
+		}
+		
+		// If hashvalueMap was successfully populated, return that object as JSON.
+		Map<String,Object> map =  new HashMap<String,Object>();
+		map.putAll(hashvalueMap);
+		return ServiceUtility.OK(map);	
+	} // End 
+			
+	
 	
 	@Path("/taint/{oid:.*}")
 	@GET
@@ -184,7 +356,7 @@ public class ObjectServices {
 			return ServiceUtility.ERROR(exc.getMessage());
 		} // End catch
 	} // End setTaint
-	
+		
 	@Path("/taint/{oid:.*}") 
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
