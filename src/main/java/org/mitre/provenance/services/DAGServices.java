@@ -12,375 +12,423 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.mitre.provenance.services;
+package org.mitre.provenance.client;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.StatusType;
 
-import org.mitre.provenance.PLUSException;
-import org.mitre.provenance.client.AbstractProvenanceClient;
-import org.mitre.provenance.client.LocalProvenanceClient;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.mitre.provenance.Metadata;
 import org.mitre.provenance.dag.TraversalSettings;
-import org.mitre.provenance.db.neo4j.Neo4JPLUSObjectFactory;
-import org.mitre.provenance.db.neo4j.Neo4JStorage;
+import org.mitre.provenance.plusobject.PLUSActor;
 import org.mitre.provenance.plusobject.PLUSObject;
+import org.mitre.provenance.plusobject.PLUSWorkflow;
 import org.mitre.provenance.plusobject.ProvenanceCollection;
-import org.mitre.provenance.plusobject.json.JsonFormatException;
+import org.mitre.provenance.plusobject.json.JSONConverter;
 import org.mitre.provenance.plusobject.json.ProvenanceCollectionDeserializer;
-import org.mitre.provenance.user.User;
-import org.neo4j.cypher.javacompat.ExecutionResult;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.ResourceIterator;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.TransactionFailureException;
+import org.mitre.provenance.user.PrivilegeClass;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-import com.wordnik.swagger.annotations.ApiResponse;
-import com.wordnik.swagger.annotations.ApiResponses;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
- * DAGServices encompassess RESTful services that operate over provenance "DAGs" (directed acyclic graphs).
- * @author dmallen
+ * This class acts as a client for a remote provenance server which can serve up provenance or permit reporting
+ * of new provenance via RESTful services.
+ * 
+ * <p>Use this class if you want to report provenance to a foreign host that is running PLUS.
+ * 
+ * @author moxious
  */
-@Path("/graph")
-@Api(value = "/graph", description = "Operations about provenance graphs")
-public class DAGServices {
-	protected static Logger log = Logger.getLogger(DAGServices.class.getName());
+public class RESTProvenanceClient extends AbstractProvenanceClient {
+	protected static final String VERSION = "0.5";
+	protected static final Logger log = Logger.getLogger(RESTProvenanceClient.class.getName());
+	protected static final String UA = "RESTProvenanceClient " + VERSION;
 	
-	public class CollectionFormatException extends Exception {
-		private static final long serialVersionUID = 2819285921155590440L;
-		public CollectionFormatException(String msg) { super(msg); } 
+	/** The host of the remote server */
+	protected String host = "";
+	/** Port where the remote server is located. */
+	protected String port = "80";
+	
+	protected static final String API_DEPLOY_PATH = "/plus/api";
+	protected static final String PRIVILEGE_PATH = "/privilege/dominates/";
+	protected static final String SEARCH_PATH = "/object/search/";
+	protected static final String METADATA_PATH = "/object/metadata/";
+	protected static final String QUERY_PATH = "/graph/search";
+	protected static final String GET_ACTOR_PATH = "/actor/";
+	protected static final String GET_ACTOR_BY_NAME_PATH = "/actor/name/";
+	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners";
+	protected static final String NEW_GRAPH_PATH = "/graph/new";	
+	protected static final String NEW_ASIAS_PATH = "/graph/newasias";	
+	protected static final String TAINT_FLING_PATH = "/object/taint/marktaintandfling/";	
+	protected static final String GET_GRAPH_PATH = "/graph/";
+	protected static final String GET_LATEST_PATH = "/feeds/objects/latest";
+	protected static final String LIST_WORKFLOWS_PATH = "/workflow/latest";
+	protected static final String GET_WORKFLOW_MEMBERS_PATH = "/workflow/";
+	protected static final String GET_SINGLE_NODE_PATH = "/object/";
+	protected static final String GROUPBYHASH_PATH = "/object/groupbyhash/";
+	
+	protected Client client = null;
+	
+	public RESTProvenanceClient() {
+		
 	}
 	
-	@Path("/{oid:.*}")	
-	@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-	@GET
-	@ApiOperation(value = "Get a provenance graph", notes = "More notes about this method", response = ProvenanceCollection.class)
-	@ApiResponses(value = {
-	  @ApiResponse(code = 400, message = "Error loading graph"),
-	  @ApiResponse(code = 404, message = "Base object ID not found") 
-	})	
-	public Response getGraph(@Context HttpServletRequest req, 
-			@ApiParam(value = "The ID of the starting point from which to discover the graph", required = true)
-			@PathParam("oid") String oid, 
-			@ApiParam(value = "Maximum number of nodes to return", required = false)
-			@DefaultValue("50") @QueryParam("n") int maxNodes,
-			@ApiParam(value = "Maximum number of hops from starting point to traverse", required = false)
-			@DefaultValue("8") @QueryParam("maxHops") int maxHops,
-			@ApiParam(value = "Whether or not to include nodes in result", required = false)
-			@DefaultValue("true") @QueryParam("includeNodes") boolean includeNodes,
-			@ApiParam(value = "Whether or not to include edges in result", required = false)
-			@DefaultValue("true") @QueryParam("includeEdges") boolean includeEdges,
-			@ApiParam(value = "Whether or not to include non-provenance edges in result", required = false)
-			@DefaultValue("true") @QueryParam("includeNPEs") boolean includeNPEs,
-			@ApiParam(value = "Whether or not to follow non-provenance IDs in traversal", required = false)
-			@DefaultValue("true") @QueryParam("followNPIDs") boolean followNPIDs,
-			@ApiParam(value = "Return results forward of the starting point", required = false)
-			@DefaultValue("true") @QueryParam("forward") boolean forward,
-			@ApiParam(value = "Return results backward of the starting point", required = false)
-			@DefaultValue("true") @QueryParam("backward") boolean backward,
-			@ApiParam(value = "If true, traverse via BFS.  If false, use DFS", required = false)
-			@DefaultValue("true") @QueryParam("breadthFirst") boolean breadthFirst) {				
+	public RESTProvenanceClient(String host) throws ProvenanceClientException {
+		this(host, "80");
+	}
+	
+	/**
+	 * Create a client object to send requests to a provenance service located at a particular location.
+	 * @param host the host where the provenance service can be found.
+	 * @param port the port the provenance service is running on.
+	 * @throws when parameters are invalid
+	 */
+	public RESTProvenanceClient(String host, String port) throws ProvenanceClientException { 
+		this.host = host;
+		this.port = port;
+		
+		if(host == null || "".equals(host)) throw new ProvenanceClientException("No host specified.");
+		if(port == null || "".equals(port)) throw new ProvenanceClientException("No port specified.");
+		
+		int i = 0;
+		try { i = Integer.parseInt(port); } catch(Exception exc) { 
+			throw new ProvenanceClientException("Invalid port: " + port); 
+		}
+		
+		if(i < 1 || i > 65535) throw new ProvenanceClientException("Invalid port number: " + i); 
+		
+		ClientConfig cc = new ClientConfig().property(ClientProperties.FOLLOW_REDIRECTS, true);		
+		client = ClientBuilder.newClient(cc);
+		// client.getProperties().put(ClientConfig.PROPERTY_FOLLOW_REDIRECTS, true);
+	} // End RESTProvenanceClient
+		
+	protected Builder getRequestBuilderForPath(String endpointPath) {
+		return getRequestBuilderForPath(endpointPath, null);
+	}
+	
+	/**
+	 * Takes an endpoint path (one of the finals declared in the top of the class) and returns a Builder for it, setting
+	 * standard options on the request such as a user agent header, requesting a JSON response, and configured to the 
+	 * location of the client host/port.
+	 * @param endpointPath
+	 * @param queryParams
+	 * @return
+	 */
+	protected Builder getRequestBuilderForPath(String endpointPath, MultivaluedMap<String,?> queryParams) {					
+		WebTarget t = client.target("http://" + this.host + ":" + this.port + API_DEPLOY_PATH)
+				     .path(endpointPath)
+				     .queryParam("format", "json");
+				
+		// Add in custom-defined query params.
+		if(queryParams != null) {
+			for(String key : queryParams.keySet()) {				
+				t = t.queryParam(key, queryParams.getFirst(key));
+			}				
+		}
+			
+		System.out.println(t.getUri());
+		
+		Builder b = t.request(MediaType.APPLICATION_JSON_TYPE)
+				     .accept(MediaType.APPLICATION_JSON_TYPE)
+				     .header("User-Agent", UA);
+		
+		return b;
+	} // End getRequestBuilderForPath
+	
+	/**
+	 * Performs various checks on a response from the server; ideally this does nothing at all, but may 
+	 * throw an exception in various common error conditions (response is a 404, etc)
+	 * @param r the response
+	 * @throws ProvenanceClientException
+	 */
+	protected void validateResponse(Response r) throws ProvenanceClientException {
+		StatusType status = r.getStatusInfo();
+		
+		if(status.getFamily() == Response.Status.Family.SERVER_ERROR) {
+			MultivaluedMap<String,Object> headers = r.getHeaders();
+			log.warning("Server error encountered on response => " + headers);			
+		}
+		
+		if(r.getStatus() == 404) {
+			log.warning(r.readEntity(String.class));
+			throw new ProvenanceClientException(r.getStatusInfo().getFamily() + " " +
+				r.getStatusInfo().getReasonPhrase());
+		}
+	} // End validateResponse
+	
+	public boolean report(ProvenanceCollection col) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(NEW_GRAPH_PATH);
 
-		TraversalSettings ts = new TraversalSettings();
-		ts.n = maxNodes;
-		ts.maxDepth = maxHops;
-		ts.backward = backward;
-		ts.forward = forward;
-		ts.includeNodes = includeNodes;
-		ts.includeEdges = includeEdges;
-		ts.includeNPEs = includeNPEs;
-		ts.followNPIDs = followNPIDs;
-		ts.breadthFirst = breadthFirst;
+		MultivaluedMap<String,String> formData = new MultivaluedHashMap<String,String>();
+		String json = JSONConverter.provenanceCollectionToD3Json(col);
+		// System.out.println("POSTING:\n" + json + "\n\n");
+	    formData.add("provenance", json);
+	    
+	    Response response = r.post(Entity.form(formData));	    				 
+	    
+	    validateResponse(response);
+	    
+		String output = response.readEntity(String.class);
+	   
 		
-		log.info("GET D3 GRAPH " + oid + " / " + ts);
-		
-		if(maxNodes <= 0) return ServiceUtility.BAD_REQUEST("n must be greater than zero");		
-		if(maxHops <= 0) return ServiceUtility.BAD_REQUEST("Max hops must be greater than zero");		
-		
-		try {
-			AbstractProvenanceClient client = new LocalProvenanceClient(ServiceUtility.getUser(req)); 
-			
-			if((client.exists(oid) == null) && (Neo4JStorage.getNPID(oid, false) == null))  
-				return Response.status(Response.Status.NOT_FOUND).entity("Entity not found for " + oid).build();
-						
-			ProvenanceCollection col = client.getGraph(oid, ts);
-			log.info("D3 Graph for " + oid + " returned " + col); 
-			
-			return ServiceUtility.OK(col, req);					
-		} catch(PLUSException exc) { 
-			log.severe(exc.getMessage());
-			exc.printStackTrace();
-			return ServiceUtility.ERROR(exc.getMessage());					
-		} // End catch
-	} // End getD3Graph
+	    System.out.println(response); 
+		System.out.println(response.getLength());
+	    System.out.println(response.getStatus());
+	    System.out.println(output);
+		return true;
+	}
 	
-	/**
-	 * This function is needed to check the format of incoming collections to see if they are 
-	 * loggable.
-	 * @param col
-	 * @return the same collection, or throws an exception on error.
-	 */
-	public ProvenanceCollection checkGraphFormat(ProvenanceCollection col) throws CollectionFormatException { 		
-		StringBuffer reasons = new StringBuffer("");
+	public boolean report(ProvenanceCollection col, String quiet) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(NEW_GRAPH_PATH);
+
+		MultivaluedMap<String,String> formData = new MultivaluedHashMap<String,String>();
+		String json = JSONConverter.provenanceCollectionToD3Json(col);
+	    formData.add("provenance", json);
+	    
+	    Response response = r.post(Entity.form(formData));	    				 
+	    
+	    validateResponse(response);
+	    
+	    return true;
+	}
+	
+	public ProvenanceCollection getGraph(String oid) throws ProvenanceClientException {
+		return getGraph(oid, new TraversalSettings());
+	}
+	
+	public ProvenanceCollection getGraph(String oid, TraversalSettings desc) throws ProvenanceClientException {		
+		MultivaluedMap<String,String> params = desc.asMultivaluedMap();		
+		Builder r = getRequestBuilderForPath(GET_GRAPH_PATH + oid, params);
+
+		System.out.println(r);
 		
-		for(PLUSObject o : col.getNodes()) {
-			if(Neo4JStorage.oidExists(o.getId()) != null) {
-				String reason = "Node named " + o.getName() + " / " + o.getId() + " has duplicate ID to something already in DB";
-				log.warning(reason);
-				reasons.append(" (E) " + reason);
-			}
+		Response response = r.get();
+		return provenanceCollectionFromResponse(response);
+	} // End getGraph
+	
+	public ProvenanceCollection latest() throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(GET_LATEST_PATH);		
+		Response response = r.get();		
+		return provenanceCollectionFromResponse(response);
+	}
+	
+	public ProvenanceCollection getActors(int max) throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
+		
+		Builder r = getRequestBuilderForPath(GET_ACTORS_PATH, params);						
+		Response response = r.get();
+		return provenanceCollectionFromResponse(response.readEntity(String.class));
+	} // End getActors
+	
+	public ProvenanceCollection search(String searchTerm, int max)
+			throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);		//Add a get-parameter, replace "n" with "query" and max with string of cypher query. 
+		
+		Builder r = getRequestBuilderForPath(SEARCH_PATH + searchTerm, params); //create REST object
+		Response response = r.get();			//actually going to server and fetching data	
+		return provenanceCollectionFromResponse(response); //turn JSON/HTTP stuff into a provenance collection
+	}
+	
+	public ProvenanceCollection search(Metadata parameters, int max)
+			throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
+		String key = parameters.keySet().iterator().next();
+		String value = (String) parameters.get(key);
+		Builder r = getRequestBuilderForPath(METADATA_PATH + key + "/" + value, params);
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);
+	}
+	
+	public ProvenanceCollection query(String query) throws IOException
+	{
+		URL url = new URL("http://" + host + ":" + port + API_DEPLOY_PATH + QUERY_PATH);
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
+		connection.setRequestMethod("POST");
+		connection.setRequestProperty("Host", host);
+		connection.setRequestProperty("Accept", "application/json");
+		connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; chartset=UTF-8");
+		connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+		connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
+		
+		System.out.println("Flag (1)");
+		
+		OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+		writer.write( "query=" + URLEncoder.encode(query, "UTF-8"));
+		writer.close();
+		
+		System.out.println("Flag (2)");
+		
+		BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		String line;
+		StringBuffer jsonString = new StringBuffer();
+		
+		System.out.println("Flag (3)");
+
+		while ((line = reader.readLine()) != null) {
+			jsonString.append(line);
 		}
 		
-		// [piekutsj] Commenting out the exception, keeping the warnings.  This action subject to revision at a later time, but for now,
-		// after some discussion it was decided that it would be best if REST actions were consistent to how local behaves, 
-		// i.e., skip duplicate node, with warning.
-		//if(reasons.length() > 0) throw new CollectionFormatException(reasons.toString());
+		reader.close();
+		connection.disconnect();
+		System.out.println("Flag (4)");
 		
-		return col;
-	} // End checkGraphFormat
+		String outputString = jsonString.toString();
+		System.out.println("Flag (5)");
+		return provenanceCollectionFromResponse(outputString);
+	}
 	
-	@SuppressWarnings("unchecked")
-	@POST
-	@Produces(MediaType.APPLICATION_JSON)
-	@Path("/new")
-	@ApiOperation(value = "Report a new provenance graph", notes = "Write the contents of new provenance to the database", response = ProvenanceCollection.class)
-	@ApiResponses(value = {
-	  @ApiResponse(code = 400, message = "Invalid data provided")	  
-	})
 	/**
-	 * Creates a new graph in the provenance store.  The parameters posted must include an item called "provenance" whose value
-	 * is a D3 JSON object corresponding to the provenance graph that will be created.
-	 * <p>This service will re-allocate new IDs for everything in the graph, and will *not* store the objects under the IDs provided by
-	 * the user, to avoid conflicts on uniqueness.
-	 * @param req 
-	 * @param queryParams a set of parameters, which must contain an element "provenance" mapping to a D3 JSON object.
-	 * @return a D3 JSON graph of the provenance that was stored, with new IDs.
-	 * @throws JsonFormatException
+	 * @author piekut
+	 * Given a node id or (ASIAS-specific) meta_id value in node Metadata, mark node as tainted and return the FLING of that marking.
+	*/
+	public ProvenanceCollection markTaintAndRetrieveFLING(String id)
+			throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		Builder r = getRequestBuilderForPath(TAINT_FLING_PATH + id, params);
+
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);		
+	}
+	
+	/**
+	 * @author piekut
+	 * Retrieve all nodes belonging to particular type (name), and report on the hash-match of specified types.
+	*/
+	public boolean  groupByHash(String node_name)
+			throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		Builder r = getRequestBuilderForPath(GROUPBYHASH_PATH + node_name, params);
+
+		Response response = r.get();				
+		
+	//	System.out.println(response.toString());
+	    System.out.println(response.getMediaType());
+		validateResponse(response);
+		
+		String responseTxt = response.readEntity(String.class);
+		
+		System.out.println(responseTxt);
+		return true;
+	}
+	
+	protected ProvenanceCollection provenanceCollectionFromResponse(Response r) throws ProvenanceClientException { 
+		validateResponse(r);
+		
+		String responseTxt = r.readEntity(String.class);
+		
+		System.out.println(responseTxt);
+		return provenanceCollectionFromResponse(responseTxt); 
+	}
+	
+	/**
+	 * Take a string JSON response, deserialize it as a ProvenanceCollection, and return it.
+	 * @param response a JSON object that came back from a service
+	 * @return an equivalent provenance collection.
 	 */
-	public Response newGraph(@Context HttpServletRequest req,
-			@ApiParam(value = "D3-JSON formatted provenance graph", required = true)
-			@FormParam("provenance") String provenance, 
-			MultivaluedMap<String, String> queryParams) throws JsonFormatException {
-		//String jsonStr = queryParams.getFirst("provenance");
-		User reportingUser = ServiceUtility.getUser(req);		
-		log.info("NEW GRAPH msg len " + (provenance == null ? "null" : provenance.length()) + " REPORTING USER " + reportingUser);
-		
-		if(provenance == null)  {
-			Map<String,String[]> params = req.getParameterMap();
-			
-			System.err.println("DEBUG:  bad parameters to newGraph");
-			for(String k : params.keySet()) {
-				String[] val = params.get(k);
-				System.err.println(k + " => " + (val != null && val.length > 0 ? val[0] : "null"));
-			}
-			
-			return ServiceUtility.BAD_REQUEST("You must specify a provenance parameter that is not empty.");
-		}
-		
+	protected ProvenanceCollection provenanceCollectionFromResponse(String response) { 
 		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
-		
-		ProvenanceCollection col = null;
-		try {
-			col = g.fromJson(provenance, ProvenanceCollection.class);
-			System.err.println("Converted from D3 JSON:  " + col + " ORIGINAL JSON: \n" + provenance);
-
-			// Check format, and throw an exception if it's no good.
-			col = checkGraphFormat(col);
-			
-			System.err.println("Tagging source...");
-			col = tagSource(col, req);
-			
-			/* for many reasons, this is a bad idea.  leave stubbed out for now.
-			System.out.println("Resetting IDs...");
-			col = resetIDs(col);
-			*/
-			int r = Neo4JStorage.store(col);
-			System.err.println("Storing " + col + " resulted in " + r);
-		} catch(CollectionFormatException gfe) {
-			log.warning("Failed storing collection: " + gfe.getMessage());
-			return ServiceUtility.BAD_REQUEST("Your collection contained a format problem: " + gfe.getMessage());
-		} catch(JsonParseException j) {
-			j.printStackTrace();
-			return ServiceUtility.BAD_REQUEST(j.getMessage());			
-		} catch(PLUSException exc) { 
-			exc.printStackTrace();
-			return ServiceUtility.ERROR(exc.getMessage());				
-		}
-
-		System.err.println("Successfully stored " + col + " returning OK to client.");
-		return ServiceUtility.OK(col, req);
-	} // End newGraph
-
-	@POST
-	@Produces(MediaType.APPLICATION_JSON)
-	@Path("/search")	
-	/**
-	 * Search the provenance store for objects with a particular cypher query.
-	 * @param cypherQuery the cypher query
-	 * @return a D3 JSON formatted provenance collection
-	 * @deprecated
-	 */
-	public Response search(@Context HttpServletRequest req,
-			@ApiParam(value="A cypher query", required=true) 
-	 	    @FormParam("query") String cypherQuery) {
-		int limit = 100;		
-
-		// log.info("SEARCH " + cypherQuery);
-		
-		if(cypherQuery == null || "".equals(cypherQuery)) {
-			return ServiceUtility.BAD_REQUEST("No query");
-		}
-		
-		// Ban certain "stop words" from the query to prevent users from updating, deleting, or
-		// creating data. 
-		String [] stopWords = new String [] { "create", "delete", "set", "remove", "foreach", "merge" };
-		String q = cypherQuery.toLowerCase();
-		for(String sw : stopWords) { 
-			if(q.contains(sw))  
-				return ServiceUtility.BAD_REQUEST("Invalid query specified (" + sw + ")"); 			
-		} // End for
-		
-		/* Begin executing query */
-
-		ProvenanceCollection col = new ProvenanceCollection();
-		try (Transaction tx = Neo4JStorage.beginTx()) { 
-			log.info("Query for " + cypherQuery);
-			ExecutionResult rs = Neo4JStorage.execute(cypherQuery);
-
-			for(String colName : rs.columns()) {
-				int x=0;							
-				ResourceIterator<?> it = rs.columnAs(colName);
-
-				while(it.hasNext() && x < limit) {
-					Object next = it.next();
-					
-					if(next instanceof Node) { 
-						if(Neo4JStorage.isPLUSObjectNode((Node)next))  
-							col.addNode(Neo4JPLUSObjectFactory.newObject((Node)next));
-						else { 
-							log.info("Skipping non-provnenace object node ID " + ((Node)next).getId());
-							continue;
-						}
-					} else if(next instanceof Relationship) { 
-						Relationship rel = (Relationship)next;
-						if(Neo4JStorage.isPLUSObjectNode(rel.getStartNode()) && 
-						   Neo4JStorage.isPLUSObjectNode(rel.getEndNode())) {
-							col.addNode(Neo4JPLUSObjectFactory.newObject(rel.getStartNode()));
-							col.addNode(Neo4JPLUSObjectFactory.newObject(rel.getEndNode()));
-							col.addEdge(Neo4JPLUSObjectFactory.newEdge(rel));
-						} else { 
-							log.info("Skipping non-provenace edge not yet supported " + rel.getId());
-						}
-					}
-				} // End while
-				
-				it.close();
-				
-				if((col.countEdges() + col.countNodes()) >= limit) break;
-			}			
-			
-			tx.success();
-		} catch(TransactionFailureException tfe) { 
-			// Sometimes neo4j does the wrong thing, and throws these exceptions failing to commit
-			// on simple read-only queries.  Which doesn't make sense.  Subject to a bug report.
-			log.warning("Transaction failed when searching graph: " + tfe.getMessage() + " / " + tfe);
-		} catch(Exception exc) { 
-			exc.printStackTrace();
-			return ServiceUtility.ERROR(exc.getMessage());
-		}
-
-		return ServiceUtility.OK(col, req);		
-	} // End search
+		return g.fromJson(response, ProvenanceCollection.class);		
+	}
 	
-	protected Object formatLimitedSearchResult(Object o) { 
-		if(o instanceof Node) { 
-			Node n = (Node)o;
-			if(Neo4JStorage.isPLUSObjectNode(n)) {
-				HashMap<String,Object> nodeProps = new HashMap<String,Object>();
-				nodeProps.put("oid", n.getProperty("oid"));
-				nodeProps.put("name", n.getProperty("name", "Unknown"));
-				return nodeProps;
-			} else { 
-				log.info("Skipping non-provenance object node ID " + n.getId());
-				return null;
-			}
-		} else if(o instanceof Relationship) { 
-			Relationship r = (Relationship)o;
-
-			if(Neo4JStorage.isPLUSObjectNode(r.getStartNode()) && 
-			   Neo4JStorage.isPLUSObjectNode(r.getEndNode())) {
-				//TODO ;
-			}
-			
-			HashMap<String,Object> relProps = new HashMap<String,Object>();
-			
-			relProps.put("from", formatLimitedSearchResult(r.getStartNode()));
-			relProps.put("to", formatLimitedSearchResult(r.getEndNode()));
-			relProps.put("type", r.getType().name());
-			return relProps;
-		} else if(o instanceof Iterable) { 
-			ArrayList<Object> things = new ArrayList<Object>();
-			for(Object so : (Iterable<?>)o) {
-				Object ro = formatLimitedSearchResult(so);
-				if(ro != null) things.add(ro);
-			}
-			
-			return things;
-		} else {
-			log.info("Unsupported query response type " + o.getClass().getCanonicalName());
-		}
+	public List<PLUSWorkflow> listWorkflows(int max) throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
 		
+		Builder r = getRequestBuilderForPath(LIST_WORKFLOWS_PATH, params);
+		
+		Response response = r.get();				
+
+		ProvenanceCollection col = provenanceCollectionFromResponse(response);
+		ArrayList<PLUSWorkflow> results = new ArrayList<PLUSWorkflow>();
+		
+		for(PLUSObject o : col.getNodesInOrderedList()) {
+			if(o.isWorkflow()) results.add((PLUSWorkflow)o);
+		}
+
+		return results;
+	}
+	
+	public ProvenanceCollection getWorkflowMembers(String oid, int max)
+			throws ProvenanceClientException {
+		PLUSObject n = getSingleNode(oid);
+		if(n == null) throw new ProvenanceClientException("No such workflow node " + oid);
+		if(!n.isWorkflow()) throw new ProvenanceClientException("Can't list members of non-workflow node " + n);
+
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
+		
+		Builder r = getRequestBuilderForPath(GET_WORKFLOW_MEMBERS_PATH + n.getId(), params);		
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);
+	} // End getWorkflowMembers
+
+	public PLUSObject getSingleNode(String oid) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(GET_SINGLE_NODE_PATH + oid);		
+		Response response = r.get();				
+		ProvenanceCollection col = provenanceCollectionFromResponse(response);		
+		if(col.containsObjectID(oid)) return col.getNode(oid);		
 		return null;
-	} // End formatLimitedSearchResult
+	} // End getSingleNode
+
+	public PLUSActor actorExists(String aid) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(GET_ACTOR_PATH + aid);		
+		Response response = r.get();				
+		Gson g = new GsonBuilder().create();
+		JsonElement elem = g.fromJson(response.readEntity(String.class), JsonElement.class);
+		if(!elem.isJsonObject()) throw new ProvenanceClientException("Server response wasn't a JSON object " + elem);
+		
+		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
+	}
 	
-	/**
-	 * Tag each of the objects in a provenance collection with information about the user that
-	 * posted them.
-	 * @param col the provenance collection to tag
-	 * @param req the request that created the provenenace collection
-	 * @return the modified collection
-	 */
-	protected ProvenanceCollection tagSource(ProvenanceCollection col, HttpServletRequest req) {		
-		String addr = req.getRemoteAddr();
-		String host = req.getRemoteHost();
-		String user = req.getRemoteUser();
-		String ua = req.getHeader("User-Agent");
-
-		String tag = (user != null ? user : "unknown") + "@" + 
-				host + " " + 
-				(host.equals(addr) ? "" : "(" + addr + ") ") + 
-				ua;
-		long reportTime = System.currentTimeMillis();
-
-		for(PLUSObject o : col.getNodes()) { 
-			o.getMetadata().put("plus:reporter", tag);
-			o.getMetadata().put("plus:reportTime", reportTime);
-		}
-
-		return col;
-	} // End tagSource
-} // End DAGServices
+	public PLUSActor actorExistsByName(String name) throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(GET_ACTOR_BY_NAME_PATH + name);		
+		Response response = r.get();				
+		Gson g = new GsonBuilder().create();
+		JsonElement elem = g.fromJson(response.readEntity(String.class), JsonElement.class);
+		if(!elem.isJsonObject()) throw new ProvenanceClientException("Server response wasn't a JSON object " + elem);
+		
+		return ProvenanceCollectionDeserializer.convertActor((JsonObject)elem); 
+	}
+	
+	public boolean dominates(PrivilegeClass a, PrivilegeClass b)
+			throws ProvenanceClientException {
+		Builder r = getRequestBuilderForPath(PRIVILEGE_PATH + a.getId() + "/" + b.getId());
+		Response response = r.get();				
+		Gson g = new GsonBuilder().create();		
+		String txt = response.readEntity(String.class);
+		JsonElement elem = g.fromJson(txt, JsonElement.class);
+		if(elem.isJsonPrimitive()) return elem.getAsBoolean();
+		throw new ProvenanceClientException(txt);
+	} // End dominates
+} // End RESTProvenanceClient
