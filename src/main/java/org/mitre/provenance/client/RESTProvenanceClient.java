@@ -77,11 +77,13 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	protected static final String API_DEPLOY_PATH = "/plus/api";
 	protected static final String PRIVILEGE_PATH = "/privilege/dominates/";
 	protected static final String SEARCH_PATH = "/object/search/";
+	protected static final String METADATA_PATH = "/object/metadata/";
 	protected static final String QUERY_PATH = "/graph/search";
 	protected static final String GET_ACTOR_PATH = "/actor/";
 	protected static final String GET_ACTOR_BY_NAME_PATH = "/actor/name/";
 	protected static final String GET_ACTORS_PATH = "/feeds/objects/owners";
-	protected static final String NEW_GRAPH_PATH = "/graph/new";	
+	protected static final String NEW_GRAPH_PATH = "/graph/new";
+	protected static final String TAINT_FLING_PATH = "/object/taint/marktaintandfling/";	
 	protected static final String GET_GRAPH_PATH = "/graph/";
 	protected static final String GET_LATEST_PATH = "/feeds/objects/latest";
 	protected static final String LIST_WORKFLOWS_PATH = "/workflow/latest";
@@ -229,10 +231,10 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		Builder r = getRequestBuilderForPath(GET_GRAPH_PATH + oid, params);
 
 		System.out.println(r);
-		System.out.println("GOT THIS FAR!");
+		//System.out.println("GOT THIS FAR!");
 		
 		Response response = r.get();
-		System.out.println("GOT THIS FAR 2!");
+		//System.out.println("GOT THIS FAR 2!");
 		
 		return provenanceCollectionFromResponse(response);
 	} // End getGraph
@@ -264,7 +266,27 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	
 	public ProvenanceCollection search(Metadata parameters, int max)
 			throws ProvenanceClientException {
-		throw new ProvenanceClientException("Not yet implemented.");
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		params.add("n", max);
+		String key = parameters.keySet().iterator().next();
+		String value = (String) parameters.get(key);
+		Builder r = getRequestBuilderForPath(METADATA_PATH + key + "/" + value, params);
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);
+	}
+	
+	
+	/**
+	 * @author piekut
+	 * Given a node id , mark node as tainted and return the FLING of that marking.
+	*/
+	public ProvenanceCollection markTaintAndRetrieveFLING(String id)
+			throws ProvenanceClientException {
+		MultivaluedMap<String,Object> params = new MultivaluedHashMap<String,Object>();
+		Builder r = getRequestBuilderForPath(TAINT_FLING_PATH + id, params);
+
+		Response response = r.get();				
+		return provenanceCollectionFromResponse(response);		
 	}
 	
 	public ProvenanceCollection query(String query) throws IOException
@@ -281,19 +303,14 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 		connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
 		
-		System.out.println("Flag (1)");
-		
 		OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
 		writer.write( "query=" + URLEncoder.encode(query, "UTF-8"));
 		writer.close();
-		
-		System.out.println("Flag (2)");
 		
 		BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 		String line;
 		StringBuffer jsonString = new StringBuffer();
 		
-		System.out.println("Flag (3)");
 
 		while ((line = reader.readLine()) != null) {
 			jsonString.append(line);
@@ -301,10 +318,8 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 		
 		reader.close();
 		connection.disconnect();
-		System.out.println("Flag (4)");
 		
 		String outputString = jsonString.toString();
-		System.out.println("Flag (5)");
 		return provenanceCollectionFromResponse(outputString);
 	}
 	
@@ -323,7 +338,7 @@ public class RESTProvenanceClient extends AbstractProvenanceClient {
 	 */
 	protected ProvenanceCollection provenanceCollectionFromResponse(String response) { 
 		Gson g = new GsonBuilder().registerTypeAdapter(ProvenanceCollection.class, new ProvenanceCollectionDeserializer()).create();
-		System.out.println("Flag (6)");
+	
 		return g.fromJson(response, ProvenanceCollection.class);		
 	}
 	
