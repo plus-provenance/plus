@@ -1,0 +1,81 @@
+package org.mitre.provenance.asias;
+
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+
+import org.mitre.provenance.Metadata;
+import org.mitre.provenance.client.RESTProvenanceClient;
+import org.mitre.provenance.contenthash.ContentHasher;
+import org.mitre.provenance.contenthash.SHA256ContentHasher;
+import org.mitre.provenance.npe.NonProvenanceEdge;
+import org.mitre.provenance.plusobject.*;
+import org.mitre.provenance.plusobject.json.JSONConverter;
+
+/**
+ *  @author piekut
+ *	Simple class to illustrate PLUS style JSON.  "main" class creates a collection with two nodes joined by an edge.  
+ *  This collection is then saved as PLUS JSON to illustrate the format.
+ */
+
+public class Test_CreateSamplePlusJson {
+
+	public static void main(String [] args) throws Exception { 
+
+		ProvenanceCollection sampleCollection = new ProvenanceCollection();
+		
+		// PLUSInvocation is a type of node
+		PLUSInvocation invocation= new PLUSInvocation();
+		invocation.setName("sample invocation");
+		// add any properties into object's metadata.
+		invocation.getMetadata().put("MyCustomPropertyName", "a value");
+		
+		//  Here's how we store hashed values.
+		SHA256ContentHasher myHasher = new SHA256ContentHasher();
+		String contentString = "contentToBeHashed";
+		String hashString = ContentHasher.formatAsHexString(myHasher.hash(new ByteArrayInputStream(contentString.getBytes(StandardCharsets.UTF_8))));
+		//  Stores in metadata as well.
+		invocation.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, hashString);
+		// [Important] - add the node to the collection, else it won't be included.
+		sampleCollection.addNode(invocation);
+		
+		
+		// Now let's create the data node.
+		PLUSString dataNode = new PLUSString("my Data Node's Name");   // both invocation and data nodes have a constructor that automatically sets the name.		
+		String content = "some other value I may want to hash";
+		dataNode.setContent(content);		 
+		dataNode.getMetadata().put(Metadata.CONTENT_HASH_SHA_256, 
+				ContentHasher.formatAsHexString(myHasher.hash(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)))));
+		// [Important] - add the node to the collection, else it won't be included.
+		sampleCollection.addNode(dataNode);
+		
+		//  Now that both sides of the edge exist, we can add the edge.
+		PLUSEdge invocationToDataOutput = new PLUSEdge(invocation,   // The edge goes from the invocation node... 
+                dataNode,   // to the data node....
+                PLUSWorkflow.DEFAULT_WORKFLOW, 
+                PLUSEdge.EDGE_TYPE_GENERATED);
+		// [Important] - add the edge to the collection, else it won't be included.
+		sampleCollection.addEdge(invocationToDataOutput);
+		
+		// Why not add a non-provenance edge, even though for this example it's a little meaningless.
+		NonProvenanceEdge npe = new NonProvenanceEdge(dataNode, invocation, "meaningless in this example;  would normally link two disjoint nodes.");
+		// [Important] - add the NPE to the collection, else it won't be included.
+		sampleCollection.addNonProvenanceEdge(npe);
+		
+		//  Now the collection can be saved as JSON 
+		// (or reported to remote server, see the "Ingest_" classes for submitting as a call to http://{server}/plus/api/graph/new.)
+		String fileDestination = System.getProperty("user.home") + "\\Desktop\\plusFormat.json";
+		BufferedWriter mySavedProvenance = new BufferedWriter(new FileWriter(fileDestination));		
+		try { 
+			String json = JSONConverter.provenanceCollectionToD3Json(sampleCollection);
+			mySavedProvenance.write(json);
+		} finally { mySavedProvenance.close(); }
+				
+		
+		System.out.println("Done!");		
+		System.exit(0); 
+	} // End main
+	
+}
