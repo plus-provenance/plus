@@ -24,7 +24,6 @@
 	<script src="media/js/jquery.tablesorter.js"></script>
 	<script src="media/js/ui.js"></script>	
 	<script src="media/js/provenance.js"></script>
-	<script src="media/js/fitness.js"></script>		
 	
 	<link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/pepper-grinder/jquery-ui.css" />
 	<link rel="stylesheet" type="text/css" href="media/js/tablesorter/style.css"/>

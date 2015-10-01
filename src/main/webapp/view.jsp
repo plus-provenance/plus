@@ -15,224 +15,271 @@
 	<title>Provenance</title>
 
 	<link rel="stylesheet" type="text/css" href="media/css/app.css" />
+	<link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/pepper-grinder/jquery-ui.css" />
+    <link rel="stylesheet" type="text/css" href="media/js/tablesorter/style.css"/>
+    <!-- link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css" /-->
 	
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-layout/1.3.0-rc-30.79/jquery.layout.min.js"></script>
-	
-	<!-- link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css" /-->
-		
 	<script src="media/js/d3.v3.min.js"></script>
 	<script type="text/javascript" src="media/js/dagre.js"></script>
-	
 	<script src="media/js/jquery.tablesorter.js"></script>
 	<script src="media/js/ui.js"></script>
 	<script src="media/js/provenance.js"></script>
-	<script src="media/js/fitness.js"></script>
 	<script src="media/js/provenanceVis.app.js"></script>
-
-	<link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/pepper-grinder/jquery-ui.css" />
-	<link rel="stylesheet" type="text/css" href="media/js/tablesorter/style.css"/>
+    <script src="media/js/fitness.js"></script>
 
 	<script>	
-	var myLayout = null; // a var is required because this page utilizes: myLayout.allowOverflow() method
+		var myLayout = null; // a var is required because this page utilizes: myLayout.allowOverflow() method
 
-	function pageOidSubmit(value) { 
-		// Display the loading animation while search proceeds.
-		$("#D3-CANVAS").html(loadingMarkup());
-		oidSubmit(value);
-	}
-		
-	function configure() {
-		$("#maxNodes").val(GLOBAL_SETTINGS.n);
-		$("#maxHops").val(GLOBAL_SETTINGS.maxHops);
-		
-		// Various boolean settings...
-		var boolSettings = ["includeNPEs", "forward", "backward", "followNPIDs", "breadthFirst"];
-		
-		for(var i in boolSettings) { 
-			var settingName = boolSettings[i];
-			if(GLOBAL_SETTINGS[settingName]) {
-				$("#" + settingName).attr("checked", "true");
-			} else { 
-				$("#" + settingName).attr("checked", "false");
-			}
-		}
-		
-		$("#configurationDialog").dialog({
-			autoOpen: true,
-			width: "auto",
-			height: "auto",
-			buttons: {
-				"OK" : function() {					
-					for(var i in boolSettings) {
-						var settingName = boolSettings[i];
-					
-						if($("#" + settingName).is(":checked")) {							
-							GLOBAL_SETTINGS[settingName] = true;
-						} else { GLOBAL_SETTINGS[settingName] = false; }
-						
-						console.log("Set " + settingName + " => " + GLOBAL_SETTINGS[settingName]);
-					}
-					
-					GLOBAL_SETTINGS.n = $("#maxNodes").val();
-					GLOBAL_SETTINGS.maxHops = $("#maxHops").val();
-				
-					console.log("Set n=" + GLOBAL_SETTINGS.n + ", maxHops=" + GLOBAL_SETTINGS.maxHops);
-					
-					// Resubmit the selected OID to force a reload from
-					// the server with the new settings.
-					pageOidSubmit(getSelectedOID());
-					$(this).dialog("close");
-				},
-			   "Cancel" : function() { 
-				   // FINE!  I didn't want to change settings anyway!
-				   $(this).dialog("close");   
-			   }	
-			}, 
-			close: function() { 				
-				$(this).dialog("close");
-				refreshAssessors();
-			}
-		});
-	} // End configure
-			
-	function checkPopulateFitnessWidget(selector) {
-		var oid = getSelectedOID();
-		
-		// Some widgets are sensitive to changes in OID.
-		// Those only need to be reloaded/updated when the 
-		// OID changes.
-		if($(selector).attr("oid") == oid) { 
-			console.log("No update needed");
-			return;
-		} 
-		
-		if(selector == '#summaryTab') { updateSummaryTab(selector); } 
-		else if(selector == '#queryTab') { updateQueryTab(selector); }  
-		else if(selector == '#assessorTab') { updateAssessorTab(selector); } 
-		else if(selector == '#timeSpanTab') { updateTimespanTab(selector); } 
-        else if(selector == '#custodyTab') { updateCustodyTab(selector); } 
-		else { 
-			console.log("Error: undefined selector " + selector);
-		}		
-	} // End checkPopulateFitnessWidget
+	    var selectedOID = window.location.search.slice(1);
 	
-	$(document).ready(function () {
-		myLayout = $('body').layout({
-			// enable showOverflow on west-pane so popups will overlap north pane
-			west__showOverflowOnHover: false
-		});
-		
-		// $(".ui-layout-west").width("500px");
-		myLayout.sizePane("west", (screen.width/5 - 20));
-		
-		$("#tabs").tabs();
-		$("#fitnessWidgetTabs").tabs({
-			activate: function( event, ui ) {
-				console.log(event);
-				console.log(ui);			
-				checkPopulateFitnessWidget(ui.newPanel.selector);
-			}			
-		});		
-				
-		// Style buttons
-		$( "input[type=submit]").button();		
-		
-		$("#configurationDialog").dialog({
-			autoOpen: false
-		});
-			
-		// This can control whether south starts out hidden or not.
-		// myLayout.toggle("south"); 
-		
-		// Call the main d3 initialization code.		
-		init();
-				
-		var queryString = window.location.search;
-		
-		if(queryString.indexOf("?") != -1) { 
-			$("#oidsubmit").attr('oid', queryString.substr(1));
-
+		function pageOidSubmit(value) { 
 			// Display the loading animation while search proceeds.
-			$("#D3-CANVAS").html(loadingMarkup());			
-			
-			pageOidSubmit(queryString.substr(1));
+			$("#D3-CANVAS").html(loadingMarkup());
+			oidSubmit(value);
 		}
+			
+		function configure() {
+			$("#maxNodes").val(GLOBAL_SETTINGS.n);
+			$("#maxHops").val(GLOBAL_SETTINGS.maxHops);
+			
+			// Various boolean settings...
+			var boolSettings = ["includeNPEs", "forward", "backward", "followNPIDs", "breadthFirst"];
+			
+			for(var i in boolSettings) { 
+				var settingName = boolSettings[i];
+				if(GLOBAL_SETTINGS[settingName]) {
+					$("#" + settingName).attr("checked", "true");
+				} else { 
+					$("#" + settingName).attr("checked", "false");
+				}
+			}
+			
+			$("#configurationDialog").dialog({
+				autoOpen: true,
+				width: "auto",
+				height: "auto",
+				buttons: {
+					"OK" : function() {					
+						for(var i in boolSettings) {
+							var settingName = boolSettings[i];
+						
+							if($("#" + settingName).is(":checked")) {							
+								GLOBAL_SETTINGS[settingName] = true;
+							} else { GLOBAL_SETTINGS[settingName] = false; }
+							
+							console.log("Set " + settingName + " => " + GLOBAL_SETTINGS[settingName]);
+						}
+						
+						GLOBAL_SETTINGS.n = $("#maxNodes").val();
+						GLOBAL_SETTINGS.maxHops = $("#maxHops").val();
+					
+						console.log("Set n=" + GLOBAL_SETTINGS.n + ", maxHops=" + GLOBAL_SETTINGS.maxHops);
+						
+						// Resubmit the selected OID to force a reload from
+						// the server with the new settings.
+						pageOidSubmit(getSelectedOID());
+						$(this).dialog("close");
+					},
+				   "Cancel" : function() { 
+					   // FINE!  I didn't want to change settings anyway!
+					   $(this).dialog("close");   
+				   }	
+				}, 
+				close: function() { 				
+					$(this).dialog("close");
+					refreshAssessors();
+				}
+			});
+		} // End configure
 				
-		// Populate the summary tab as necessary.
-		checkPopulateFitnessWidget("#summaryTab");
-		$(document).tooltip();
- 	});	
+		function checkPopulateFitnessWidget(selector) {
+			var oid = getSelectedOID();
+			
+			// Some widgets are sensitive to changes in OID.
+			// Those only need to be reloaded/updated when the 
+			// OID changes.
+			if($(selector).attr("oid") == oid) { 
+				console.log("No update needed");
+				return;
+			} 
+			
+            switch (selector) {
+                case '#summaryTab':     updateSummaryTab(selector); break;
+                case '#queryTab':       updateQueryTab(selector); break;
+                case '#assessorTab':    assessors.refreshAll(); break;
+                case '#timeSpanTab':    updateTimespanTab(selector); break;
+                case '#custodyTab':     updateCustodyTab(selector); break;
+                default:                console.log("Error: undefined selector " + selector); break;
+            }
+		} // End checkPopulateFitnessWidget
+		
+		$(document).ready(function () {
+			myLayout = $('body').layout({
+				// enable showOverflow on west-pane so popups will overlap north pane
+				west__showOverflowOnHover: false
+			});
+			
+			// $(".ui-layout-west").width("500px");
+			myLayout.sizePane("west", (screen.width/5 - 20));
+			
+			$("#graphTabs").tabs();
+			$("#fitnessWidgetTabs").tabs({
+				activate: function( event, ui ) {
+					checkPopulateFitnessWidget(ui.newPanel.selector);
+				}			
+			});		
+					
+			// Style buttons
+			$( "input[type=submit]").button();		
+			
+			$("#configurationDialog").dialog({
+				autoOpen: false
+			});
+				
+			// This can control whether south starts out hidden or not.
+			// myLayout.toggle("south"); 
+			
+			// Call the main d3 initialization code.		
+			init();
+					
+			var queryString = window.location.search;
+			
+			if(queryString.indexOf("?") != -1) { 
+				$("#oidsubmit").attr('oid', queryString.substr(1));
+	
+				// Display the loading animation while search proceeds.
+				$("#D3-CANVAS").html(loadingMarkup());			
+				
+				pageOidSubmit(queryString.substr(1));
+			}
+					
+			// Populate the summary tab as necessary.
+			checkPopulateFitnessWidget("#summaryTab");
+			$(document).tooltip();
+			
+			$("#assessorTypeButton").click(function() {
+				assessors.add(assessors.getAssessorByName($("#assessorType").val()));
+			});
+			
+			var selector = $("#assessorType");
+			for (var i = 0; i < assessorTypes.length; i++) {
+				selector.append($('<option>', {
+					value: assessorTypes[i]["constructor"],
+					text:  assessorTypes[i]["display"]
+				}));
+			}
+			
+			$("#assessmentsDialog").keydown(function (event) {
+				if (event.keyCode == 13) {
+					$(this).parent().find("button:eq(1)").trigger("click");
+					return false;
+				}
+			});
+			
+			  // Set up spinners and force them to stay inside min/max.
+		    function keepInBounds(event, ui) {
+		        if (ui.value > $(this).attr("max")) {
+		            $(this).spinner("value", $(this).attr("max"));
+		            return false;
+		        } else if (ui.value < $(this).attr("min")) {
+		            $(this).spinner("value", $(this).attr("min"));
+		            return false;
+		        }       
+		    }
+		    
+		    $(".spinner").spinner({
+		        spin : keepInBounds,
+		        change: keepInBounds
+		    });
+		    
+		    // adds a default TaintAssessor to the Assessors list.
+		    assessors.add(new TaintAssessor());
+		    
+		    // This is the nice jQuery way of doing it, but with our 
+		    // theme toggle buttons look confusing.
+		    // $( "input[type=checkbox]").button(); 
+	 	});	
 	</script>
 
 	<style type="text/css">
-	/**
-	 *	Basic Layout Theme
-	 * 
-	 *	This theme uses the default layout class-names for all classes
-	 *	Add any 'custom class-names', from options: paneClass, resizerClass, togglerClass
-	 */
-
-	.ui-layout-pane { /* all 'panes' */ 
-		background: #FFF; 
-		border: 1px solid #BBB; 
-		padding: 10px; 
-		overflow: auto;
-	} 
-
-	.ui-layout-resizer { /* all 'resizer-bars' */ 
-		background: #DDD; 
-	} 
-
-	.ui-layout-toggler { /* all 'toggler-buttons' */ 
-		background: #AAA; 
-	} 
-	</style>
-
-	<style type="text/css">
-	body {
-		font-family: Arial, sans-serif;
-		font-size: 0.85em;
-	}
-	p {
-		margin: 1em 0;
-	}
-	ul {
-		/* rules common to BOTH inner and outer UL */
-		z-index:	100000;
-		margin:		1ex 0;
-		padding:	0;
-		list-style:	none;
-		cursor:		pointer;
-		border:		1px solid Black;
-		/* rules for outer UL only */
-		width:		15ex;
-		position:	relative;
-	}
-	ul li {
-		background-color: #EEE;
-		padding: 0.15em 1em 0.3em 5px;
-	}
-	ul ul {
-		display:	none;
-		position:	absolute;
-		width:		100%;
-		left:		-1px;
-		/* Pop-Up */
-		bottom:		0;
-		margin:		0;
-		margin-bottom: 1.55em;
-	}
-	.ui-layout-north ul ul {
-		/* Drop-Down */
-		bottom:		auto;
-		margin:		0;
-		margin-top:	1.45em;
-	}
-	ul ul li		{ padding: 3px 1em 3px 5px; }
-	ul ul li:hover	{ background-color: #FF9; }
-	ul li:hover ul	{ display:	block; background-color: #EEE; }
+		/**
+		 *	Basic Layout Theme
+		 * 
+		 *	This theme uses the default layout class-names for all classes
+		 *	Add any 'custom class-names', from options: paneClass, resizerClass, togglerClass
+		 */
+	
+		.ui-layout-pane { /* all 'panes' */ 
+			background: #FFF; 
+			border: 1px solid #BBB; 
+			padding: 10px; 
+			overflow: auto;
+		} 
+	
+		.ui-layout-resizer { /* all 'resizer-bars' */ 
+			background: #DDD; 
+		} 
+	
+		.ui-layout-toggler { /* all 'toggler-buttons' */ 
+			background: #AAA; 
+		} 
+		</style>
+	
+		<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 0.85em;
+		}
+		p {
+			margin: 1em 0;
+		}
+		ul {
+			/* rules common to BOTH inner and outer UL */
+			z-index:	100000;
+			margin:		1ex 0;
+			padding:	0;
+			list-style:	none;
+			cursor:		pointer;
+			border:		1px solid Black;
+			/* rules for outer UL only */
+			position:	relative;
+		}
+		ul li {
+			background-color: #EEE;
+			padding: 0.15em 1em 0.3em 5px;
+		}
+		ul ul {
+			display:	none;
+			position:	absolute;
+			width:		100%;
+			left:		-1px;
+			/* Pop-Up */
+			bottom:		0;
+			margin:		0;
+			margin-bottom: 1.55em;
+		}
+		.ui-layout-north ul ul {
+			/* Drop-Down */
+			bottom:		auto;
+			margin:		0;
+			margin-top:	1.45em;
+		}
+		ul ul li		{ padding: 3px 1em 3px 5px; }
+		ul ul li:hover	{ background-color: #FF9; }
+		ul li:hover ul	{ display:	block; background-color: #EEE; }
+		
+		#addTabHeader { width: 3em; }
+		
+		/*#fitnessWidgetTabs li {
+		   width:  50em;
+		}*/
+		
+		#graphTabs li {
+		   min-width:  8em;
+		}
 	</style>
 </head>
 <body>
@@ -259,7 +306,7 @@
 
 <!-- allowOverflow auto-attached by option: west__showOverflowOnHover = true -->
 <div class="ui-layout-west">
-	<div id="tabs" style="width: 100%; height: 95%">
+	<div id="graphTabs" style="width: 100%; height: 95%">
 		<ul style="width: 95%">
 			<li><a href="#objSumTab">Current Item</a>			
 			<!--  span class="ui-icon ui-icon-close" role="presentation">Remove Tab</span -->
@@ -319,30 +366,6 @@
 	<p>The graph will be reloaded as soon as you apply these changes.</p>
 </div>
 
-<script>
-$(document).ready(function () {
-	// Set up spinners and force them to stay inside min/max.
-	function keepInBounds(event, ui) {
-		if (ui.value > $(this).attr("max")) {
-			$(this).spinner("value", $(this).attr("max"));
-			return false;
-		} else if (ui.value < $(this).attr("min")) {
-			$(this).spinner("value", $(this).attr("min"));
-			return false;
-		}		
-	}
-	
-	$(".spinner").spinner({
-		spin : keepInBounds,
-		change: keepInBounds
-	});
-	
-	// This is the nice jQuery way of doing it, but with our 
-	// theme toggle buttons look confusing.
-	// $( "input[type=checkbox]").button();	
-});
-</script>
-
 <div class="ui-layout-center" id="centerPanel">
 	<div class="ui-widget-header" style="vertical-align: middle; text-align: center; width:100%;">
 		<span style="float:center; vertical-align: middle;">
@@ -384,7 +407,38 @@ $(document).ready(function () {
 			</ul>
 			
 			<div id='summaryTab'>Summary</div>			
-			<div id='assessorTab'>Custom Assessments</div>
+			<div id='assessorTab'>
+                <table id="assessmentTable" width="100%">
+                    <tbody>
+                        <tr>
+                            <td style="padding-left: 2px" id="overallAssessmentCell">
+                                <img width="90" border="0" src="/plus/media/img/fitness/yellowSensor.png"/>
+                            </td>
+                            <td style="white-space: nowrap; padding-left: 3px">Overall Assessment</td>
+                            <td>
+                                <select id="assessorType" name="assessorType"></select>
+                                <input id="assessorTypeButton" alt="Add Assessor" type="image" border="0" src="/plus/media/img/fitness/add.gif"></input>
+                                <img id="fitnessWidgetsLoadingAnim" style="visibility: hidden" src="/plus/media/img/loading.gif" border="0" alt="" />
+                            </td>
+                            <td style="width: 50px;"></td>
+                            <td></td>
+                        </tr>
+                        <tr id="blankAssessorRow" style="display: none;">
+                            <td class="imgCell"></td>
+                            <td class="nameCell" style="white-space:nowrap; padding-left:4px"></td>
+                            <td class="removeCell"><a class="removeLink" onclick="javascript:assessors.remove($(this).parent().parent().attr('id')); return false;" href="#">remove</a></td>
+                            <td class="configureCell"><a class="configureLink" onclick="javascript:assessors.configure($(this).parent().parent().attr('id')); return false;" href="#">configure</a></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id='assessmentsDialog' title=''>
+                    <p id='dialogmessage'></p>
+                    <form>
+                        <input type='text' name='assessmentDialogInput' id='assessmentDialogInput' class='text ui-widget-content ui-corner-all' /> 
+                    </form>
+                </div>
+            </div>
 			<div id='timeSpanTab'>Time span</div>
 			<div id='custodyTab'>Chain of Custody</div>
 			<div id='queryTab'>Custom Query</div>

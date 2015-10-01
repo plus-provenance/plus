@@ -53,8 +53,6 @@ var	colors = function(taint) {
 
 var svg = d3.select(CANVAS);
 
-var selectedOID = "urn:uuid:mitre:plus:4033da91-8f83-46fd-bafb-9f9083a33c7e";
-
 function getSelectedOID() { 
 	return selectedOID;
 }
@@ -107,9 +105,8 @@ var linkedByIndex = {};
     
 
 function isConnected(a, b) {
-
-        return linkedByIndex[a.index + "," + b.index] || linkedByIndex[b.index + "," + a.index] || a.index == b.index;
-    }
+    return linkedByIndex[a.index + "," + b.index] || linkedByIndex[b.index + "," + a.index] || a.index == b.index;
+}
 
 function fade(opacity,d) {
 	svgGraphElements.style("stroke-opacity", function(o) {

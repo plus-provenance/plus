@@ -11,483 +11,385 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * Original author: M. David Allen
+ * Updated by: Zack Panitzke
  */
 
-function colorMarkup(imgFilename) { 
-	var base = "/plus/media/img/fitness/";		
-	return "<img width='90' border='0' src='" + base + imgFilename + "'/>";
+function colorMarkup(verdict) { 
+	var base = "/plus/media/img/fitness/";
+	var image = "";
+	
+	switch (verdict) {
+		case 'G':	image = "greenOnlySensor.png"; break;
+		case 'Y':	image = "yellowOnlySensor.png"; break;
+		case 'R':	image = "redOnlySensor.png"; break;
+		default: 	image = "noneSensor.png"; break;
+	}
+	
+	return "<img width='90' border='0' src='" + base + image + "'/>";
 };
 
-var Assessor = function () { 	
-	// Set a unique ID once on create.
+// define the Assessor base class.
+var Assessor = function(name, configurable) {
 	this.id = Math.round(Math.random()*10000) % 10000;
-	this.verdict = "";   // must be one of R, G, B, or ""
+	this.verdict = "";   // must be one of R, G, Y, or ""
 	this.assessedId = "";
+	this.name = name;
+	this.configurable = configurable;
+	this.configured = false;
+};
+Assessor.prototype.isConfigurable = function() { return this.configurable; }
+Assessor.prototype.isConfigured = function() { return this.configured; };
+Assessor.prototype.configure = function() { return !this.configurable; }
+Assessor.prototype.getName = function() { return this.name; };
+Assessor.prototype.getId = function() { return this.id; };
+Assessor.prototype.getVerdict =	function() { return this.verdict; };
+/**
+ * @param selector the selector where resulting elements should be inserted.
+ * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
+ */
+Assessor.prototype.run = function(selector, callback) { throw "Implementing classes must implement run()"; };		
+Assessor.prototype.getInput = function(title, message, value, callback) {
+	// Reset some aspects about the dialog.
+	$("#assessmentsDialog").attr("title", title);
+	$("#dialogmessage").html(message);
+	$("#assessmentDialogInput").val(value !== null ? value : "");
 	
-	this.isConfigured = function() { return false; };
-	
-	this.getName = function() { return "Generic Assessor"; };
-	this.getId = function() { return this.id; };
-	this.getVerdict = function() { return this.verdict; };
-	
-	this.configureLink = function() { 
-		return "<a onclick='configureAssessor(" + this.getId() + "); return false' href='#'>configure</a>";
-	};	
-	
-	this.removeLink = function() { 
-		return "<a onclick='removeAssessor(" + this.getId() + "); return false' href='#'>remove</a>";
-	};
-
-	/**
-	 * @param selector the selector where resulting elements should be inserted.
-	 * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
-	 */
-	this.run = function(selector, callback) { throw "Implementing classes must implement run()"; };
-	
-	this.render = function() { 
-		return "<tr><td>" + colorMarkup("greenOnlyOffSensor.png") + "</td><td>Blankety Blank</td><td></td></tr>";
-	};
-		
-	this.getInput = function(title, message, callback) {
-		// Reset some aspects about the dialog.
-		$("#assessmentsDialog").attr("title", title);
-		$("#dialogmessage").html(message);
-		$("#assessmentDialogInput").val("");
-		
-		$("#assessmentsDialog").dialog({
-			autoOpen: true,
-			height: 300,
-			width: 350,
-			modal: true,
-			buttons: {
-				"OK" : function() {
-					callback($("#assessmentDialogInput").val());
-					$(this).dialog("close");
-				}
-			}, 
-			close: function() { 				
+	$("#assessmentsDialog").dialog({
+		autoOpen: true,
+		height: 300,
+		width: 350,
+		modal: true,
+		buttons: {
+			"OK" : function() {
+				callback($("#assessmentDialogInput").val());
 				$(this).dialog("close");
-				refreshAssessors();
+				return false;
 			}
-		});		
-		
+		}, 
+		close: function() { 				
+			$(this).dialog("close");
+		}
+	});		
+	
+	return this;
+};
+
+var assessorTypes = [];
+function makeAssessor(assessorBase, displayName) {
+	assessorBase.prototype = Object.create(Assessor.prototype);
+	assessorBase.prototype.constructor = assessorBase;
+	
+	// ugly hack until ES6 is supported
+	var reg = /function ([^\(]*)/;
+	var constructorName = reg.exec(assessorBase.toString())[1];
+	assessorTypes.push({ "display": displayName, "constructor": constructorName })
+}
+
+function TaintAssessor() {
+	Assessor.call(this, "Taint Assessor", false);
+}
+makeAssessor(TaintAssessor, "Taint Assessor");
+/**
+ * @param selector the selector where resulting elements should be inserted.
+ * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
+ */
+TaintAssessor.prototype.run = function (callback) {
+	var me = this;
+
+	if (getSelectedOID() == this.assessedId) {
+		// Don't need to re-run.
+		if(callback) { callback(true); }
+	}
+	
+	this.assessedId = getSelectedOID();
+
+	Provenance().getTaint({
+		oid: getSelectedOID(),
+		success: function(provGraph) {
+			me.verdict = (provGraph.countNodes() == 0 ? "Y" : "R");
+			console.log("TaintAssessor verdict: " + me.verdict);
+			if(callback) { callback(true); }
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Error fetching taint");
+			me.verdict = "R";
+			if(callback) { callback(false); }
+		}
+	});
+};
+
+function TermFinder() {
+	Assessor.call(this, "Term Finder", true);
+	this.term = "";
+}
+makeAssessor(TermFinder, "Term Finder");
+/**
+ * @param selector the selector where resulting elements should be inserted.
+ * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
+ */
+TermFinder.prototype.run = function(callback) {		
+	var oid = getSelectedOID();
+	var me = this;
+
+	if (getSelectedOID() == this.assessedId) {
+		// Don't need to re-run.
+		if (callback) { callback(true); }
 		return this;
-	};
-	
-	return this;
-};
+	}
 
-var TaintAssessor = function() { 
-	this.configure = function () { 
-		return true;
-	};
-
-	this.getName = function() { return "Taint Assessor"; };
-	
-	/**
-	 * @param selector the selector where resulting elements should be inserted.
-	 * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
-	 */
-	this.run = function (selector, callback) {
-		var me = this;
+	this.assessedId = getSelectedOID();
+	console.log("Running termFinder on term=" + this.term);
 		
-		if(getSelectedOID() == this.assessedId) {
-			// Don't need to re-run.
-			$(selector + " tr:last").after(this.render());
-			if(callback) { callback(true); } 
-			return this;
-		} else { 
-			// Note that we're assessing this one so we don't redo.
-			this.assessedId = getSelectedOID();
-		}
-		
-		Provenance().getTaint({
-			oid: getSelectedOID(),
-			success: function(provGraph) {
-				this.verdict = (provGraph.countNodes() == 0 ? "" : "R");
-				console.log("TaintAssessor: verdict => " + this.verdict);
-				$(selector + ' tr:last').after(me.render());
-				if(callback) { callback(true); } 
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("Error fetching taint");
-				this.verdict = "R";
-				$(selector + ' tr:last').after(me.render());
-				if(callback) { callback(false); }
-			}
-		});
-	};
-	
-	this.render = function() { 				
-		return '<tr>' +
-		'	<td><img width="90" border="0" src="/plus/media/img/fitness/redOnlyOffSensor.png"/></td>' +          
-	    '   <td style="white-space:nowrap; padding-left:4px">Taint Assessor</td>' + 
-	    '<td>' + this.removeLink() + "</td>" + 		 
-		'</tr>';		
-	};
-	
-	this.configure = function() { ; };
-	this.isConfigured = function() { return true; };
-	return this;
-};
-TaintAssessor.prototype = new Assessor;
-
-var TermFinder = function() {
-	this.super = Assessor();
-	this.term = "";
-	
-	this.isConfigured = function() { return term && term != ''; };
-	
-	this.getName = function() { return "Term Finder"; };
-	
-	this.render = function() {
-		var color = (this.verdict ==="G" ? colorMarkup("greenOnlySensor.png") : colorMarkup("greenOnlyOffSensor.png"));
-		console.log("TermFinder verdict " + this.verdict + " => " + color);
-		return "<tr><td>" + color + "</td><td>Term Finder: " + this.term + "</td><td>" + 
-			   this.configureLink() + "; " + this.removeLink() + 
-		       "</td></tr>";
-	};
-	
-	/**
-	 * @param selector the selector where resulting elements should be inserted.
-	 * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
-	 */
-	this.run = function(selector, callback) {		
-		var oid = getSelectedOID();
-		var me = this;
-		
-		if(getSelectedOID() == this.assessedId) {
-			// Don't need to re-run.
-			$(selector + " tr:last").after(this.render());
+	Provenance().termFinder({
+		oid: oid,
+		term: this.term,
+		success: function(provGraph) {
+			var goodTermFound = provGraph.countNodes() > 0;
+			me.verdict = (goodTermFound ? "G" : "Y");
+			console.log("TermFinder verdict: " + me.verdict);
 			if(callback) { callback(true); }
-			
-			return this;
-		} else { 
-			// Note that we're assessing this one so we don't redo.
-			this.assessedId = getSelectedOID();
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Error fetching TermFinder: " + textStatus + " " + errorThrown);
+			me.verdict = "R";
+			if(callback) { callback(false); }
 		}
-		
-		console.log("Running termFinder on term=" + me.term);
-				
-		Provenance().termFinder({
-			oid: oid,
-			term: me.term,
-			success: function(provGraph) {
-				var goodTermFound = provGraph.countNodes() > 0;
-				me.verdict = (goodTermFound ? "G" : "");
-				console.log("TermFinder: verdict => " + me.verdict);
-				$(selector + ' tr:last').after(me.render());
-				if(callback) { callback(true); }
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("Error fetching termFinder: " + textStatus);
-				this.verdict = "R";
-				$(selector + ' tr:last').after(me.render());
-				if(callback) { callback(false); }
-			}
-		});
-	};
-	
-	this.configure = function () {
-		var me = this;
-		this.getInput("Enter a term", "Please enter a term you expect in the provenance:",
-				function(term) { 
-					if(!(me.term === term)) {
-						// Reset this value so when term changes, we'll
-						// recompute.
-						me.assessedId = "";  
-					}
-			
-					me.term = term;					
-					console.log("TermFinder:  got " + me.term);
-										
-					return term;
-				});
-	};
-	
-	return this;
+	});
 };
-TermFinder.prototype = new Assessor;
+TermFinder.prototype.configure = function (callback) {
+	var me = this;
+	this.getInput("Enter a term", "Please enter a term you expect in the provenance:", this.term,
+		function (term) { 
+			if(!(me.term === term)) {
+				// Reset this value so when term changes, we'll recompute.
+				me.assessedId = "";  
+			}
 
-var BadTermFinder = function() { 
-	this.super = Assessor();
+			console.log("TermFinder reconfigured with term: " + me.term);
+			me.term = term;
+			me.name = "Term Finder: " + me.term;
+
+			me.configured = true;
+			if (callback) { callback(true); }
+		}
+	);
+};
+
+function BadTermFinder() {
+	Assessor.call(this, "Bad Term Finder", true);
 	this.term = "";
+}
+makeAssessor(BadTermFinder, "Bad Term Finder");
+/**
+ * @param selector the selector where resulting elements should be inserted.
+ * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
+ */
+BadTermFinder.prototype.run = function(callback) {
+	var oid = getSelectedOID();
+	var me = this;
 
-	this.getName = function() { return "Bad Term Finder"; };
-	
-	this.render = function() {
-		var color = (this.verdict === "R" ? colorMarkup("redOnlySensor.png") : colorMarkup("redOnlyOffSensor.png"));
-		console.log("BadTermFinder verdict " + this.verdict + " => " + color);
-		return "<tr><td>" + color + "</td><td>Bad Term Finder: " + this.term + "</td>" + 
-		       "<td>" + 
-		       this.configureLink() + "; " + this.removeLink() + "</td></tr>";		
-	};
-	
-	/**
-	 * @param selector the selector where resulting elements should be inserted.
-	 * @callback a function to call once completed; will be passed true or false, depending on success/fail of the run.
-	 */
-	this.run = function(selector, callback) {
-		var oid = getSelectedOID();
-		var me = this;
-		
-		if(getSelectedOID() == this.assessedId) {
-			// Don't need to re-run.
-			$(selector + " tr:last").after(this.render());
+	if(getSelectedOID() == this.assessedId) {
+		// Don't need to re-run.
+		if(callback) { callback(true); }
+		return this;
+	}
+	// Note that we're assessing this one so we don't redo.
+	this.assessedId = getSelectedOID();
+
+	console.log("Running bad term finder on " + this.term);
+
+	Provenance().termFinder({
+		oid: oid,
+		term: this.term,
+		success: function(provGraph) {
+			var badTermFound = provGraph.countNodes() > 0;
+			me.verdict = (badTermFound ? "R" : "G");
+			console.log("BadTermFinder verdict: " + me.verdict);
 			if(callback) { callback(true); }
-			return this;
-		} else { 
-			// Note that we're assessing this one so we don't redo.
-			this.assessedId = getSelectedOID();
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log("Error fetching BadTermFinder: " + textStatus + " " + errorThrown);
+			me.verdict = "R";
+			if(callback) { callback(false); }
 		}
-		
-		console.log("Running bad term finder on " + me.term);
-		
-		Provenance().termFinder({
-			oid: oid,
-			term: me.term,
-			success: function(provGraph) {
-				var badTermFound = provGraph.countNodes() > 0;
-				me.verdict = (badTermFound ? "R" : "");
-				console.log("BadTermFinder: verdict => " + me.verdict);
-				$(selector + ' tr:last').after(me.render());
-				if(callback) { callback(true); }
-			},
-			error: function(jqXHR, textStatus, errorThrown) {
-				console.log("Error fetching termFinder: " + textStatus);
-				this.verdict = "R";
-				$(selector + ' tr:last').after(me.render());
-				if(callback) { callback(false); }
-			}
-		});		
-	};
-	
-	this.isConfigured = function() { return term && term != ''; };
-	
-	this.configure = function () {
-		var me = this;
-		
-		this.getInput("Enter a term", "Please enter a term you want to avoid in the provenance:",
-				function(term) {
-					if(!(me.term === term)) {
-						// Reset this value so when term changes, we'll
-						// recompute.
-						me.assessedId = "";  
-					}
-
-					me.term = term;
-					console.log("BadTermFinder:  got " + me.term);	
-					return term;
-				});
-				
-		return this; 
-	};
-	
-	return this;
+	});		
 };
-BadTermFinder.prototype = new Assessor;
+BadTermFinder.prototype.configure = function (callback) {
+	var me = this;
+	this.getInput("Enter a term", "Please enter a term you want to avoid in the provenance:", this.term,
+		function(term) {
+			if (!(me.term === term)) {
+				// Reset this value so when term changes, we'll recompute.
+				me.assessedId = "";  
+			}
+			
+			console.log("BadTermFinder got: " + me.term);
+			me.term = term;
+			me.name = "Bad Term Finder: " + me.term;
+			
+			me.configured = true;
+			if (callback) { callback(true); }
+		}
+	);
+};
 
 /*************************************************************************/
 
-var assessors = [new TaintAssessor()];
-
-function summarize() { 
-	var v = "";
-	for(var i in assessors) { 
-		v = v + assessors[i].getId() + " ";		
+var Assessors = function() {
+	this.assessorList = {};
+	
+	this.getAssessorByName = function(assessorName) {
+		var func = window[assessorName];
+		return new func();
 	}
-	return v;
-}
-
-function configureAssessor(id) { 
-	for (var i in assessors) { 
-		var a = assessors[i];
+	
+	this.add = function(assessor) {
+		console.log("Adding Assessor " + assessor.getId());
+		this.assessorList[assessor.getId()] = assessor;
 		
-		if(a.getId() == id) {
-			a.configure();
+		if (assessor.isConfigurable()) {
+			var me = this;
+			assessor.configure(function(configSuccess) {
+				me.refresh(assessor.getId());
+			});
+		} else {
+			this.refresh(assessor.getId());
 		}
-	}
+	};
 	
-	// One of them changed, so we re-render all of them.
-	// This is easier than trying to surgically remove one
-	// row and change it.
-	refreshAssessors();
-}
-
-function removeAssessor(id) { 
-	var newlist = [];
+	this.summarize = function() {
+		return Object.keys(this.assessorList).join(" ");
+	};
 	
-	for(var i in assessors) { 
-		var a = assessors[i];
+	this.remove = function(id) {
+		var strippedId = String(id).replace("assessor-","");
+		console.log("Removing Assessor " + strippedId);
 		
-		if(a.getId() == id) { continue; } 
-		else { newlist.push(a); }
-	}
-	
-	assessors = newlist;
-	refreshAssessors();
-} // End removeAssessor
-
-/**
- * Remove all assessment rows from the table.  Re-run all assessors as needed.  Once all
- * assessors have been run again, re-compute the summary assessment.
- */
-function refreshAssessors() { 
-	// Remove all but first row.
-	console.log("Refreshing " + assessors.length + " total assessors");
-	$("#assessmentTable").find("tr:gt(0)").remove();
-			
-	function runAssessorIdx(idx, assessors) {
-		if(idx >= assessors.length || idx < 0) { throw "Invalid index"; }
+		delete this.assessorList[strippedId];
+		$("#" + id).remove();
 		
-		// Run the idx'th assessor, then wire a callback to daisy-chain the methods together.
-		// This is necessary because we're single-threaded here.
-		console.log("runAssessorIdx(" + idx + ")");
-		assessors[idx].run("#assessmentTable", 
-				function (succeeded) {					
-					if(!succeeded) { console.log("Assessor #" + idx + " failed to complete"); }
-					else { console.log("Assessor #" + idx + " succeeded."); }
-					
-					if(idx == (assessors.length - 1)) {
-						// The final assessor has finished running.   Now we can update the verdict table.
-						updateSummaryVerdict();
-						return;						
-					}
-					
-					runAssessorIdx((idx + 1), assessors); // Go to the next assessor.
-				});		
-	} // End runAssessorIdx
+		this.updateSummary();
+	};
 	
-	$("#fitnessWidgetsLoadingAnim").show();
-	runAssessorIdx(0, assessors); // Run this just-defined thing on the first item, starting the daisy chain.		
-} // End refreshAssessors
-
-/**
- * Looks through all of the assessors, queries them for a final verdict, creates a summary
- * verdict, and updates the DOM to display that.
- */
-function updateSummaryVerdict() {
-	var verdicts = {G: 0, Y: 0, R: 0};
-	console.log("Update summary verdict");
-	
-	$("#fitnessWidgetsLoadingAnim").hide();
-	
-	for(var idx in assessors) {
-		// Increment the number of times we've seen each verdict.
-		var verdict = assessors[idx].getVerdict();
-		if(verdict) { 
-			verdicts[verdict] = verdicts[verdict] + 1; 
+	this.configure = function(id) {
+		var strippedId = String(id).replace("assessor-","");
+		console.log("Configuring Assessor " + strippedId);
+		var thisAssessor = this.assessorList[strippedId];
+		
+		if (thisAssessor.isConfigurable()) {
+			var me = this;
+			thisAssessor.configure(function(configSuccess) {
+				me.refresh(strippedId);
+			});
 		}
-	} // End for
+	};
+	
+	this.refresh = function(id) {
+		var me = this;
+		console.log("Refreshing Assessor " + id);
+		
+		this.assessorList[id].run(function(runSuccess) {
+			var rendered = me.render(id);
+			if ($("#assessor-" + id).length > 0) {
+				$("#assessor-" + id).replaceWith(rendered);
+			} else {
+				rendered.insertBefore("#blankAssessorRow");
+			}
+			me.updateSummary();
+		});
+	};
+	
+	this.refreshAll = function() {
+		console.log("Refreshing all Assessors.");
+		
+		for (var key in this.assessorList) {
+			if (!this.assessorList.hasOwnProperty(key)) { continue; }
+			this.refresh(key);
+		}
+	};
+	
+	this.render = function(id) {
+		console.log("Rendering assessor row with id: " + id);
+		var assessor = this.assessorList[String(id).replace("assessor-","")];
+		
+		var newRow = $("#blankAssessorRow").clone();
+		newRow.attr("id", "assessor-" + assessor.getId());
+		newRow.find(".imgCell").html(colorMarkup(assessor.getVerdict()));
+		newRow.find(".nameCell").html(assessor.getName());
+		newRow.find(".configureLink").css("display", assessor.isConfigurable() ? "" : "none");
+		newRow.css("display", "");
+		
+		return newRow;
+	};
+	
+	this.getSummaryVerdict = function() {
+		var verdicts = {G: 0, Y: 0, R: 0};
+		var overall = 'Y';
+		console.log("Updating summary verdict.");
+		
+		for (var key in this.assessorList) {
+			if (!this.assessorList.hasOwnProperty(key)) { continue; }
 			
-	for(var key in verdicts) {
-		console.log("VERDICT " + key + ": " + verdicts[key]);
-	}
-	
-	var overall = "yellowOnlySensor.png";
-	
-	// At this point, using the contents of verdicts, we have to determine
-	// what the overall verdict is.  A value for a flag (red/green/yellow)
-	// is false if we didn't see any.
-	//
-	// There are 8 possibilities, corresponding to G, Y, R (on/off)
-	// They are:
-	// GYR => Y
-	// GY  => Y
-	// G   => G
-	// G R => Y
-	//  YR => R
-	//   R => R
-	//  Y  => Y
-	//     => Y
-	if(verdicts.G && !verdicts.Y && !verdicts.R) { 
-		// Clean "green" assessment -- all lights were green, or off.
-		overall = "greenOnlySensor.png";
-	} else if(!verdicts.G && verdicts.R) { 
-		// Clean "red" assessment.  If you had reds, you get red, whether
-		// or not there were any yellows.
-		overall = "redOnlySensor.png";
-	} else if(verdicts.G && verdicts.R) {
-		// Mixed reds and greens yields yellow.
-		overall = "yellowOnlySensor.png";
-	} else {
-		// Default is no real information.
-		overall = "yellowOnlySensor.png";
-	}	
-	
-	// Set the overall assessment cell to the right stoplight.
-	$("#overallAssessmentCell").html(colorMarkup(overall));
-	// $("#assessmentTable").styleTable();	
-} // End refreshAssessors
-
-/**
- * Adds a new assessor to the table, according to the assessor type the user has chosen.
- */
-function addAssessor() { 
-	var assessorType = $("#assessorType").val();
-	
-	console.log("Pre add: " + summarize());
-	// Each assessor type has a corresponding function.
-	var func = window[assessorType];
+			var verdict = this.assessorList[key].getVerdict();
+			console.log(">>>> ID: " + key + " Verdict: " + verdict);
+			if (verdict) { 
+				verdicts[verdict] = verdicts[verdict] + 1;
+			}
+		}
 		
-	var instance = new func();
-	console.log("Adding (+) instance " + instance.getId() + " to " + summarize());
-	assessors.push(instance);
+		console.log ("Overall verdicts:");
+		for (var key in verdicts) {
+			console.log(">>>> VERDICT " + key + ": " + verdicts[key]);
+		}
 		
-	// Call whatever instance-specific configuration is necessary.
-	console.log("Pre configure: " + summarize());
-	instance.configure();
+		// At this point, using the contents of verdicts, we have to determine
+		// what the overall verdict is.  A value for a flag (red/green/yellow)
+		// is false if we didn't see any.
+		//
+		// There are 8 possibilities, corresponding to G, Y, R (on/off)
+		// They are:
+		// GYR => Y
+		// GY  => Y
+		// G   => G
+		// G R => Y
+		//  YR => R
+		//   R => R
+		//  Y  => Y
+		//     => Y
+		if (verdicts.G && !verdicts.Y && !verdicts.R) { 
+			// Clean "green" assessment -- all lights were green, or off.
+			overall = 'G';
+		} else if (!verdicts.G && verdicts.R) { 
+			// Clean "red" assessment.  If you had reds, you get red, whether
+			// or not there were any yellows.
+			overall = 'R';
+		} else if (verdicts.G && verdicts.R) {
+			// Mixed reds and greens yields yellow.
+			overall = 'Y';
+		} else {
+			// Default is no real information.
+			overall = 'Y';
+		}
+		
+		return overall;
+	};
 	
-	// Refresh runs them as needed and updates display.
-	refreshAssessors();
-} // End addAssessor
-
-function updateAssessorTab(selector) {
-	var html = ('<table id="assessmentTable" width="100%">' + 
-	            '   <tbody>' + 
-		        '    <tr>' + 
-						'<td style="padding-left: 2px" id="overallAssessmentCell">' +
-						'	<img width="90" border="0" src="/plus/media/img/fitness/yellowSensor.png"/>' +
-						'</td>' +
-						'<td style="white-space: nowrap; padding-left: 3px">Overall Assessment</td>' +
-						'<td>' +
-						'	<select id="assessorType" name="assessorType">' +
-						'		<option value="TaintAssessor">Taint Assessor</option>' +
-						'		<option value="TermFinder">Term Finder</option>' +
-						'		<option value="BadTermFinder">Bad Term Finder</option>' +
-						'	</select>' +
-						'	<input onclick="addAssessor(); return false" ' +
-						'          alt="Add Assessor" ' + 
-						'          type="image" border="0" src="/plus/media/img/fitness/add.gif"></input>' +
-						'   <img id="fitnessWidgetsLoadingAnim" style="visibility: hidden" src="/plus/media/img/loading.gif" border="0" alt=""/>' + 
-						'</td>' +
-					'</tr>' +
-					'</tbody>' +
-				'</table>');
+	this.updateSummary = function() {
+		var verdict = this.getSummaryVerdict();
+		$("#overallAssessmentCell").html(colorMarkup(verdict));
+		$('#assessmentsDialog').dialog({autoOpen: false});
+	};
 	
-	var dialog = "<div id='assessmentsDialog' title=''>" +
-    				"<p id='dialogmessage'></p>" +  
-    				"<form>" + 
-    					"<input type='text' name='assessmentDialogInput' id='assessmentDialogInput' class='text ui-widget-content ui-corner-all' />" + 
-    				"</form>" + 
-    			"</div>";
-	
-	$(selector).html(html + dialog);
-	// $("#assessmentTable").styleTable();
-	refreshAssessors();
-	
-	$('#assessmentsDialog').dialog({
-		autoOpen:  false
-	});
-	return false;
-} // End updateAssessorTab
+	return this;
+};
+var assessors = new Assessors;
 
 /**
  * Function to submit a custom cypher query and update results.
  */
-function submitCustomQuery() { 
-	var q = $("#query").val();
-	
+function submitCustomQuery(q) {	
 	Provenance().cypherQuery({
 		query : q,
 		success: function(provGraph) {
@@ -570,6 +472,7 @@ function updateCustodyTab(selector) {
 function updateSummaryTab(selector) { 
 	var oid = getSelectedOID();
 	$(selector).html(loadingMarkup());
+
 	Provenance().getSummary({
 		oid: oid,
 		success: function(data) { 
