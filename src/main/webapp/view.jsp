@@ -15,13 +15,12 @@
 	<title>Provenance</title>
 
 	<link rel="stylesheet" type="text/css" href="media/css/app.css" />
-	<link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/pepper-grinder/jquery-ui.css" />
-    <link rel="stylesheet" type="text/css" href="media/js/tablesorter/style.css"/>
-    <!-- link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/themes/ui-lightness/jquery-ui.css" /-->
+	<link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/pepper-grinder/jquery-ui.css" />
+    <link rel="stylesheet" type="text/css" href="media/js/tablesorter/style.css"/>    
 	
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-layout/1.3.0-rc-30.79/jquery.layout.min.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-layout/1.4.3/jquery.layout.min.js"></script>
 	<script src="media/js/d3.v3.min.js"></script>
 	<script type="text/javascript" src="media/js/dagre.js"></script>
 	<script src="media/js/jquery.tablesorter.js"></script>
