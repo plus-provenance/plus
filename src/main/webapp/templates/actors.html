@@ -1,0 +1,13 @@
+<table class="table table-striped table-bordered table-hover" data-sort-name="created" data-sort-order="desc">
+	<thead>
+		<tr>
+			<th data-field='name' data-sortable='true'>Name</th>
+			<th data-field='created' data-sortable='true'>Created</th>
+		</tr>
+	</thead>
+
+	<tr ng-repeat="actor in graph.actors">
+		<td>{{actor.name}}</td>
+		<td>{{actor.created}}</td>
+	</tr>
+</table>
