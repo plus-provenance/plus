@@ -12,29 +12,30 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script src="js/ui-bootstrap-tpls-0.13.4.min.js"></script>
   
+  <link rel="stylesheet" href="assets/css/sticky-footer-navbar.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 </head>
 
 <body ng-app="plus">
 	<div class="container">
 	  <div class="page-header">
-	    <img src="media/img/tci_logo.png"/>
+	    <img src="assets/img/tci_logo.png"/>
 	    <h3>Provenance: Linking and Understanding Sources</h3> 
 	  </div>
 	</div>
 	
 	<div ng-view></div>
 	
-	<hr/>
-	
-	<div class="panel panel-default">  
-	  <div class="panel-body">(c) MITRE 2014 / <a href="docs/index.html">API documentation</a> / <a href="https://github.com/plus-provenance/plus">GitHub Repo</a></div>
-	</div>
+	<footer class="footer">
+      <div class="container">
+        <p class="text-muted">(c) MITRE 2007-2015 / <a href="docs/index.html">API documentation</a> / <a href="https://github.com/plus-provenance/plus">GitHub Repo</a></p>
+      </div>
+    </footer>
 
-	<script src="app/provApi.js"></script>
-	<script src="app/plus.js"></script>    
-	<script src="app/services.js"></script>
-	<script src="app/controllers.js"></script>
-	<script src="app/directives.js"></script>  
+	<script src="assets/js/provApi.js"></script>
+	<script src="assets/js/plus.js"></script>    
+	<script src="assets/js/services.js"></script>
+	<script src="assets/js/controllers.js"></script>
+	<script src="assets/js/directives.js"></script>  
 </body>
 </html>
