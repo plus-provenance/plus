@@ -8,6 +8,10 @@ app.config(['$routeProvider',
 			templateUrl: 'templates/main.html',
 			controller: 'MainCtrl'
 		}).
+		when('/graph/:oid', {
+			templateUrl: 'templates/graph.html',
+			controller: 'GraphCtrl'
+		}).
 		when('/actors/:aid', {
 			templateUrl: 'templates/actor.html',
 			controller: 'ActorCtrl'

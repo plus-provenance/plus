@@ -1,6 +1,46 @@
 var plusControllers = angular.module('plusControllers', ['ngAnimate', 'ngResource', 'ui.bootstrap']);
 console.log("INIT controllers.");
 
+plusControllers.controller('GraphCtrl', ['$scope', '$http', '$routeParams', 'ProvenanceService', function($scope, $http, $routeParams, ProvenanceService) {
+	var __settings = {
+		n: 50,   // Max number of nodes per graph to return.
+		maxHops: 8, // Max distance from starting point to fetch
+		includeNodes: true, // whether results should include nodes
+		includeEdges: true, // whether results should include edges
+		includeNPEs: true, // whether results include non-provenance IDs
+		followNPIDs: false, // whether graph discovery goes through NPIDs or not.
+		forward: true, // whether to look forward
+		backward: true, // whether to look backward
+		breadthFirst: true
+	};	
+	
+	// First, ensure settings are correct or twiddle them if they're
+	// not.   That way we don't have to trust the UI layer to get it
+	// right.
+	if(isNaN(parseInt(this.__settings.n))) { this.__settings.n = 20; } 
+	if(isNaN(parseInt(this.__settings.maxHops))) { this.__settings.maxHops = 8; }
+	
+	if(this.__settings.n < 5) { this.__settings.n = 5; }
+	if(this.__settings.n > 200) { this.__settings.n = 200; }
+	if(this.__settings.maxHops > 200) { this.__settings.maxHops = 200; } 
+	if(this.__settings.maxHops < 1) { this.__settings.maxHops = 1; } 
+	
+	var url = "/plus/api/graph/" + $routeParams.oid + "?" + 
+	       "n=" + __settings.n + "&" + 
+	       "maxHops=" + __settings.maxHops + "&" + 
+	       "includeNodes=" + __settings.includeNodes + "&" +
+	       "includeEdges=" + __settings.includeEdges + "&" + 
+	       "includeNPEs=" + __settings.includeNPEs + "&" + 
+	       "followNPIDs=" + __settings.followNPIDs + "&" +  
+	       "forward=" + __settings.forward + "&" + 
+	       "backward=" + __settings.backward + "&" + 
+	       "breadthFirst=" + __settings.breadthFirst;
+	
+	$http.get(url).success(function (data) {
+		$scope.graph = data;
+	});
+}]);
+
 plusControllers.controller('ActorCtrl', ['$scope', '$http', '$routeParams', 'ProvenanceService', function($scope, $http, $routeParams, ProvenanceService) {
 	$http.get('/plus/api/actor/' + $routeParams.aid).success(function(data) {
 		$scope.actor = data;
