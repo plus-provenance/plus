@@ -7,7 +7,7 @@
 	</thead>
 
 	<tr ng-repeat="actor in graph.actors">
-		<td>{{actor.name}}</td>
+		<td><a href="#/actor/{{actor.aid}}">{{actor.name}}</a></td>
 		<td>{{actor.created}}</td>
 	</tr>
 </table>

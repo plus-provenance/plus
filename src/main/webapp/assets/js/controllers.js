@@ -17,13 +17,13 @@ plusControllers.controller('GraphCtrl', ['$scope', '$http', '$routeParams', 'Pro
 	// First, ensure settings are correct or twiddle them if they're
 	// not.   That way we don't have to trust the UI layer to get it
 	// right.
-	if(isNaN(parseInt(this.__settings.n))) { this.__settings.n = 20; } 
-	if(isNaN(parseInt(this.__settings.maxHops))) { this.__settings.maxHops = 8; }
+	if(isNaN(parseInt(__settings.n))) { __settings.n = 20; } 
+	if(isNaN(parseInt(__settings.maxHops))) { __settings.maxHops = 8; }
 	
-	if(this.__settings.n < 5) { this.__settings.n = 5; }
-	if(this.__settings.n > 200) { this.__settings.n = 200; }
-	if(this.__settings.maxHops > 200) { this.__settings.maxHops = 200; } 
-	if(this.__settings.maxHops < 1) { this.__settings.maxHops = 1; } 
+	if(__settings.n < 5) { __settings.n = 5; }
+	if(__settings.n > 200) { __settings.n = 200; }
+	if(__settings.maxHops > 200) { __settings.maxHops = 200; } 
+	if(__settings.maxHops < 1) { __settings.maxHops = 1; } 
 	
 	var url = "/plus/api/graph/" + $routeParams.oid + "?" + 
 	       "n=" + __settings.n + "&" + 
