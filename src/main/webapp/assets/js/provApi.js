@@ -84,8 +84,8 @@ function ProvenanceGraph(d3json) {
 		item.created = new Date(parseInt(item.created,10));
 	};
 	
-	this.nodes(reformatDates);
-	this.actors(reformatDates);
+	// this.nodes(reformatDates);
+	// this.actors(reformatDates);
 	
 	return this;
 } // End ProvenanceGraph
