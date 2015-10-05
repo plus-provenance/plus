@@ -1,6 +1,18 @@
 var plusControllers = angular.module('plusControllers', ['ngAnimate', 'ngResource', 'ui.bootstrap']);
 console.log("INIT controllers.");
 
+plusControllers.controller('ActorCtrl', ['$scope', '$http', '$routeParams', 'ProvenanceService', function($scope, $http, $routeParams, ProvenanceService) {
+	$http.get('/plus/api/actor/' + $routeParams.aid).success(function(data) {
+		$scope.actor = data;
+	});
+}]);
+
+plusControllers.controller('ProvCtrl', ['$scope', '$http', '$routeParams', 'ProvenanceService', function($scope, $http, $routeParams, ProvenanceService) {
+	$http.get('/plus/api/object/' + $routeParams.oid).success(function(data) {
+		$scope.object = data.nodes[0];
+	});	
+}]);
+
 plusControllers.controller('MainCtrl', ['$scope', '$sce', '$http', 'ProvenanceService', function($scope, $sce, $http, ProvenanceService) {
    console.log("MainCtrl");
       

@@ -7,7 +7,7 @@ plusDirectives.directive('nodelist', function() {
     	  graph : "=graph",
     	  title : "=title",
       },
-      templateUrl: '/plus/angular/templates/nodelist.html'
+      templateUrl: 'templates/nodelist.html'
   };
 });
 
@@ -17,6 +17,6 @@ plusDirectives.directive('actors', function() {
 	      scope: { 
 	    	  graph : "=graph",
 	      },
-	      templateUrl: '/plus/angular/templates/actors.html'
+	      templateUrl: 'templates/actors.html'
 	  };	
 });

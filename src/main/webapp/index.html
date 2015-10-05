@@ -8,6 +8,7 @@
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-animate.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-resource.js"></script>  
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular-route.js"></script>  
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script src="js/ui-bootstrap-tpls-0.13.4.min.js"></script>
   
@@ -15,82 +16,25 @@
 </head>
 
 <body ng-app="plus">
-<div class="container">
-  <div class="page-header">
-    <img src="/plus/media/img/tci_logo.png"/>
-    <h3>Provenance: Linking and Understanding Sources</h3> 
-  </div>
-</div>
-
-<div ng-controller="MainCtrl">
-	 <tabset>	    
-	    <tab heading="Search">
-			<div id='search' class="tab-pane fade in active" ng-controller="MainCtrl"> 
-			  <h3>Search</h3>
-			  <div>
-			  	<input type="text" name="searchTerm" ng-model="searchTerm" id='searchTerm' size="70" title="Enter search term here" value=""/>
-			  	<button ng-click="searchProvenance()" id='searchSubmit' value='Search'>Search</button>
-			  </div> 
-			  
-			  <div ng-if="searchResults" class="animate-if">
-				<div nodelist title="searchTerm" graph="searchResults"></div>
-			  </div>	  
-			</div>    
-	    </tab>
-	 
-	 	<tab heading="Object Feed" select="getLatestObjects()">
-		   <div ng-if="latestObjects">
-		   		<div nodelist title="'Latest Objects'" graph="latestObjects"></div>
-		   </div>
-		
-		   <h3 ng-if="latestObjectsError">Error: {{ latestObjectsError }}</h3>	 	
-	 	</tab>
-	 	
-	 	<tab heading="Owners" select="getOwners()">
-	 		<h3>Owners</h3>
-	 		
-	 		<div ng-if="owners">
-	 			<div actors graph="owners"></div>
-	 		</div>
-	 	</tab>
-	 	
-	 	<tab heading="Non-Provenance Data" select="getNonProvenanceData()">
-	 		<h3>Non-Provenance Data</h3>
-	 		
-			<div ng-if="npids" class="animate-if">
-				<div nodelist title="searchTerm" graph="npids"></div>
-			</div>	  	 		
-	 	</tab>
-	 	
-	 	<tab heading="Dashboard">
-	 		<h3>Dashboard Queries</h3>
+	<div class="container">
+	  <div class="page-header">
+	    <img src="/plus/media/img/tci_logo.png"/>
+	    <h3>Provenance: Linking and Understanding Sources</h3> 
+	  </div>
+	</div>
 	
-			<p>Select a dashboard query from the list below.</p>
-			
-			<select ng-model="querySelector">
-	  			<option value="connectedData" selected='selected'>Latest Connected Data</option>
-	  			<option value="hashedContent">Latest Hashed Data</option>
-			</select> 
-				
-			<button ng-click="dashboardQuery(querySelector)" id='runQuery' value='Run Query'>Run Query</button>
-			
-			<div ng-if="dashboardQueryResults">
-				<div nodelist title="'Results'" graph="dashboardQueryResults"></div>
-			</div>			
-	 	</tab>
-	</tabset>
-</div>
+	<div ng-view></div>
+	
+	<hr/>
+	
+	<div class="panel panel-default">  
+	  <div class="panel-body">(c) MITRE 2014 / <a href="docs/index.html">API documentation</a> / <a href="https://github.com/plus-provenance/plus">GitHub Repo</a></div>
+	</div>
 
-<hr/>
-
-<div class="panel panel-default">  
-  <div class="panel-body">(c) MITRE 2014 / <a href="docs/index.html">API documentation</a> / <a href="https://github.com/plus-provenance/plus">GitHub Repo</a></div>
-</div>
-
-  <script src="app/provApi.js"></script>
-  <script src="app/plus.js"></script>    
-  <script src="app/services.js"></script>
-  <script src="app/controllers.js"></script>
-  <script src="app/directives.js"></script>  
+	<script src="app/provApi.js"></script>
+	<script src="app/plus.js"></script>    
+	<script src="app/services.js"></script>
+	<script src="app/controllers.js"></script>
+	<script src="app/directives.js"></script>  
 </body>
 </html>
