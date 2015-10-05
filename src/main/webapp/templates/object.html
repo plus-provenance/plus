@@ -1,0 +1,26 @@
+<div ng-app="plus" ng-controller="ProvCtrl" class="panel panel-default">
+	<div class="panel-body">	
+		<h3>Item {{object.name}}</h3>
+
+		<p>{{object.type}} / {{object.subtype}}</p>
+
+		<h3>Metadata</h3>
+		<table class="table table-striped table-bordered table-hover" data-sort-name="attribute" data-sort-order="asc">
+			<thead><tr><th data-field='attribute' data-sortable='true'>Attribute</th>
+			           <th data-field='value' data-sortable='true'>Value</th></tr></thead>
+			
+			<tbody>
+				<tr ng-repeat="(key, value) in object.metadata">
+					<td>{{key}}</td>
+					<td>{{value}}</td>
+				</tr>
+			</tbody>
+		</table>		
+		
+		<pre>{{object}}</pre>
+		
+		<h3>Owners</h3>
+		
+		<p><a href="/plus/index.html#/actors/{{object.ownerid}}">Owner {{object.ownerid}}</a>
+	</div>
+</div>

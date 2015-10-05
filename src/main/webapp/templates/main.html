@@ -1,0 +1,58 @@
+<div ng-app="plus" ng-controller="MainCtrl">
+	 <tabset>	    
+	    <tab heading="Search">
+			<div id='search' class="tab-pane fade in active" ng-controller="MainCtrl"> 
+			  <h3>Search</h3>
+			  <div>
+			  	<input type="text" name="searchTerm" ng-model="searchTerm" id='searchTerm' size="70" title="Enter search term here" value=""/>
+			  	<button ng-click="searchProvenance()" id='searchSubmit' value='Search'>Search</button>
+			  </div> 
+			  
+			  <div ng-if="searchResults" class="animate-if">
+				<div nodelist title="searchTerm" graph="searchResults"></div>
+			  </div>	  
+			</div>    
+	    </tab>
+	 
+	 	<tab heading="Object Feed" select="getLatestObjects()">
+		   <div ng-if="latestObjects">
+		   		<div nodelist title="'Latest Objects'" graph="latestObjects"></div>
+		   </div>
+		
+		   <h3 ng-if="latestObjectsError">Error: {{ latestObjectsError }}</h3>	 	
+	 	</tab>
+	 	
+	 	<tab heading="Owners" select="getOwners()">
+	 		<h3>Owners</h3>
+	 		
+	 		<div ng-if="owners">
+	 			<div actors graph="owners"></div>
+	 		</div>
+	 	</tab>
+	 	
+	 	<tab heading="Non-Provenance Data" select="getNonProvenanceData()">
+	 		<h3>Non-Provenance Data</h3>
+	 		
+			<div ng-if="npids" class="animate-if">
+				<div nodelist title="searchTerm" graph="npids"></div>
+			</div>	  	 		
+	 	</tab>
+	 	
+	 	<tab heading="Dashboard">
+	 		<h3>Dashboard Queries</h3>
+	
+			<p>Select a dashboard query from the list below.</p>
+			
+			<select ng-model="querySelector">
+	  			<option value="connectedData" selected='selected'>Latest Connected Data</option>
+	  			<option value="hashedContent">Latest Hashed Data</option>
+			</select> 
+				
+			<button ng-click="dashboardQuery(querySelector)" id='runQuery' value='Run Query'>Run Query</button>
+			
+			<div ng-if="dashboardQueryResults">
+				<div nodelist title="'Results'" graph="dashboardQueryResults"></div>
+			</div>			
+	 	</tab>
+	</tabset>
+</div>
